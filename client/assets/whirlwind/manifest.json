@@ -1,0 +1,31 @@
+{
+  "type": "animation",
+  "animation_id": "4b5d72de-8bab-4ab0-acb4-0eb877593f20",
+  "task_id": "4b5d72de-8bab-4ab0-acb4-0eb877593f20",
+  "character_id": "5201b31f-a068-4de3-ab25-4812fe1a7c7d",
+  "character_name": "赵云",
+  "animation_name": "旋风斩/大招）",
+  "frame_count": 4,
+  "prompt": "2.5D pixel art Zhao Yun spinning attack, silver armor, long spear swirling in circle, {direction} view, 6 frames, energy swirl effect, dynamic pose, chibi pixel art, magenta background #ff00ff",
+  "created_at": "2026-06-16T13:11:58.904427Z",
+  "source_sheet": "source/source.png",
+  "preview_gif": "preview.gif",
+  "frames": [
+    {
+      "index": 1,
+      "file": "frames/frame_001.webp"
+    },
+    {
+      "index": 2,
+      "file": "frames/frame_002.webp"
+    },
+    {
+      "index": 3,
+      "file": "frames/frame_003.webp"
+    },
+    {
+      "index": 4,
+      "file": "frames/frame_004.webp"
+    }
+  ]
+}

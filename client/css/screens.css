@@ -1,0 +1,176 @@
+/* Start Screen */
+#startScreen, #gameOverScreen {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  pointer-events: auto;
+}
+
+#startScreen {
+  background: linear-gradient(to bottom, rgba(5,5,15,0.95), rgba(15,10,5,0.98));
+}
+
+#bgParticles {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+#startScreen .title-wrap {
+  text-align: center;
+  animation: fadeIn 0.8s ease;
+  position: relative;
+  z-index: 2;
+}
+#startScreen .subtitle {
+  font-size: 16px;
+  color: var(--gold-dark);
+  letter-spacing: 8px;
+  margin-bottom: 6px;
+}
+#startScreen h1 {
+  font-size: 56px;
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255, 215, 0, 0.3), 3px 3px 6px #000;
+  animation: pulse 3s ease infinite;
+  margin-bottom: 6px;
+}
+#startScreen .scene-name {
+  font-size: 22px;
+  color: var(--gold-dim);
+  letter-spacing: 4px;
+  margin-bottom: 24px;
+}
+
+.start-layout {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  animation: slideUp 0.8s ease 0.3s both;
+  position: relative;
+  z-index: 2;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+}
+.ctrl-row {
+  display: contents;
+}
+.ctrl-key {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 3px 8px;
+  font-size: 12px;
+  color: #ddd;
+  text-align: center;
+  font-family: monospace;
+  min-width: 60px;
+}
+.ctrl-desc {
+  font-size: 12px;
+  color: #999;
+  display: flex;
+  align-items: center;
+}
+
+.leaderboard-preview {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  min-width: 180px;
+}
+.leaderboard-preview h4 {
+  color: var(--gold);
+  font-size: 14px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.leaderboard-preview ol {
+  list-style: none;
+  font-size: 11px;
+  color: #bbb;
+}
+.leaderboard-preview li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.leaderboard-preview .lb-name { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.leaderboard-preview .lb-score { color: var(--gold); }
+.leaderboard-preview .empty { color: #666; text-align: center; padding: 8px 0; }
+
+.start-actions {
+  display: flex;
+  gap: 16px;
+  animation: slideUp 0.8s ease 0.5s both;
+  position: relative;
+  z-index: 2;
+}
+
+/* Game Over */
+#gameOverScreen {
+  background: linear-gradient(to bottom, rgba(20,5,5,0.95), rgba(5,5,15,0.98));
+  display: none;
+}
+#gameOverScreen h1 {
+  font-size: 48px;
+  color: #ff3333;
+  text-shadow: 0 0 20px rgba(255, 50, 50, 0.4), 3px 3px 6px #000;
+  margin-bottom: 20px;
+  animation: fadeIn 0.5s ease;
+}
+.go-stats {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 6px 20px;
+  margin-bottom: 18px;
+  animation: slideUp 0.5s ease 0.2s both;
+}
+.go-stats .gs-label { font-size: 14px; color: #888; text-align: right; }
+.go-stats .gs-value { font-size: 16px; font-weight: bold; color: var(--gold); }
+
+.submit-score {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  animation: slideUp 0.5s ease 0.3s both;
+}
+.submit-score input {
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid #555;
+  border-radius: 3px;
+  color: #fff;
+  font-family: inherit;
+  outline: none;
+}
+.submit-score input:focus { border-color: var(--gold-dim); }
+
+#gameOverScreen .leaderboard-preview {
+  margin-bottom: 18px;
+  animation: slideUp 0.5s ease 0.35s both;
+}
+
+#gameOverScreen .btn { animation: slideUp 0.5s ease 0.4s both; }
+
+@media (max-width: 700px) {
+  #startScreen h1 { font-size: 40px; }
+  .start-layout { flex-direction: column; align-items: center; gap: 20px; }
+  .controls { gap: 5px 10px; }
+  .ctrl-key { min-width: 50px; padding: 2px 6px; font-size: 11px; }
+  .ctrl-desc { font-size: 11px; }
+}

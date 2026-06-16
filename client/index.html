@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三国赵云传 - 长坂坡</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/ui.css">
+<link rel="stylesheet" href="css/screens.css">
+</head>
+<body>
+<div id="gameWrapper">
+  <div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+    <div id="vignette"></div>
+    <div id="screenFlash"></div>
+    <div id="lowHpWarning"></div>
+
+    <div id="ui">
+      <!-- HUD Top-Left -->
+      <div id="hud">
+        <div id="charPortrait">
+          <span class="avatar">🏇</span>
+          <span class="lv-badge" id="lvBadge">Lv.1</span>
+        </div>
+        <div class="hud-info">
+          <div id="charName">赵云 · 子龙</div>
+          <div id="bars">
+            <div class="bar-row">
+              <span class="bar-icon">❤️</span>
+              <div class="bar-container" id="hpBar"><div class="bar-fill"></div><div class="bar-text">150/150</div></div>
+            </div>
+            <div class="bar-row">
+              <span class="bar-icon">💧</span>
+              <div class="bar-container" id="mpBar"><div class="bar-fill"></div><div class="bar-text">80/80</div></div>
+            </div>
+            <div class="bar-row">
+              <span class="bar-icon">⭐</span>
+              <div class="bar-container" id="expBar"><div class="bar-fill"></div><div class="bar-text">0/100</div></div>
+            </div>
+          </div>
+          <div id="statsRow">
+            <span title="攻击力">⚔️<span id="statAtk">20</span></span>
+            <span title="防御力">🛡️<span id="statDef">8</span></span>
+            <span title="暴击率">💥<span id="statCrit">5</span>%</span>
+            <span title="移动速度">👢<span id="statSpd">200</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Score Panel -->
+      <div id="scorePanel">
+        <div class="row"><span class="label">波次</span><span class="value wave" id="waveNum">1</span></div>
+        <div class="row"><span class="label">击杀</span><span class="value" id="killCount">0</span></div>
+        <div class="row"><span class="label">连击</span><span class="value combo" id="comboCount">0</span></div>
+        <div class="row"><span class="label">得分</span><span class="value" id="score">0</span></div>
+        <div class="row"><span class="label">时间</span><span class="value" id="timeDisplay">0:00</span></div>
+        <div class="row wave-countdown"><span class="label">下一波</span><span class="value" id="waveCountdown">—</span></div>
+      </div>
+
+      <!-- Skill Bar -->
+      <div id="skillBar"></div>
+
+      <!-- Dodge Indicator -->
+      <div id="dodgeIndicator">
+        <div class="dodge-icon ready" id="dodgeIcon"><span>💨</span></div>
+        <span>闪避<kbd>Space</kbd></span>
+      </div>
+
+      <!-- Minimap -->
+      <div id="minimapWrap">
+        <canvas id="minimap" width="140" height="110"></canvas>
+        <span id="minimapLabel">长坂坡</span>
+      </div>
+
+      <!-- Kill Log -->
+      <div id="killLog"></div>
+
+      <!-- Combo Display -->
+      <div id="comboDisplay">
+        <div class="combo-num" id="comboNum">0</div>
+        <div class="combo-label">连击</div>
+      </div>
+
+      <!-- Wave Announcement -->
+      <div id="waveAnnounce">
+        <div class="wa-num" id="waNum"></div>
+        <div class="wa-sub" id="waSub"></div>
+      </div>
+
+      <!-- Pickup Hint -->
+      <div id="pickupHint">
+        <div class="ph-name" id="phName"></div>
+        <div class="ph-stats" id="phStats"></div>
+        <div class="ph-compare" id="phCompare"></div>
+        <div class="ph-action">按 <kbd>E</kbd> 拾取</div>
+      </div>
+
+      <!-- Equipment Panel -->
+      <div id="equipPanel">
+        <h3>⚔️ 装备栏</h3>
+        <div class="equip-grid" id="equipGrid"></div>
+        <div class="close-hint">按 <kbd>Tab</kbd> 或点击关闭</div>
+      </div>
+
+      <!-- Level Up Rewards -->
+      <div id="levelUpPanel">
+        <h2>🎖 升级！选择一项奖励</h2>
+        <div class="reward-list" id="rewardList"></div>
+      </div>
+    </div>
+
+    <!-- Pause Overlay -->
+    <div id="pauseOverlay">
+      <h2>⏸ 暂停</h2>
+      <p>按 ESC 继续</p>
+      <div class="pause-actions">
+        <button class="btn small" id="saveBtn">💾 保存存档</button>
+        <span id="saveStatus"></span>
+      </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="startScreen">
+      <canvas id="bgParticles"></canvas>
+      <div class="title-wrap">
+        <div class="subtitle">三国</div>
+        <h1>赵云传</h1>
+        <div class="scene-name">— 长坂坡 —</div>
+      </div>
+      <div class="start-layout">
+        <div class="controls">
+          <div class="ctrl-row"><span class="ctrl-key">W A S D</span><span class="ctrl-desc">移动 / 方向</span></div>
+          <div class="ctrl-row"><span class="ctrl-key">🖱️</span><span class="ctrl-desc">点击地面移动 / 瞄准</span></div>
+          <div class="ctrl-row"><span class="ctrl-key">J</span><span class="ctrl-desc">普通攻击</span></div>
+          <div class="ctrl-row"><span class="ctrl-key">K</span><span class="ctrl-desc">枪刃旋风（AOE）</span></div>
+          <div class="ctrl-row"><span class="ctrl-key">L</span><span class="ctrl-desc">突刺（突进）</span></div>
+          <div class="ctrl-row"><span class="ctrl-key">U</span><span class="ctrl-desc">烽火燎原（大范围）</span></div>
+          <div class="ctrl-row"><span class="ctrl-key">I</span><span class="ctrl-desc">龙胆枪绝（终极技）</span></div>
+          <div class="ctrl-row"><span class="ctrl-key">Space</span><span class="ctrl-desc">闪避翻滚（无敌帧）</span></div>
+          <div class="ctrl-row"><span class="ctrl-key">E</span><span class="ctrl-desc">拾取装备</span></div>
+          <div class="ctrl-row"><span class="ctrl-key">Tab</span><span class="ctrl-desc">装备面板</span></div>
+          <div class="ctrl-row"><span class="ctrl-key">Esc</span><span class="ctrl-desc">暂停</span></div>
+        </div>
+        <div class="leaderboard-preview">
+          <h4>🏆 排行榜</h4>
+          <div id="startLeaderboard">加载中…</div>
+        </div>
+      </div>
+      <div class="start-actions">
+        <button class="btn" id="startBtn">开始游戏</button>
+        <button class="btn secondary" id="loadBtn">📂 读取存档</button>
+      </div>
+    </div>
+
+    <!-- Game Over -->
+    <div id="gameOverScreen">
+      <h1>战死沙场</h1>
+      <div class="go-stats">
+        <span class="gs-label">击杀</span><span class="gs-value" id="finalKills">0</span>
+        <span class="gs-label">最高连击</span><span class="gs-value" id="finalCombo">0</span>
+        <span class="gs-label">得分</span><span class="gs-value" id="finalScore">0</span>
+        <span class="gs-label">存活</span><span class="gs-value" id="finalTime">0秒</span>
+        <span class="gs-label">到达波次</span><span class="gs-value" id="finalWave">1</span>
+        <span class="gs-label">等级</span><span class="gs-value" id="finalLevel">1</span>
+      </div>
+      <div class="submit-score">
+        <input type="text" id="playerName" placeholder="输入名字提交成绩" maxlength="20">
+        <button class="btn small" id="submitScoreBtn">提交成绩</button>
+      </div>
+      <div class="leaderboard-preview">
+        <h4>🏆 排行榜</h4>
+        <div id="endLeaderboard"></div>
+      </div>
+      <button class="btn" id="restartBtn">再战一回</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
