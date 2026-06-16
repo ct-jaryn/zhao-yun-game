@@ -113,6 +113,12 @@ export class Game {
   }
 
   onEnemyKilled(e) {
+    // 曹操第二次死亡才算通关
+    if (e.type === 'boss' && e.hasRevived) {
+      this.gameWin();
+      return;
+    }
+
     this.totalKills++;
     const comboBonus = 1 + Math.floor(this.player.combo / 5) * 0.2;
     this.score += Math.floor(e.score * comboBonus);
@@ -129,6 +135,24 @@ export class Game {
       const eq = genEquip(this.wave);
       this.drops.push(new DropItem(e.x, e.y, eq));
     }
+  }
+
+  onBossFirstDeath(boss) {
+    this.addText(boss.x, boss.y - boss.radius - 40, '曹操倒下，60秒后复活！', '#ff44ff', 24, '#000');
+    this.addKillLog('曹操倒下，正在积蓄力量…');
+    this.shakeScreen(8);
+    this.flashScreen('rgba(150,0,150,0.4)', 0.4);
+    this.addParticles(boss.x, boss.y, '#ff44ff', 40, 160);
+  }
+
+  onBossRevived(boss) {
+    this.addText(boss.x, boss.y - boss.radius - 40, '曹操复活！力量翻倍！', '#ff2222', 26, '#000');
+    this.addKillLog('曹操复活，变得更加强大！');
+    this.shakeScreen(10);
+    this.flashScreen('rgba(255,0,0,0.5)', 0.5);
+    this.addParticles(boss.x, boss.y, '#ff0000', 50, 200);
+    // 复活后满血并刷新血条显示
+    boss.hp = boss.maxHp;
   }
 
   checkNearestDrop() {
@@ -288,7 +312,9 @@ export class Game {
       }
     }
 
-    if (this.enemies.filter(e => !e.dead).length === 0) {
+    const aliveEnemies = this.enemies.filter(e => !e.dead);
+    const revivingBoss = this.enemies.some(e => e.type === 'boss' && e.dead && e.reviveTimer > 0);
+    if (aliveEnemies.length === 0 && !revivingBoss) {
       this.waveTimer -= dt;
       if (this.waveTimer <= 0) { this.waveTimer = 4; this.spawnWave(); }
     }
@@ -317,6 +343,7 @@ export class Game {
     if (!this.running) return;
     this.running = false;
     document.getElementById('gameOverScreen').style.display = 'flex';
+    document.getElementById('victoryScreen').style.display = 'none';
     document.getElementById('finalKills').textContent = this.totalKills;
     document.getElementById('finalCombo').textContent = this.player.maxCombo;
     document.getElementById('finalScore').textContent = Math.floor(this.score);
@@ -324,6 +351,23 @@ export class Game {
     document.getElementById('finalTime').textContent = `${m}分${s}秒`;
     document.getElementById('finalWave').textContent = this.wave;
     document.getElementById('finalLevel').textContent = this.player.level;
+  }
+
+  gameWin() {
+    if (!this.running) return;
+    this.running = false;
+    document.getElementById('victoryScreen').style.display = 'flex';
+    document.getElementById('gameOverScreen').style.display = 'none';
+    document.getElementById('winKills').textContent = this.totalKills;
+    document.getElementById('winCombo').textContent = this.player.maxCombo;
+    document.getElementById('winScore').textContent = Math.floor(this.score);
+    const m = Math.floor(this.gameTime / 60), s = Math.floor(this.gameTime % 60);
+    document.getElementById('winTime').textContent = `${m}分${s}秒`;
+    document.getElementById('winWave').textContent = this.wave;
+    document.getElementById('winLevel').textContent = this.player.level;
+    this.addText(this.player.x, this.player.y - 80, '通关！曹操已被彻底击败！', '#ffd700', 32, '#000');
+    this.shakeScreen(12);
+    this.flashScreen('rgba(255,215,0,0.6)', 0.8);
   }
 
   getSaveData() {

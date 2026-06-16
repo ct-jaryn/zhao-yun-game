@@ -29,6 +29,7 @@ async function loadLeaderboard(elementId) {
 async function startGame(useSave = false) {
   document.getElementById('startScreen').style.display = 'none';
   document.getElementById('gameOverScreen').style.display = 'none';
+  document.getElementById('victoryScreen').style.display = 'none';
   document.getElementById('pauseOverlay').style.display = 'none';
   document.getElementById('waveAnnounce').style.display = 'none';
   document.getElementById('equipPanel').style.display = 'none';
@@ -53,6 +54,7 @@ async function startGame(useSave = false) {
 document.getElementById('startBtn').addEventListener('click', () => startGame(false));
 document.getElementById('loadBtn').addEventListener('click', () => startGame(true));
 document.getElementById('restartBtn').addEventListener('click', () => startGame(false));
+document.getElementById('restartBtn2').addEventListener('click', () => startGame(false));
 
 document.getElementById('saveBtn').addEventListener('click', async () => {
   if (!game || !game.running) return;
@@ -75,6 +77,21 @@ document.getElementById('submitScoreBtn').addEventListener('click', async () => 
     time: Math.floor(game.gameTime)
   });
   await loadLeaderboard('endLeaderboard');
+  nameInput.value = '';
+});
+
+document.getElementById('submitWinScoreBtn').addEventListener('click', async () => {
+  if (!game) return;
+  const nameInput = document.getElementById('winPlayerName');
+  const name = nameInput.value.trim() || '无名英雄';
+  await submitScore({
+    name,
+    score: Math.floor(game.score),
+    kills: game.totalKills,
+    wave: game.wave,
+    level: game.player.level,
+    time: Math.floor(game.gameTime)
+  });
   nameInput.value = '';
 });
 

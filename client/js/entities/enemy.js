@@ -26,6 +26,17 @@ export class Enemy {
     this.walkAnimTimer = 0;
     this.attacking = false;
     this.attackAnimTimer = 0;
+
+    // Boss 特殊机制
+    this.baseRadius = this.radius;
+    this.baseMaxHp = this.maxHp;
+    this.baseAtk = this.atk;
+    this.baseDef = this.def;
+    this.sizeScale = 1;
+    this.hpRegen = type === 'boss' ? 0.05 : 0;
+    this.hasRevived = false;
+    this.reviveTimer = 0;
+    this.enraged = false;
   }
 
   takeDamage(dmg, isCrit, fromDir, game) {
@@ -37,14 +48,49 @@ export class Enemy {
     game.addText(this.x, this.y - 28, (isCrit ? '暴击! ' : '') + actual, color, size, '#000');
     game.addParticles(this.x, this.y, '#ff4444', 6, 70);
     if (this.hp <= 0) {
-      this.dead = true;
-      this.deathTimer = 0.6;
-      game.onEnemyKilled(this);
+      if (this.type === 'boss' && !this.hasRevived) {
+        // 曹操首次死亡，进入 60 秒复活倒计时
+        this.dead = true;
+        this.deathTimer = 60;
+        this.reviveTimer = 60;
+        this.hasRevived = true;
+        if (game.onBossFirstDeath) game.onBossFirstDeath(this);
+      } else {
+        this.dead = true;
+        this.deathTimer = 0.6;
+        game.onEnemyKilled(this);
+      }
     }
   }
 
+  reviveBoss() {
+    this.dead = false;
+    this.reviveTimer = 0;
+    // 变强 1 倍：攻击、防御、生命翻倍
+    this.maxHp = Math.floor(this.baseMaxHp * 2);
+    this.hp = this.maxHp;
+    this.atk = Math.floor(this.baseAtk * 2);
+    this.def = Math.floor(this.baseDef * 2);
+    this.baseMaxHp = this.maxHp;
+    this.baseAtk = this.atk;
+    this.baseDef = this.def;
+    // 复活后保持狂暴体型（如果已触发）
+    this.radius = this.baseRadius * this.sizeScale;
+  }
+
   update(dt, game) {
-    if (this.dead) { this.deathTimer -= dt; return; }
+    if (this.dead) {
+      if (this.type === 'boss' && this.reviveTimer > 0) {
+        this.reviveTimer -= dt;
+        if (this.reviveTimer <= 0) {
+          this.reviveBoss();
+          if (game.onBossRevived) game.onBossRevived(this);
+        }
+        return;
+      }
+      this.deathTimer -= dt;
+      return;
+    }
     if (this.attacking) {
       this.attackAnimTimer -= dt;
       if (this.attackAnimTimer <= 0) this.attacking = false;
@@ -53,6 +99,22 @@ export class Enemy {
     this.attackCd -= dt;
     this.stateTimer -= dt;
     this.animTimer += dt * 3;
+
+    // Boss 自动回血
+    if (this.type === 'boss' && this.hp > 0) {
+      this.hp = Math.min(this.maxHp, this.hp + this.maxHp * this.hpRegen * dt);
+    }
+
+    // Boss 半血狂暴：体型增大 50%
+    if (this.type === 'boss' && !this.enraged && this.hp <= this.maxHp * 0.5) {
+      this.enraged = true;
+      this.sizeScale = 1.5;
+      this.radius = this.baseRadius * this.sizeScale;
+      if (game.addText) game.addText(this.x, this.y - this.radius - 30, '曹操狂暴！体型暴增', '#ff44ff', 22, '#000');
+      if (game.shakeScreen) game.shakeScreen(6);
+      if (game.addParticles) game.addParticles(this.x, this.y, '#ff44ff', 30, 140);
+    }
+
     const isMoving = this.state === 'chase' || this.state === 'wander';
     if (isMoving) {
       this.walkAnimTimer += dt * 10;
@@ -110,7 +172,7 @@ export class Enemy {
 
     ctx.fillStyle = 'rgba(0,0,0,0.3)';
     ctx.beginPath();
-    ctx.ellipse(sx, sy + this.radius + 3, this.radius + 1, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(sx, sy + this.radius + 3, (this.radius + 1) * this.sizeScale, 5 * this.sizeScale, 0, 0, Math.PI * 2);
     ctx.fill();
 
     const isMoving = this.state === 'chase' || this.state === 'wander';
@@ -123,14 +185,14 @@ export class Enemy {
     let spriteTopY = sy - this.radius - 8;
     if (sprite) {
       let img = null;
-      let drawH = sprite.drawH;
+      let drawH = sprite.drawH * this.sizeScale;
       const a = this.dir;
       const flipX = a > Math.PI / 2 || a < -Math.PI / 2;
       if (this.attacking) {
         const progress = Math.max(0, Math.min(1, 1 - this.attackAnimTimer / 0.5));
         const frameIndex = Math.min(5, Math.floor(progress * 6));
         img = sprite.attackGetter(frameIndex);
-        drawH = sprite.drawH + 10;
+        drawH = sprite.drawH * this.sizeScale + 10;
       } else if (isMoving) {
         const frameIndex = Math.floor(this.walkAnimTimer) % 6;
         img = sprite.walkGetter(this.dir, frameIndex);

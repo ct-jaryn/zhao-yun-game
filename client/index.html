@@ -131,7 +131,7 @@
       <div class="start-layout">
         <div class="controls">
           <div class="ctrl-row"><span class="ctrl-key">W A S D</span><span class="ctrl-desc">移动 / 方向</span></div>
-          <div class="ctrl-row"><span class="ctrl-key">🖱️</span><span class="ctrl-desc">点击地面移动 / 瞄准</span></div>
+          <div class="ctrl-row"><span class="ctrl-key">🖱️</span><span class="ctrl-desc">按住鼠标瞄准</span></div>
           <div class="ctrl-row"><span class="ctrl-key">J</span><span class="ctrl-desc">普通攻击</span></div>
           <div class="ctrl-row"><span class="ctrl-key">K</span><span class="ctrl-desc">枪刃旋风（AOE）</span></div>
           <div class="ctrl-row"><span class="ctrl-key">L</span><span class="ctrl-desc">突刺（突进）</span></div>
@@ -173,6 +173,25 @@
         <div id="endLeaderboard"></div>
       </div>
       <button class="btn" id="restartBtn">再战一回</button>
+    </div>
+
+    <!-- Victory Screen -->
+    <div id="victoryScreen">
+      <h1>🎉 通关大吉</h1>
+      <p class="win-subtitle">曹操二次殒命，长坂坡之围已解！</p>
+      <div class="go-stats">
+        <span class="gs-label">击杀</span><span class="gs-value" id="winKills">0</span>
+        <span class="gs-label">最高连击</span><span class="gs-value" id="winCombo">0</span>
+        <span class="gs-label">得分</span><span class="gs-value" id="winScore">0</span>
+        <span class="gs-label">存活</span><span class="gs-value" id="winTime">0秒</span>
+        <span class="gs-label">到达波次</span><span class="gs-value" id="winWave">1</span>
+        <span class="gs-label">等级</span><span class="gs-value" id="winLevel">1</span>
+      </div>
+      <div class="submit-score">
+        <input type="text" id="winPlayerName" placeholder="输入名字提交成绩" maxlength="20">
+        <button class="btn small" id="submitWinScoreBtn">提交成绩</button>
+      </div>
+      <button class="btn" id="restartBtn2">再战一回</button>
     </div>
   </div>
 </div>
