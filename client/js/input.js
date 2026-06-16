@@ -15,6 +15,8 @@ export function initInput(getGame, cam) {
   });
 
   const canvas = document.getElementById('gameCanvas');
+  let mouseDownPos = null;
+  let mouseDownTime = 0;
 
   canvas.addEventListener('mousemove', e => {
     mouse.x = e.clientX;
@@ -22,33 +24,40 @@ export function initInput(getGame, cam) {
     const w = screenToWorld(e.clientX, e.clientY, cam);
     mouse.worldX = w.x;
     mouse.worldY = w.y;
+
+    // 按住鼠标并移动/超过阈值后进入瞄准模式
+    if (mouse.down && mouseDownPos) {
+      const dist = Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y);
+      const duration = Date.now() - mouseDownTime;
+      if (dist > 5 || duration > 200) {
+        const game = getGame();
+        if (game && game.running && !game.paused && game.player) {
+          game.player.mouseAim = true;
+        }
+      }
+    }
   });
 
   canvas.addEventListener('mousedown', e => {
     if (e.button === 0) {
       mouse.down = true;
-      const game = getGame();
-      if (game && game.running && !game.paused) {
-        game.player.mouseAim = true;
-      }
+      mouseDownPos = { x: e.clientX, y: e.clientY };
+      mouseDownTime = Date.now();
     }
     if (e.button === 2) mouse.rightDown = true;
   });
 
   canvas.addEventListener('mouseup', e => {
-    if (e.button === 0) mouse.down = false;
+    if (e.button === 0) {
+      mouse.down = false;
+      mouseDownPos = null;
+      const game = getGame();
+      if (game && game.player) game.player.mouseAim = false;
+    }
     if (e.button === 2) mouse.rightDown = false;
   });
 
   canvas.addEventListener('contextmenu', e => e.preventDefault());
-
-  canvas.addEventListener('click', e => {
-    const game = getGame();
-    if (game && game.running && !game.paused && game.player) {
-      const w = screenToWorld(e.clientX, e.clientY, cam);
-      game.player.moveTarget = { x: w.x, y: w.y };
-    }
-  });
 }
 
 function handleKey(e, game) {

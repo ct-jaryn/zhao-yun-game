@@ -141,13 +141,26 @@ export class Game {
     this.nearestDrop = nearest;
   }
 
+  autoPickupDrops() {
+    const p = this.player;
+    const pickupRadius = p.radius + 24;
+    for (let i = this.drops.length - 1; i >= 0; i--) {
+      const d = this.drops[i];
+      if (d.life <= 0) continue;
+      const dist = vdist(vec(p.x, p.y), vec(d.x, d.y));
+      if (dist < pickupRadius) {
+        this.pickupDrop(d);
+      }
+    }
+  }
+
   shouldEquip(eq, old) {
     return equipPower(eq) > equipPower(old);
   }
 
-  pickupDrop() {
-    if (!this.nearestDrop) return;
-    const d = this.nearestDrop;
+  pickupDrop(drop = null) {
+    const d = drop || this.nearestDrop;
+    if (!d) return;
     const eq = d.equip;
     const slot = eq.type;
     const old = this.player.equip[slot];
@@ -162,7 +175,7 @@ export class Game {
     }
     const idx = this.drops.indexOf(d);
     if (idx >= 0) this.drops.splice(idx, 1);
-    this.nearestDrop = null;
+    if (!drop) this.nearestDrop = null;
   }
 
   showLevelUp() {
@@ -251,6 +264,7 @@ export class Game {
     for (const k of this.killLog) k.time -= dt;
     this.killLog = this.killLog.filter(k => k.time > 0);
 
+    this.autoPickupDrops();
     this.checkNearestDrop();
 
     // 自动补充小兵：场上存活敌人少于阈值时持续生成

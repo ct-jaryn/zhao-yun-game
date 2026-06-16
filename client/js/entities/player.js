@@ -166,7 +166,6 @@ export class Player {
       this.attackTimer -= dt;
       this.attackAnim += dt * 8;
       if (this.attackTimer <= 0) { this.attacking = false; this.attackAnim = 0; }
-      return;
     }
 
     let dx = 0, dy = 0;
@@ -238,7 +237,7 @@ export class Player {
     for (const e of game.enemies) {
       if (e.dead) continue;
       const dist = vdist(vec(this.x, this.y), vec(e.x, e.y));
-      if (dist > sk.range + e.radius) continue;
+      if (dist > sk.range + e.radius + this.radius) continue;
       const angleTo = Math.atan2(e.y - this.y, e.x - this.x);
       if (Math.abs(angleDiff(angleTo, this.dir)) <= sk.arc / 2) hits.push(e);
     }
@@ -356,7 +355,7 @@ export class Player {
     let img;
     let flipX = false;
     const idle = !this.moving && !this.dodging && !this.attacking && this.hurtAnimTimer <= 0;
-    const canWalk = this.moving && !this.dodging && !this.attacking && this.hurtAnimTimer <= 0;
+    const canWalk = this.moving && !this.dodging && this.hurtAnimTimer <= 0;
     if (idle) {
       img = getPlayerSlice(Math.PI / 2);
     } else if (canWalk) {
