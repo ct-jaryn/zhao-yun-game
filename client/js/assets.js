@@ -31,6 +31,17 @@ const GENERAL_SLICE_PATHS = {
   front_left: 'assets/enemy_general/slices_png/front_left.png'
 };
 
+const LUBU_SLICE_PATHS = {
+  front: 'assets/enemy_lubu/slices_png/front.webp',
+  front_right: 'assets/enemy_lubu/slices_png/front_right.webp',
+  right: 'assets/enemy_lubu/slices_png/right.webp',
+  back_right: 'assets/enemy_lubu/slices_png/back_right.webp',
+  back: 'assets/enemy_lubu/slices_png/back.webp',
+  back_left: 'assets/enemy_lubu/slices_png/back_left.webp',
+  left: 'assets/enemy_lubu/slices_png/left.webp',
+  front_left: 'assets/enemy_lubu/slices_png/front_left.webp'
+};
+
 const SKILL_FRAMES = {
   0: [ // 普攻
     'assets/attack/frames_png/frame_001.png',
@@ -139,6 +150,33 @@ const SPEARMAN_ATTACK_FRAMES = [
   'assets/enemy_spearman/attack_frames/frames/frame_006.webp'
 ];
 
+const LUBU_WALK_LEFT_FRAMES = [
+  'assets/enemy_lubu/walk_left_frames/frames/frame_001.webp',
+  'assets/enemy_lubu/walk_left_frames/frames/frame_002.webp',
+  'assets/enemy_lubu/walk_left_frames/frames/frame_003.webp',
+  'assets/enemy_lubu/walk_left_frames/frames/frame_004.webp',
+  'assets/enemy_lubu/walk_left_frames/frames/frame_005.webp',
+  'assets/enemy_lubu/walk_left_frames/frames/frame_006.webp'
+];
+
+const LUBU_SKILL_FRAMES = [
+  'assets/enemy_lubu/skill_frames/frames/frame_001.webp',
+  'assets/enemy_lubu/skill_frames/frames/frame_002.webp',
+  'assets/enemy_lubu/skill_frames/frames/frame_003.webp',
+  'assets/enemy_lubu/skill_frames/frames/frame_004.webp',
+  'assets/enemy_lubu/skill_frames/frames/frame_005.webp',
+  'assets/enemy_lubu/skill_frames/frames/frame_006.webp'
+];
+
+const LUBU_ATTACK_FRAMES = [
+  'assets/enemy_lubu/attack_frames/frames/frame_001.webp',
+  'assets/enemy_lubu/attack_frames/frames/frame_002.webp',
+  'assets/enemy_lubu/attack_frames/frames/frame_003.webp',
+  'assets/enemy_lubu/attack_frames/frames/frame_004.webp',
+  'assets/enemy_lubu/attack_frames/frames/frame_005.webp',
+  'assets/enemy_lubu/attack_frames/frames/frame_006.webp'
+];
+
 const PLAYER_ULTIMATE_FRAMES = [
   'assets/player_ultimate/frames/frame_001.webp',
   'assets/player_ultimate/frames/frame_002.webp',
@@ -172,6 +210,10 @@ export const spearmanWalkRightFrames = [];
 export const spearmanWalkDownFrames = [];
 export const spearmanWalkUpFrames = [];
 export const spearmanAttackFrames = [];
+export const lubuSlices = {};
+export const lubuWalkLeftFrames = [];
+export const lubuSkillFrames = [];
+export const lubuAttackFrames = [];
 export const playerUltimateFrames = [];
 export const playerWalkFrames = [];
 
@@ -180,7 +222,7 @@ const BACKGROUND_IMAGE = 'assets/background.png';
 export const backgroundImage = new Image();
 
 let loadedCount = 0;
-let totalCount = Object.keys(SLICE_PATHS).length + Object.keys(SPEARMAN_SLICE_PATHS).length + Object.keys(GENERAL_SLICE_PATHS).length + 1; // +1 for background
+let totalCount = Object.keys(SLICE_PATHS).length + Object.keys(SPEARMAN_SLICE_PATHS).length + Object.keys(GENERAL_SLICE_PATHS).length + Object.keys(LUBU_SLICE_PATHS).length + 1; // +1 for background
 for (const frames of Object.values(SKILL_FRAMES)) totalCount += frames.length;
 totalCount += DODGE_FRAMES.length;
 totalCount += HURT_FRAMES.length;
@@ -189,6 +231,7 @@ totalCount += GENERAL_ATTACK_FRAMES.length;
 totalCount += GENERAL_WALK_RIGHT_FRAMES.length + GENERAL_WALK_DOWN_FRAMES.length + GENERAL_WALK_UP_FRAMES.length;
 totalCount += SPEARMAN_WALK_RIGHT_FRAMES.length + SPEARMAN_WALK_DOWN_FRAMES.length + SPEARMAN_WALK_UP_FRAMES.length;
 totalCount += SPEARMAN_ATTACK_FRAMES.length;
+totalCount += LUBU_WALK_LEFT_FRAMES.length + LUBU_SKILL_FRAMES.length + LUBU_ATTACK_FRAMES.length;
 totalCount += PLAYER_ULTIMATE_FRAMES.length;
 totalCount += PLAYER_WALK_FRAMES.length;
 let onLoadCallback = null;
@@ -234,6 +277,38 @@ export function loadPlayerAssets(callback) {
     img.onerror = () => onImageError(path);
     img.src = path;
     generalSlices[dir] = img;
+  }
+
+  for (const [dir, path] of Object.entries(LUBU_SLICE_PATHS)) {
+    const img = new Image();
+    img.onload = onImageLoad;
+    img.onerror = () => onImageError(path);
+    img.src = path;
+    lubuSlices[dir] = img;
+  }
+
+  for (const path of LUBU_WALK_LEFT_FRAMES) {
+    const img = new Image();
+    img.onload = onImageLoad;
+    img.onerror = () => onImageError(path);
+    img.src = path;
+    lubuWalkLeftFrames.push(img);
+  }
+
+  for (const path of LUBU_SKILL_FRAMES) {
+    const img = new Image();
+    img.onload = onImageLoad;
+    img.onerror = () => onImageError(path);
+    img.src = path;
+    lubuSkillFrames.push(img);
+  }
+
+  for (const path of LUBU_ATTACK_FRAMES) {
+    const img = new Image();
+    img.onload = onImageLoad;
+    img.onerror = () => onImageError(path);
+    img.src = path;
+    lubuAttackFrames.push(img);
   }
 
   for (const [skillIdx, frames] of Object.entries(SKILL_FRAMES)) {
@@ -419,6 +494,25 @@ export function getSpearmanWalkFrame(dir, frameIndex) {
 export function getSpearmanAttackFrame(frameIndex) {
   if (!spearmanAttackFrames || spearmanAttackFrames.length === 0) return null;
   return spearmanAttackFrames[frameIndex % spearmanAttackFrames.length];
+}
+
+export function getLubuSlice(dir) {
+  return lubuSlices[resolveSliceDir(dir)];
+}
+
+export function getLubuWalkFrame(frameIndex) {
+  if (!lubuWalkLeftFrames || lubuWalkLeftFrames.length === 0) return null;
+  return lubuWalkLeftFrames[frameIndex % lubuWalkLeftFrames.length];
+}
+
+export function getLubuSkillFrame(frameIndex) {
+  if (!lubuSkillFrames || lubuSkillFrames.length === 0) return null;
+  return lubuSkillFrames[frameIndex % lubuSkillFrames.length];
+}
+
+export function getLubuAttackFrame(frameIndex) {
+  if (!lubuAttackFrames || lubuAttackFrames.length === 0) return null;
+  return lubuAttackFrames[frameIndex % lubuAttackFrames.length];
 }
 
 export function getPlayerWalkFrame(frameIndex) {

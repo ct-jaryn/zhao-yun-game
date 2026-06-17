@@ -113,8 +113,14 @@ export class Game {
   }
 
   onEnemyKilled(e) {
-    // 曹操第二次死亡才算通关
+    // 曹操二次倒下后召唤吕布，不算通关
     if (e.type === 'boss' && e.hasRevived) {
+      this.onCaoCaoDefeated(e);
+      return;
+    }
+
+    // 击败吕布后才是真正通关
+    if (e.type === 'lubu') {
       this.gameWin(e);
       return;
     }
@@ -134,6 +140,34 @@ export class Game {
     if (Math.random() < e.dropRate) {
       const eq = genEquip(this.wave);
       this.drops.push(new DropItem(e.x, e.y, eq));
+    }
+  }
+
+  onCaoCaoDefeated(caoCao) {
+    this.rewardBossKill(caoCao, false);
+    this.totalKills++;
+    this.score += Math.floor(caoCao.score * 2);
+    this.addKillLog('曹操败逃！吕布降临！');
+    this.addText(caoCao.x, caoCao.y - caoCao.radius - 50, '曹操逃跑，吕布出现！', '#ff0000', 28, '#000');
+    this.shakeScreen(10);
+    this.flashScreen('rgba(255,0,0,0.5)', 0.6);
+    this.addParticles(caoCao.x, caoCao.y, '#ff44ff', 50, 200);
+
+    // 在屏幕边缘生成吕布
+    const spawnPos = this.randomBossSpawnPos();
+    const lubu = new Enemy(spawnPos.x, spawnPos.y, 'lubu', this.wave + 3);
+    this.enemies.push(lubu);
+  }
+
+  randomBossSpawnPos() {
+    const margin = 200;
+    const p = this.player;
+    const side = randInt(0, 3);
+    switch (side) {
+      case 0: return { x: rand(margin, MAP_W - margin), y: Math.max(margin, p.y - 500) };
+      case 1: return { x: rand(margin, MAP_W - margin), y: Math.min(MAP_H - margin, p.y + 500) };
+      case 2: return { x: Math.max(margin, p.x - 500), y: rand(margin, MAP_H - margin) };
+      default: return { x: Math.min(MAP_W - margin, p.x + 500), y: rand(margin, MAP_H - margin) };
     }
   }
 
