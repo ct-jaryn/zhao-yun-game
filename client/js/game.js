@@ -77,6 +77,16 @@ export class Game {
     if (this.killLog.length > 6) this.killLog.pop();
   }
 
+  pickEnemyType() {
+    // 骑兵比例随波次递增：第1波5%，第5波55%，第10波起100%全是骑兵
+    const cavRate = Math.min(1, 0.05 + this.wave * 0.1);
+    if (Math.random() < cavRate) return 'cavalry';
+    const roll = Math.random();
+    if (this.wave >= 5 && roll < 0.2) return 'general';
+    if (this.wave >= 2 && roll < 0.5) return 'archer';
+    return 'soldier';
+  }
+
   spawnWave(forceWave = null) {
     if (forceWave !== null) this.wave = forceWave;
     else this.wave++;
@@ -86,11 +96,7 @@ export class Game {
 
     for (let i = 0; i < base; i++) {
       const pos = this.randomSpawnPos();
-      let type = 'soldier';
-      const roll = Math.random();
-      if (this.wave >= 2 && roll < 0.3) type = 'archer';
-      if (this.wave >= 3 && roll < 0.15) type = 'cavalry';
-      if (this.wave >= 5 && roll < 0.08) type = 'general';
+      const type = this.pickEnemyType();
       this.enemies.push(new Enemy(pos.x, pos.y, type, this.wave));
     }
 
@@ -353,11 +359,7 @@ export class Game {
         const toSpawn = Math.min(6, maxEnemies - aliveCount);
         for (let i = 0; i < toSpawn; i++) {
           const pos = this.randomSpawnPos();
-          let type = 'soldier';
-          const roll = Math.random();
-          if (this.wave >= 2 && roll < 0.3) type = 'archer';
-          if (this.wave >= 3 && roll < 0.15) type = 'cavalry';
-          if (this.wave >= 5 && roll < 0.08) type = 'general';
+          const type = this.pickEnemyType();
           this.enemies.push(new Enemy(pos.x, pos.y, type, this.wave));
         }
       }
