@@ -16,14 +16,18 @@ export function drawBackground(cam) {
   if (backgroundImage && backgroundImage.complete && backgroundImage.naturalWidth) {
     const imgW = backgroundImage.naturalWidth;
     const imgH = backgroundImage.naturalHeight;
-    const scale = Math.max(MAP_W / imgW, MAP_H / imgH);
-    const dw = imgW * scale;
-    const dh = imgH * scale;
-    const dx = (MAP_W - dw) / 2 - cam.x;
-    const dy = (MAP_H - dh) / 2 - cam.y;
+    // 平铺绘制地面纹理，避免单张大图跟随相机移动产生“飞行”感
+    const startX = Math.floor(cam.x / imgW) * imgW;
+    const startY = Math.floor(cam.y / imgH) * imgH;
+    const endX = cam.x + W;
+    const endY = cam.y + H;
     ctx.save();
-    ctx.filter = 'blur(2px)';
-    ctx.drawImage(backgroundImage, dx, dy, dw, dh);
+    ctx.filter = 'blur(1px)';
+    for (let x = startX; x < endX + imgW; x += imgW) {
+      for (let y = startY; y < endY + imgH; y += imgH) {
+        ctx.drawImage(backgroundImage, x - cam.x, y - cam.y, imgW, imgH);
+      }
+    }
     ctx.restore();
   } else {
     ctx.fillStyle = '#3a6b10';
