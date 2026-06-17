@@ -177,16 +177,17 @@ export class Enemy {
 
     const isMoving = this.state === 'chase' || this.state === 'wander';
     const spriteMap = {
-      soldier: { sliceGetter: getSpearmanSlice, walkGetter: getSpearmanWalkFrame, attackGetter: getSpearmanAttackFrame, drawH: 160 },
-      cavalry: { sliceGetter: getCavalrySlice, walkGetter: getCavalryWalkFrame, attackGetter: getCavalryAttackFrame, drawH: 180 },
-      general: { sliceGetter: getGeneralSlice, walkGetter: getGeneralWalkFrame, attackGetter: getGeneralAttackFrame, drawH: 220 },
-      boss: { sliceGetter: getGeneralSlice, walkGetter: getGeneralWalkFrame, attackGetter: getGeneralAttackFrame, drawH: 300 },
-      lubu: { sliceGetter: getLubuSlice, walkGetter: getLubuWalkFrame, attackGetter: getLubuAttackFrame, skillGetter: getLubuSkillFrame, drawH: 360 }
+      soldier: { sliceGetter: getSpearmanSlice, walkGetter: getSpearmanWalkFrame, attackGetter: getSpearmanAttackFrame, drawH: 160, walkScale: 1.10, attackScale: 1.05 },
+      cavalry: { sliceGetter: getCavalrySlice, walkGetter: getCavalryWalkFrame, attackGetter: getCavalryAttackFrame, drawH: 180, walkScale: 1.48, attackScale: 1.24 },
+      general: { sliceGetter: getGeneralSlice, walkGetter: getGeneralWalkFrame, attackGetter: getGeneralAttackFrame, drawH: 220, walkScale: 1.26, attackScale: 1.22 },
+      boss: { sliceGetter: getGeneralSlice, walkGetter: getGeneralWalkFrame, attackGetter: getGeneralAttackFrame, drawH: 300, walkScale: 1.26, attackScale: 1.22 },
+      lubu: { sliceGetter: getLubuSlice, walkGetter: getLubuWalkFrame, attackGetter: getLubuAttackFrame, skillGetter: getLubuSkillFrame, drawH: 360, walkScale: 1.13, attackScale: 1.40 }
     };
     const sprite = spriteMap[this.type];
     let spriteTopY = sy - this.radius - 8;
     if (sprite) {
       let img = null;
+      let scale = 1.0;
       let drawH = sprite.drawH * this.sizeScale;
       let flipX = false;
       const a = this.dir;
@@ -200,14 +201,17 @@ export class Enemy {
         const progress = Math.max(0, Math.min(1, 1 - this.attackAnimTimer / 0.5));
         const frameIndex = Math.min(5, Math.floor(progress * 6));
         img = sprite.attackGetter(frameIndex);
-        drawH = sprite.drawH * this.sizeScale;
+        scale = sprite.attackScale || 1.0;
       } else if (isMoving) {
         const frameIndex = Math.floor(this.walkAnimTimer) % 6;
         img = (this.type === 'lubu' || this.type === 'cavalry') ? sprite.walkGetter(frameIndex) : sprite.walkGetter(this.dir, frameIndex);
+        scale = sprite.walkScale || 1.0;
       }
       if (!img || !img.complete || img.naturalWidth <= 0) {
         img = sprite.sliceGetter(this.dir);
+        scale = 1.0;
       }
+      drawH *= scale;
       if (img && img.complete && img.naturalWidth > 0) {
         spriteTopY = sy - drawH * 0.78 - 6;
         const drawW = drawH * (img.naturalWidth / img.naturalHeight);

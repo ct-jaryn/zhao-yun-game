@@ -319,7 +319,7 @@ export class Player {
       const frameIndex = Math.min(3, Math.floor(progress * 4));
       const deathImg = getPlayerDeathFrame(frameIndex);
       if (deathImg && deathImg.complete && deathImg.naturalWidth > 0) {
-        const drawH = 192;
+        const drawH = 192 * 1.17;
         const drawW = drawH * (deathImg.naturalWidth / deathImg.naturalHeight);
         const a = this.dir;
         const flipX = a > Math.PI / 2 || a < -Math.PI / 2;
@@ -354,18 +354,22 @@ export class Player {
 
     let img;
     let flipX = false;
+    let scale = 1.0;
     const idle = !this.moving && !this.dodging && !this.attacking && this.hurtAnimTimer <= 0;
     const canWalk = this.moving && !this.dodging && this.hurtAnimTimer <= 0;
     if (idle) {
       img = getPlayerSlice(Math.PI / 2);
+      scale = 1.0;
     } else if (canWalk) {
       const frameIndex = Math.floor(this.walkAnimTimer) % 6;
       img = getPlayerWalkFrame(frameIndex);
+      scale = 1.4;
       const a = this.dir;
       // Source animation faces left; flip when moving right
       flipX = a >= -Math.PI / 2 && a <= Math.PI / 2;
     } else {
       img = getPlayerSlice(this.dir);
+      scale = 1.0;
     }
 
     // Use dodge animation during roll
@@ -375,6 +379,7 @@ export class Player {
       const dodgeImg = getPlayerDodgeFrame(frameIndex);
       if (dodgeImg && dodgeImg.complete && dodgeImg.naturalWidth > 0) {
         img = dodgeImg;
+        scale = 1.7;
         const a = this.dodgeDir;
         if (a > Math.PI / 2 || a < -Math.PI / 2) flipX = true;
       }
@@ -389,10 +394,12 @@ export class Player {
         const frameCount = 6;
         const frameIndex = Math.min(frameCount - 1, Math.floor(progress * frameCount));
         animImg = getPlayerUltimateFrame(frameIndex);
+        scale = 1.04;
       } else {
         const frameCount = 4;
         const frameIndex = Math.min(frameCount - 1, Math.floor(progress * frameCount));
         animImg = getPlayerSkillFrame(this.currentSkill, frameIndex);
+        scale = this.currentSkill === 1 ? 1.22 : 1.23;
       }
       if (animImg && animImg.complete && animImg.naturalWidth > 0) {
         img = animImg;
@@ -409,13 +416,14 @@ export class Player {
       const hurtImg = getPlayerHurtFrame(frameIndex);
       if (hurtImg && hurtImg.complete && hurtImg.naturalWidth > 0) {
         img = hurtImg;
+        scale = 1.23;
         const a = this.dir;
         if (a > Math.PI / 2 || a < -Math.PI / 2) flipX = true;
       }
     }
 
     if (img && img.complete && img.naturalWidth > 0) {
-      const drawH = 192;
+      const drawH = 192 * scale;
       const drawW = drawH * (img.naturalWidth / img.naturalHeight);
       if (flipX) {
         ctx.save();
