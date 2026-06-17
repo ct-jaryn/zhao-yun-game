@@ -115,7 +115,7 @@ export class Game {
   onEnemyKilled(e) {
     // 曹操第二次死亡才算通关
     if (e.type === 'boss' && e.hasRevived) {
-      this.gameWin();
+      this.gameWin(e);
       return;
     }
 
@@ -137,7 +137,24 @@ export class Game {
     }
   }
 
+  rewardBossKill(boss, isFinal = false) {
+    // 曹操每次倒下都让玩家直接升一级
+    this.player.addExp(this.player.expToLevel, this);
+    this.addText(this.player.x, this.player.y - 90, isFinal ? '通关奖励：等级提升！' : '击败曹操：等级提升！', '#ffd700', 22, '#000');
+
+    // 随机掉落多件装备（首次 3~5 件，最终 5~8 件）
+    const dropCount = isFinal ? randInt(5, 8) : randInt(3, 5);
+    for (let i = 0; i < dropCount; i++) {
+      const eq = genEquip(Math.max(1, this.wave + (isFinal ? 3 : 1)));
+      const angle = Math.random() * Math.PI * 2;
+      const dist = rand(20, 80);
+      this.drops.push(new DropItem(boss.x + Math.cos(angle) * dist, boss.y + Math.sin(angle) * dist, eq));
+    }
+    this.addText(boss.x, boss.y - boss.radius - 55, `掉落 ${dropCount} 件装备！`, '#ffaa44', 18, '#000');
+  }
+
   onBossFirstDeath(boss) {
+    this.rewardBossKill(boss, false);
     this.addText(boss.x, boss.y - boss.radius - 40, '曹操倒下，60秒后复活！', '#ff44ff', 24, '#000');
     this.addKillLog('曹操倒下，正在积蓄力量…');
     this.shakeScreen(8);
@@ -353,8 +370,10 @@ export class Game {
     document.getElementById('finalLevel').textContent = this.player.level;
   }
 
-  gameWin() {
+  gameWin(boss) {
     if (!this.running) return;
+    // 通关奖励：玩家直接升级 + 大量随机掉落
+    if (boss) this.rewardBossKill(boss, true);
     this.running = false;
     document.getElementById('victoryScreen').style.display = 'flex';
     document.getElementById('gameOverScreen').style.display = 'none';
