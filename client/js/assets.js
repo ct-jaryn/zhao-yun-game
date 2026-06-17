@@ -127,6 +127,15 @@ const GENERAL_ATTACK_FRAMES = [
   'assets/enemy_general/attack_frames_png/frame_006.png'
 ];
 
+const GENERAL_ULTIMATE_FRAMES = [
+  'assets/enemy_general/skill_ultimate_frames/frames/frame_001.webp',
+  'assets/enemy_general/skill_ultimate_frames/frames/frame_002.webp',
+  'assets/enemy_general/skill_ultimate_frames/frames/frame_003.webp',
+  'assets/enemy_general/skill_ultimate_frames/frames/frame_004.webp',
+  'assets/enemy_general/skill_ultimate_frames/frames/frame_005.webp',
+  'assets/enemy_general/skill_ultimate_frames/frames/frame_006.webp'
+];
+
 const GENERAL_WALK_RIGHT_FRAMES = [
   'assets/enemy_general/walk_right_frames/frames/frame_001.webp',
   'assets/enemy_general/walk_right_frames/frames/frame_002.webp',
@@ -217,6 +226,15 @@ const LUBU_ATTACK_FRAMES = [
   'assets/enemy_lubu/attack_frames/frames/frame_006.webp'
 ];
 
+const LUBU_ULTIMATE_FRAMES = [
+  'assets/enemy_lubu/skill_ultimate_frames/frames/frame_001.webp',
+  'assets/enemy_lubu/skill_ultimate_frames/frames/frame_002.webp',
+  'assets/enemy_lubu/skill_ultimate_frames/frames/frame_003.webp',
+  'assets/enemy_lubu/skill_ultimate_frames/frames/frame_004.webp',
+  'assets/enemy_lubu/skill_ultimate_frames/frames/frame_005.webp',
+  'assets/enemy_lubu/skill_ultimate_frames/frames/frame_006.webp'
+];
+
 const CAVALRY_WALK_LEFT_FRAMES = [
   'assets/enemy_cavalry/walk_left_frames/frames/frame_001.webp',
   'assets/enemy_cavalry/walk_left_frames/frames/frame_002.webp',
@@ -261,6 +279,7 @@ export const playerDeathFrames = [];
 export const spearmanSlices = {};
 export const generalSlices = {};
 export const generalAttackFrames = [];
+export const generalUltimateFrames = [];
 export const generalWalkRightFrames = [];
 export const generalWalkDownFrames = [];
 export const generalWalkUpFrames = [];
@@ -272,6 +291,7 @@ export const lubuSlices = {};
 export const lubuWalkLeftFrames = [];
 export const lubuSkillFrames = [];
 export const lubuAttackFrames = [];
+export const lubuUltimateFrames = [];
 export const cavalrySlices = {};
 export const cavalryWalkLeftFrames = [];
 export const cavalryAttackFrames = [];
@@ -293,11 +313,11 @@ for (const frames of Object.values(SKILL_FRAMES)) totalCount += frames.length;
 totalCount += DODGE_FRAMES.length;
 totalCount += HURT_FRAMES.length;
 totalCount += DEATH_FRAMES.length;
-totalCount += GENERAL_ATTACK_FRAMES.length;
+totalCount += GENERAL_ATTACK_FRAMES.length + GENERAL_ULTIMATE_FRAMES.length;
 totalCount += GENERAL_WALK_RIGHT_FRAMES.length + GENERAL_WALK_DOWN_FRAMES.length + GENERAL_WALK_UP_FRAMES.length;
 totalCount += SPEARMAN_WALK_RIGHT_FRAMES.length + SPEARMAN_WALK_DOWN_FRAMES.length + SPEARMAN_WALK_UP_FRAMES.length;
 totalCount += SPEARMAN_ATTACK_FRAMES.length;
-totalCount += LUBU_WALK_LEFT_FRAMES.length + LUBU_SKILL_FRAMES.length + LUBU_ATTACK_FRAMES.length;
+totalCount += LUBU_WALK_LEFT_FRAMES.length + LUBU_SKILL_FRAMES.length + LUBU_ATTACK_FRAMES.length + LUBU_ULTIMATE_FRAMES.length;
 totalCount += CAVALRY_WALK_LEFT_FRAMES.length + CAVALRY_ATTACK_FRAMES.length;
 totalCount += ARCHER_WALK_LEFT_FRAMES.length + ARCHER_ATTACK_FRAMES.length;
 totalCount += PLAYER_ULTIMATE_FRAMES.length;
@@ -381,6 +401,14 @@ export function loadPlayerAssets(callback) {
     img.onerror = () => onImageError(path);
     img.src = path;
     lubuAttackFrames.push(img);
+  }
+
+  for (const path of LUBU_ULTIMATE_FRAMES) {
+    const img = new Image();
+    img.onload = onImageLoad;
+    img.onerror = () => onImageError(path);
+    img.src = path;
+    lubuUltimateFrames.push(img);
   }
 
   for (const [dir, path] of Object.entries(CAVALRY_SLICE_PATHS)) {
@@ -471,6 +499,14 @@ export function loadPlayerAssets(callback) {
     img.onerror = () => onImageError(path);
     img.src = path;
     generalAttackFrames.push(img);
+  }
+
+  for (const path of GENERAL_ULTIMATE_FRAMES) {
+    const img = new Image();
+    img.onload = onImageLoad;
+    img.onerror = () => onImageError(path);
+    img.src = path;
+    generalUltimateFrames.push(img);
   }
 
   for (const path of GENERAL_WALK_RIGHT_FRAMES) {
@@ -591,6 +627,11 @@ export function getGeneralAttackFrame(frameIndex) {
   return generalAttackFrames[frameIndex % generalAttackFrames.length];
 }
 
+export function getGeneralUltimateFrame(frameIndex) {
+  if (!generalUltimateFrames || generalUltimateFrames.length === 0) return null;
+  return generalUltimateFrames[frameIndex % generalUltimateFrames.length];
+}
+
 export function getGeneralWalkFrame(dir, frameIndex) {
   const d = resolveWalkDir4(dir);
   const frames =
@@ -633,6 +674,11 @@ export function getLubuSkillFrame(frameIndex) {
 export function getLubuAttackFrame(frameIndex) {
   if (!lubuAttackFrames || lubuAttackFrames.length === 0) return null;
   return lubuAttackFrames[frameIndex % lubuAttackFrames.length];
+}
+
+export function getLubuUltimateFrame(frameIndex) {
+  if (!lubuUltimateFrames || lubuUltimateFrames.length === 0) return null;
+  return lubuUltimateFrames[frameIndex % lubuUltimateFrames.length];
 }
 
 export function getCavalrySlice(dir) {

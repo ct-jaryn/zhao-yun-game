@@ -17,7 +17,7 @@ export class Game {
     this.projectiles = [];
     this.drops = [];
     this.cam = { x: 0, y: 0 };
-    // 新关卡流程：击败20个枪兵 → 曹操 → 狂暴曹操 + 吕布
+    // 新关卡流程：击败20个曹兵 → 曹操 → 狂暴曹操 + 吕布
     this.phase = 'soldiers';
     this.soldierKills = 0;
     this.soldiersRequired = 20;
@@ -107,29 +107,31 @@ export class Game {
     // 根据当前阶段恢复对应敌人
     if (this.phase === 'caocao') this.spawnCaocao();
     else if (this.phase === 'final') this.spawnFinalBosses();
-    else this.showWaveAnnounce(0, '击败20个枪兵，引出曹操！');
+    else this.showWaveAnnounce(0, '击败20个曹兵，引出曹操！');
   }
 
   spawnPhaseMinions() {
-    if (this.phase === 'soldiers') {
-      // 前期混合刷新：枪兵 40%、弓箭手 35%、骑兵 25%；场上数量翻倍，更热闹
-      const aliveMinions = this.enemies.filter(e => !e.dead && ['soldier', 'archer', 'cavalry'].includes(e.type)).length;
-      if (aliveMinions < 20) {
-        const pos = this.randomSpawnPos();
-        const r = Math.random();
-        const type = r < 0.4 ? 'soldier' : (r < 0.75 ? 'archer' : 'cavalry');
-        this.enemies.push(new Enemy(pos.x, pos.y, type, this.getEnemyLevel(type)));
-      }
-    } else if (this.phase === 'final') {
-      // 最终双Boss阶段持续刷小怪增加压力
-      const aliveMinions = this.enemies.filter(e => !e.dead && e.type !== 'boss' && e.type !== 'lubu').length;
-      if (aliveMinions < 5) {
-        const pos = this.randomSpawnPos();
-        const r = Math.random();
-        const type = r < 0.3 ? 'archer' : (r < 0.6 ? 'cavalry' : 'soldier');
-        this.enemies.push(new Enemy(pos.x, pos.y, type, this.getEnemyLevel(type)));
-      }
+    // 清兵 / 曹操 / 最终阶段都持续刷小兵，确保战斗不停
+    const isSoldiers = this.phase === 'soldiers';
+    const isCaocao = this.phase === 'caocao';
+    const isFinal = this.phase === 'final';
+    if (!isSoldiers && !isCaocao && !isFinal) return;
+
+    const maxMinions = 30;
+    const aliveMinions = this.enemies.filter(e => !e.dead && e.type !== 'boss' && e.type !== 'lubu').length;
+    if (aliveMinions >= maxMinions) return;
+
+    const pos = this.randomSpawnPos();
+    const r = Math.random();
+    let type;
+    if (isSoldiers) {
+      type = r < 0.35 ? 'soldier' : (r < 0.70 ? 'archer' : 'cavalry');
+    } else if (isCaocao) {
+      type = r < 0.30 ? 'soldier' : (r < 0.65 ? 'archer' : 'cavalry');
+    } else {
+      type = r < 0.25 ? 'soldier' : (r < 0.60 ? 'archer' : 'cavalry');
     }
+    this.enemies.push(new Enemy(pos.x, pos.y, type, this.getEnemyLevel(type)));
   }
 
   spawnCaocao() {
@@ -234,8 +236,9 @@ export class Game {
       this.drops.push(new DropItem(e.x, e.y, eq));
     }
 
-    // 枪兵击杀计数，达到20个触发曹操
-    if (e.type === 'soldier') {
+    // 小兵击杀计数（枪兵/弓箭手/骑兵），达到20个触发曹操
+    const MINION_TYPES = ['soldier', 'archer', 'cavalry'];
+    if (MINION_TYPES.includes(e.type)) {
       this.soldierKills++;
       if (this.phase === 'soldiers' && this.soldierKills >= this.soldiersRequired) {
         this.spawnCaocao();

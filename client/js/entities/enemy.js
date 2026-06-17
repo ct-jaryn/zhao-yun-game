@@ -1,6 +1,6 @@
 import { ENEMY_TYPES, ENEMY_AGGRO_RANGE, ENEMY_LOSE_AGGRO_RANGE, ENEMY_CHASE_SPEED_RATIO, ENEMY_WANDER_SPEED_RATIO } from '../config.js';
 import { rand, randInt, vdist, vsub, vnorm, vec, pick } from '../utils.js';
-import { getSpearmanSlice, getGeneralSlice, getGeneralAttackFrame, getGeneralWalkFrame, getSpearmanWalkFrame, getSpearmanAttackFrame, getLubuSlice, getLubuWalkFrame, getLubuAttackFrame, getLubuSkillFrame, getCavalrySlice, getCavalryWalkFrame, getCavalryAttackFrame, getArcherSlice, getArcherWalkFrame, getArcherAttackFrame, arrowImage } from '../assets.js';
+import { getSpearmanSlice, getGeneralSlice, getGeneralAttackFrame, getGeneralUltimateFrame, getGeneralWalkFrame, getSpearmanWalkFrame, getSpearmanAttackFrame, getLubuSlice, getLubuWalkFrame, getLubuAttackFrame, getLubuUltimateFrame, getLubuSkillFrame, getCavalrySlice, getCavalryWalkFrame, getCavalryAttackFrame, getArcherSlice, getArcherWalkFrame, getArcherAttackFrame, arrowImage } from '../assets.js';
 import { Projectile } from './projectile.js';
 
 export class Enemy {
@@ -111,7 +111,10 @@ export class Enemy {
     }
     if (this.attacking) {
       this.attackAnimTimer -= dt;
-      if (this.attackAnimTimer <= 0) this.attacking = false;
+      if (this.attackAnimTimer <= 0) {
+        this.attacking = false;
+        this.isUltimate = false;
+      }
     }
     this.hitFlash -= dt;
     this.attackCd -= dt;
@@ -181,12 +184,29 @@ export class Enemy {
           this.x += dir.x * chaseSpeed * dt;
           this.y += dir.y * chaseSpeed * dt;
         } else if (this.attackCd <= 0) {
-          // 曹将和枪兵靠近赵云自动攻击，频率 1 秒 1 次
-          this.attackCd = 1.0;
-          this.attacking = true;
-          this.attackAnimTimer = 0.5;
-          p.takeDamage(this.atk, game);
-          game.addParticles(p.x, p.y, '#ff6600', 6, 55);
+          // Boss/吕布 10% 概率释放大招：范围更大、伤害更高
+          const canUltimate = (this.type === 'boss' || this.type === 'lubu') && Math.random() < 0.1;
+          if (canUltimate) {
+            this.isUltimate = true;
+            this.attackCd = 3.0;
+            this.attackAnimTimer = 0.9;
+            this.attacking = true;
+            const ultRange = (this.radius + p.radius + 10) * 2.5;
+            if (dist <= ultRange) {
+              const ultDmg = Math.floor(this.atk * 1.5);
+              p.takeDamage(ultDmg, game);
+              game.addText(p.x, p.y - 70, '⚠ 大招!', '#ff2222', 26, '#000');
+            }
+            game.addParticles(this.x, this.y, '#ff2222', 24, 140);
+            if (game.shakeScreen) game.shakeScreen(6);
+          } else {
+            this.isUltimate = false;
+            this.attackCd = 1.0;
+            this.attacking = true;
+            this.attackAnimTimer = 0.5;
+            p.takeDamage(this.atk, game);
+            game.addParticles(p.x, p.y, '#ff6600', 6, 55);
+          }
         }
       }
     } else {
@@ -218,9 +238,9 @@ export class Enemy {
       soldier: { sliceGetter: getSpearmanSlice, walkGetter: getSpearmanWalkFrame, attackGetter: getSpearmanAttackFrame, drawH: 160, walkScale: 1.10, attackScale: 1.05 },
       archer: { sliceGetter: getArcherSlice, walkGetter: getArcherWalkFrame, attackGetter: getArcherAttackFrame, drawH: 160, walkScale: 1.10, attackScale: 1.05 },
       cavalry: { sliceGetter: getCavalrySlice, walkGetter: getCavalryWalkFrame, attackGetter: getCavalryAttackFrame, drawH: 180, walkScale: 1.48, attackScale: 1.24 },
-      general: { sliceGetter: getGeneralSlice, walkGetter: getGeneralWalkFrame, attackGetter: getGeneralAttackFrame, drawH: 220, walkScale: 1.26, attackScale: 1.22 },
-      boss: { sliceGetter: getGeneralSlice, walkGetter: getGeneralWalkFrame, attackGetter: getGeneralAttackFrame, drawH: 300, walkScale: 1.26, attackScale: 1.22 },
-      lubu: { sliceGetter: getLubuSlice, walkGetter: getLubuWalkFrame, attackGetter: getLubuAttackFrame, skillGetter: getLubuSkillFrame, drawH: 360, walkScale: 1.13, attackScale: 1.40 }
+      general: { sliceGetter: getGeneralSlice, walkGetter: getGeneralWalkFrame, attackGetter: getGeneralAttackFrame, ultimateGetter: getGeneralUltimateFrame, drawH: 220, walkScale: 1.26, attackScale: 1.22, ultimateScale: 1.5 },
+      boss: { sliceGetter: getGeneralSlice, walkGetter: getGeneralWalkFrame, attackGetter: getGeneralAttackFrame, ultimateGetter: getGeneralUltimateFrame, drawH: 300, walkScale: 1.26, attackScale: 1.22, ultimateScale: 1.6 },
+      lubu: { sliceGetter: getLubuSlice, walkGetter: getLubuWalkFrame, attackGetter: getLubuAttackFrame, ultimateGetter: getLubuUltimateFrame, skillGetter: getLubuSkillFrame, drawH: 360, walkScale: 1.13, attackScale: 1.40, ultimateScale: 1.7 }
     };
     const sprite = spriteMap[this.type];
     let spriteTopY = sy - this.radius - 8;
@@ -231,10 +251,17 @@ export class Enemy {
       let flipX = false;
       const a = this.dir;
       if (this.attacking) {
-        const progress = Math.max(0, Math.min(1, 1 - this.attackAnimTimer / 0.5));
+        const isUlt = this.isUltimate && sprite.ultimateGetter;
+        const animDuration = isUlt ? 0.9 : 0.5;
+        const progress = Math.max(0, Math.min(1, 1 - this.attackAnimTimer / animDuration));
         const frameIndex = Math.min(5, Math.floor(progress * 6));
-        img = sprite.attackGetter(frameIndex);
-        scale = sprite.attackScale || 1.0;
+        if (isUlt) {
+          img = sprite.ultimateGetter(frameIndex);
+          scale = sprite.ultimateScale || 1.5;
+        } else {
+          img = sprite.attackGetter(frameIndex);
+          scale = sprite.attackScale || 1.0;
+        }
         if (this.type === 'archer') {
           // 弓箭手攻击帧本身是朝右拉弓，向左射击时才需要翻转
           flipX = a > Math.PI / 2 || a < -Math.PI / 2;
@@ -304,7 +331,7 @@ export class Enemy {
       ctx.fillStyle = '#fff';
       ctx.font = '9px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`${this.hp}/${this.maxHp}`, sx, by - 2);
+      ctx.fillText(`${Math.round(this.hp)}/${Math.round(this.maxHp)}`, sx, by - 2);
     }
 
     if (!this.dead) {

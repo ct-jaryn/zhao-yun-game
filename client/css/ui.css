@@ -34,7 +34,7 @@
   white-space: nowrap;
 }
 
-.hud-info { display: flex; flex-direction: column; gap: 2px; }
+.hud-info { display: flex; flex-direction: column; gap: 2px; position: relative; padding-top: 2px; padding-right: 34px; }
 #charName { font-size: 13px; font-weight: bold; color: var(--gold); text-shadow: 1px 1px 2px #000; }
 #bars { display: flex; flex-direction: column; gap: 4px; min-width: 200px; }
 .bar-row { display: flex; align-items: center; gap: 6px; }
@@ -136,9 +136,9 @@
 /* Pause Button */
 #pauseBtn {
   position: absolute;
-  top: 10px; right: 10px;
-  width: 26px;
-  height: 26px;
+  top: 0; right: 0;
+  width: 28px;
+  height: 28px;
   background: rgba(30, 20, 10, 0.75);
   border: 1px solid rgba(200, 162, 85, 0.35);
   border-radius: 5px;
@@ -149,6 +149,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease;
+  pointer-events: auto;
   z-index: 20;
 }
 #pauseBtn:hover {
@@ -672,49 +673,176 @@
   background: linear-gradient(145deg, rgba(20, 15, 10, 0.95), rgba(10, 8, 5, 0.98));
   border: 1px solid var(--panel-border);
   border-radius: 16px;
-  padding: 36px 44px;
-  min-width: 320px;
+  padding: 28px 36px;
+  min-width: 640px;
+  max-width: 90vw;
   text-align: center;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(200, 162, 85, 0.15);
   animation: fadeIn 0.3s ease;
 }
 
+.pause-header {
+  margin-bottom: 18px;
+}
+
 .pause-icon {
-  font-size: 56px;
-  margin-bottom: 8px;
+  font-size: 48px;
+  margin-bottom: 6px;
   filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
   animation: pulse 2.5s ease infinite;
 }
 
 #pauseOverlay h2 {
-  font-size: 32px;
+  font-size: 28px;
   color: var(--gold);
   text-shadow: 0 0 15px rgba(255, 215, 0, 0.3), 2px 2px 4px #000;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   letter-spacing: 4px;
 }
 
 .pause-hint {
-  font-size: 13px;
+  font-size: 12px;
   color: #888;
-  margin-bottom: 22px;
 }
 
-.pause-stats {
+.pause-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 24px;
+  gap: 24px;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+/* 左侧：角色状态 */
+.pause-left {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(200, 162, 85, 0.12);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pause-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pause-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  object-fit: cover;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
+}
+
+.pause-title h3 {
+  font-size: 18px;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.pause-title .lv-badge {
+  position: static;
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+.pause-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pause-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pause-bar .pb-label {
+  width: 36px;
+  font-size: 12px;
+  color: #aaa;
+  text-align: right;
+}
+
+.pause-bar .pb-track {
+  flex: 1;
+  height: 18px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.pause-bar .pb-fill {
+  height: 100%;
+  border-radius: 9px;
+  transition: width 0.2s ease;
+}
+
+.pause-bar.hp .pb-fill { background: linear-gradient(90deg, #8b0000, #cc3333); }
+.pause-bar.mp .pb-fill { background: linear-gradient(90deg, #003366, #3366cc); }
+.pause-bar.exp .pb-fill { background: linear-gradient(90deg, #664400, #cc9900); }
+
+.pause-bar .pb-text {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  font-weight: bold;
+}
+
+.pause-attrs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pause-attr {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(200, 162, 85, 0.1);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pause-attr .pa-label {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.pause-attr .pa-value {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--gold);
+}
+
+.pause-combat {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
 }
 
 .pause-stat {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(200, 162, 85, 0.15);
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  gap: 2px;
 }
 
 .pause-label {
@@ -723,9 +851,83 @@
 }
 
 .pause-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   color: var(--gold);
+}
+
+/* 右侧：装备 */
+.pause-right {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(200, 162, 85, 0.12);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pause-right h3 {
+  font-size: 16px;
+  color: var(--gold);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.pause-equip-grid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.pause-equip-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(200, 162, 85, 0.1);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.pause-equip-slot.empty {
+  opacity: 0.7;
+}
+
+.pause-equip-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  object-fit: contain;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pause-equip-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pause-equip-name {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.pause-equip-type {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 2px;
+}
+
+.pause-equip-stats {
+  font-size: 11px;
+  color: #aaa;
 }
 
 .pause-actions {
@@ -733,11 +935,10 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 8px;
 }
 
 .pause-resume {
-  width: 100%;
+  min-width: 160px;
   font-size: 16px;
   padding: 12px 24px;
   background: linear-gradient(to bottom, #ffe55c, var(--gold), #b8860b);
@@ -745,18 +946,9 @@
   border: none;
   border-radius: 24px;
   font-weight: bold;
-  margin-bottom: 6px;
   transition: all 0.2s ease;
 }
 .pause-resume:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(255, 215, 0, 0.35);
-}
-
-#saveStatus {
-  display: block;
-  font-size: 12px;
-  color: #6f6;
-  margin-top: 6px;
-  min-height: 16px;
 }

@@ -1,0 +1,39 @@
+{
+  "type": "animation",
+  "animation_id": "2730c1d2-2d7d-47c6-ad67-f0330d0be2d0",
+  "task_id": "2730c1d2-2d7d-47c6-ad67-f0330d0be2d0",
+  "character_id": "9c463303-4591-4441-9527-d8e099256e7b",
+  "character_name": "曹军将领",
+  "animation_name": "放技能",
+  "frame_count": 6,
+  "prompt": "酷炫的释放大招的动作",
+  "created_at": "2026-06-17T11:45:20.606627Z",
+  "source_sheet": "source/source.png",
+  "preview_gif": "preview.gif",
+  "frames": [
+    {
+      "index": 1,
+      "file": "frames/frame_001.webp"
+    },
+    {
+      "index": 2,
+      "file": "frames/frame_002.webp"
+    },
+    {
+      "index": 3,
+      "file": "frames/frame_003.webp"
+    },
+    {
+      "index": 4,
+      "file": "frames/frame_004.webp"
+    },
+    {
+      "index": 5,
+      "file": "frames/frame_005.webp"
+    },
+    {
+      "index": 6,
+      "file": "frames/frame_006.webp"
+    }
+  ]
+}

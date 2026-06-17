@@ -1,0 +1,39 @@
+{
+  "type": "animation",
+  "animation_id": "a2f18473-e327-4ac0-8637-c85a911758f4",
+  "task_id": "a2f18473-e327-4ac0-8637-c85a911758f4",
+  "character_id": "37640d5f-3f7c-4c53-92cc-4f35c1e22035",
+  "character_name": "曹军弓箭手",
+  "animation_name": "拉弓射箭",
+  "frame_count": 6,
+  "prompt": "拉弓射箭",
+  "created_at": "2026-06-17T08:32:49.080482Z",
+  "source_sheet": "source/source.png",
+  "preview_gif": "preview.gif",
+  "frames": [
+    {
+      "index": 1,
+      "file": "frames/frame_001.webp"
+    },
+    {
+      "index": 2,
+      "file": "frames/frame_002.webp"
+    },
+    {
+      "index": 3,
+      "file": "frames/frame_003.webp"
+    },
+    {
+      "index": 4,
+      "file": "frames/frame_004.webp"
+    },
+    {
+      "index": 5,
+      "file": "frames/frame_005.webp"
+    },
+    {
+      "index": 6,
+      "file": "frames/frame_006.webp"
+    }
+  ]
+}

@@ -64,11 +64,44 @@ export class UI {
     const secs = Math.floor(this.game.gameTime % 60);
     document.getElementById('timeDisplay').textContent = `${mins}:${secs.toString().padStart(2,'0')}`;
 
-    // 暂停面板统计
-    document.getElementById('pauseLevel').textContent = p.level;
+    // 暂停面板：左侧角色状态
+    document.getElementById('pauseLvBadge').textContent = `Lv.${p.level}`;
+    document.getElementById('pauseHpText').textContent = `${Math.ceil(p.hp)}/${p.maxHpTotal}`;
+    document.getElementById('pauseHpBar').style.width = `${p.maxHpTotal > 0 ? (p.hp / p.maxHpTotal * 100) : 0}%`;
+    document.getElementById('pauseMpText').textContent = `${Math.ceil(p.mp)}/${p.maxMpTotal}`;
+    document.getElementById('pauseMpBar').style.width = `${p.maxMpTotal > 0 ? (p.mp / p.maxMpTotal * 100) : 0}%`;
+    document.getElementById('pauseExpText').textContent = `${Math.floor(p.exp)}/${p.expToLevel}`;
+    document.getElementById('pauseExpBar').style.width = `${p.expToLevel > 0 ? (p.exp / p.expToLevel * 100) : 0}%`;
+    document.getElementById('pauseAtk').textContent = p.atk;
+    document.getElementById('pauseDef').textContent = p.def;
+    document.getElementById('pauseCrit').textContent = `${p.crit}%`;
+    document.getElementById('pauseSpd').textContent = Math.round(p.speedTotal);
     document.getElementById('pauseKills').textContent = this.game.totalKills;
     document.getElementById('pauseScore').textContent = Math.floor(this.game.score);
     document.getElementById('pauseTime').textContent = `${mins}:${secs.toString().padStart(2,'0')}`;
+
+    // 暂停面板：右侧装备
+    const pauseGrid = document.getElementById('pauseEquipGrid');
+    pauseGrid.innerHTML = EQUIP_TYPES.map(type => {
+      const eq = p.equip[type];
+      if (eq) {
+        return `<div class="pause-equip-slot">
+          <img class="pause-equip-icon" src="${equipImageUrl(eq)}" alt="${type}">
+          <div class="pause-equip-info">
+            <div class="pause-equip-name" style="color:${eq.quality.color}">${eq.name}</div>
+            <div class="pause-equip-type">${type} · ${eq.quality.name}</div>
+            <div class="pause-equip-stats">${equipStatText(eq)}</div>
+          </div>
+        </div>`;
+      }
+      return `<div class="pause-equip-slot empty">
+        <span class="pause-equip-icon">${EQUIP_ICONS[type]}</span>
+        <div class="pause-equip-info">
+          <div class="pause-equip-name" style="color:#777">未装备</div>
+          <div class="pause-equip-type">${type}</div>
+        </div>
+      </div>`;
+    }).join('');
 
     const wc = document.getElementById('waveCountdown');
     const wrow = wc.parentElement;
@@ -151,7 +184,7 @@ export class UI {
     const pct = max > 0 ? (cur / max * 100).toFixed(0) : 0;
     const bar = document.getElementById(id);
     bar.querySelector('.bar-fill').style.width = pct + '%';
-    bar.querySelector('.bar-text').textContent = `${Math.ceil(cur)}/${max}`;
+    bar.querySelector('.bar-text').textContent = `${Math.ceil(cur)}/${Math.round(max)}`;
   }
 
   updatePickupHint() {

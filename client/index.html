@@ -24,6 +24,7 @@
           <span class="lv-badge" id="lvBadge">Lv.1</span>
         </div>
         <div class="hud-info">
+          <button id="pauseBtn" title="暂停 (Esc)">⏸</button>
           <div id="charName">赵云 · 子龙</div>
           <div id="bars">
             <div class="bar-row">
@@ -50,9 +51,6 @@
 
       <!-- Right HUD Panel -->
       <div id="rightPanel">
-        <!-- Pause Button -->
-        <button id="pauseBtn" title="暂停 (Esc)">⏸</button>
-
         <!-- Score Panel -->
         <div id="scorePanel">
           <div class="row"><span class="label">阶段</span><span class="value wave" id="waveNum">清兵阶段</span></div>
@@ -134,21 +132,47 @@
     <!-- Pause Overlay -->
     <div id="pauseOverlay">
       <div class="pause-card">
-        <div class="pause-icon">⏸</div>
-        <h2>游戏暂停</h2>
-        <p class="pause-hint">按 ESC 继续 · 按 Tab 查看装备</p>
-        <div class="pause-stats">
-          <div class="pause-stat"><span class="pause-label">等级</span><span class="pause-value" id="pauseLevel">1</span></div>
-          <div class="pause-stat"><span class="pause-label">击杀</span><span class="pause-value" id="pauseKills">0</span></div>
-          <div class="pause-stat"><span class="pause-label">得分</span><span class="pause-value" id="pauseScore">0</span></div>
-          <div class="pause-stat"><span class="pause-label">时间</span><span class="pause-value" id="pauseTime">0:00</span></div>
+        <div class="pause-header">
+          <div class="pause-icon">⏸</div>
+          <h2>游戏暂停</h2>
+          <p class="pause-hint">按 ESC 继续游戏</p>
+        </div>
+        <div class="pause-body">
+          <!-- 左侧：角色状态 -->
+          <div class="pause-left">
+            <div class="pause-hero">
+              <img class="pause-avatar" src="assets/generated/avatar.png" alt="赵云">
+              <div class="pause-title">
+                <h3>赵云 · 子龙</h3>
+                <span class="lv-badge" id="pauseLvBadge">Lv.1</span>
+              </div>
+            </div>
+            <div class="pause-bars">
+              <div class="pause-bar hp"><span class="pb-label">生命</span><div class="pb-track"><div class="pb-fill" id="pauseHpBar"></div><span class="pb-text" id="pauseHpText">150/150</span></div></div>
+              <div class="pause-bar mp"><span class="pb-label">法力</span><div class="pb-track"><div class="pb-fill" id="pauseMpBar"></div><span class="pb-text" id="pauseMpText">80/80</span></div></div>
+              <div class="pause-bar exp"><span class="pb-label">经验</span><div class="pb-track"><div class="pb-fill" id="pauseExpBar"></div><span class="pb-text" id="pauseExpText">0/100</span></div></div>
+            </div>
+            <div class="pause-attrs">
+              <div class="pause-attr"><span class="pa-label">⚔️ 攻击</span><span class="pa-value" id="pauseAtk">20</span></div>
+              <div class="pause-attr"><span class="pa-label">🛡️ 防御</span><span class="pa-value" id="pauseDef">8</span></div>
+              <div class="pause-attr"><span class="pa-label">💥 暴击</span><span class="pa-value" id="pauseCrit">5%</span></div>
+              <div class="pause-attr"><span class="pa-label">👢 移速</span><span class="pa-value" id="pauseSpd">200</span></div>
+            </div>
+            <div class="pause-combat">
+              <div class="pause-stat"><span class="pause-label">击杀</span><span class="pause-value" id="pauseKills">0</span></div>
+              <div class="pause-stat"><span class="pause-label">得分</span><span class="pause-value" id="pauseScore">0</span></div>
+              <div class="pause-stat"><span class="pause-label">时间</span><span class="pause-value" id="pauseTime">0:00</span></div>
+            </div>
+          </div>
+          <!-- 右侧：装备 -->
+          <div class="pause-right">
+            <h3>🎒 装备</h3>
+            <div class="pause-equip-grid" id="pauseEquipGrid"></div>
+          </div>
         </div>
         <div class="pause-actions">
           <button class="btn pause-resume" id="resumeBtn">▶ 继续游戏</button>
-          <button class="btn small" id="viewEquipBtn">🎒 查看装备</button>
-          <button class="btn small" id="saveBtn">💾 保存存档</button>
         </div>
-        <span id="saveStatus"></span>
       </div>
     </div>
 
@@ -254,6 +278,6 @@
   </div>
 </div>
 
-<script type="module" src="js/main.js"></script>
+<script type="module" src="js/main.js?v=7"></script>
 </body>
 </html>

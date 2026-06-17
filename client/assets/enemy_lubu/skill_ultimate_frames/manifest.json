@@ -1,0 +1,39 @@
+{
+  "type": "animation",
+  "animation_id": "de3ab291-e78c-479f-9203-774dce71cc8d",
+  "task_id": "de3ab291-e78c-479f-9203-774dce71cc8d",
+  "character_id": "ade0cdd0-1e4b-40e5-abfe-76a761a722e7",
+  "character_name": "吕布",
+  "animation_name": "放技能",
+  "frame_count": 6,
+  "prompt": "酷炫的释放大招的动作",
+  "created_at": "2026-06-17T11:45:27.409368Z",
+  "source_sheet": "source/source.png",
+  "preview_gif": "preview.gif",
+  "frames": [
+    {
+      "index": 1,
+      "file": "frames/frame_001.webp"
+    },
+    {
+      "index": 2,
+      "file": "frames/frame_002.webp"
+    },
+    {
+      "index": 3,
+      "file": "frames/frame_003.webp"
+    },
+    {
+      "index": 4,
+      "file": "frames/frame_004.webp"
+    },
+    {
+      "index": 5,
+      "file": "frames/frame_005.webp"
+    },
+    {
+      "index": 6,
+      "file": "frames/frame_006.webp"
+    }
+  ]
+}

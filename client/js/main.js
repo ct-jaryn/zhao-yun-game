@@ -58,13 +58,6 @@ function initStartTabs() {
 }
 initStartTabs();
 
-document.getElementById('saveBtn').addEventListener('click', async () => {
-  if (!game || !game.running) return;
-  const status = document.getElementById('saveStatus');
-  status.textContent = '后端已禁用，无法保存';
-  setTimeout(() => status.textContent = '', 2000);
-});
-
 function togglePause() {
   if (!game || !game.running || game.levelUpOpen) return;
   game.paused = !game.paused;
@@ -78,13 +71,6 @@ function togglePause() {
 
 document.getElementById('pauseBtn').addEventListener('click', togglePause);
 document.getElementById('resumeBtn').addEventListener('click', togglePause);
-
-document.getElementById('viewEquipBtn').addEventListener('click', () => {
-  if (!game || !game.running || game.levelUpOpen) return;
-  game.equipPanelOpen = true;
-  document.getElementById('equipPanel').style.display = 'block';
-  game.ui.updateEquipPanel();
-});
 
 document.getElementById('submitScoreBtn').addEventListener('click', async () => {
   if (!game) return;
