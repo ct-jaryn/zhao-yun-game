@@ -140,6 +140,7 @@ export class UI {
 
     this.updatePickupHint();
     if (this.game.equipPanelOpen) this.updateEquipPanel();
+    this.updateEquipSidebar();
 
     const lowHp = document.getElementById('lowHpWarning');
     if (p.hp / p.maxHpTotal < 0.25 && p.hp > 0) lowHp.classList.add('danger');
@@ -202,6 +203,31 @@ export class UI {
         <div class="slot-info">
           <div class="slot-name" style="color:#555">未装备</div>
           <div class="slot-type">${type}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  updateEquipSidebar() {
+    const list = document.getElementById('esList');
+    const p = this.game.player;
+    list.innerHTML = EQUIP_TYPES.map(type => {
+      const eq = p.equip[type];
+      if (eq) {
+        const iconHtml = `<img class="es-icon" src="${equipImageUrl(eq)}" alt="${type}" title="${type}">`;
+        return `<div class="es-item">
+          ${iconHtml}
+          <div class="es-info">
+            <div class="es-name" style="color:${eq.quality.color}" title="[${eq.quality.name}] ${eq.name}">${eq.name}</div>
+            <div class="es-type">${EQUIP_ICONS[type]} ${type}</div>
+          </div>
+        </div>`;
+      }
+      return `<div class="es-item">
+        <span class="es-empty">${EQUIP_ICONS[type]}</span>
+        <div class="es-info">
+          <div class="es-name" style="color:#555">未装备</div>
+          <div class="es-type">${EQUIP_ICONS[type]} ${type}</div>
         </div>
       </div>`;
     }).join('');

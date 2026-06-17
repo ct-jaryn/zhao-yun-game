@@ -230,12 +230,6 @@ export class Enemy {
       let drawH = sprite.drawH * this.sizeScale;
       let flipX = false;
       const a = this.dir;
-      if (this.type === 'lubu' || this.type === 'cavalry' || this.type === 'archer') {
-        // 吕布/骑兵/弓箭手只有向左移动动画，向右时水平翻转
-        flipX = a >= -Math.PI / 2 && a <= Math.PI / 2;
-      } else {
-        flipX = a > Math.PI / 2 || a < -Math.PI / 2;
-      }
       if (this.attacking) {
         const progress = Math.max(0, Math.min(1, 1 - this.attackAnimTimer / 0.5));
         const frameIndex = Math.min(5, Math.floor(progress * 6));
@@ -244,15 +238,41 @@ export class Enemy {
         if (this.type === 'archer') {
           // 弓箭手攻击帧本身是朝右拉弓，向左射击时才需要翻转
           flipX = a > Math.PI / 2 || a < -Math.PI / 2;
+        } else if (this.type === 'lubu' || this.type === 'cavalry') {
+          flipX = a >= -Math.PI / 2 && a <= Math.PI / 2;
+        } else {
+          flipX = a > Math.PI / 2 || a < -Math.PI / 2;
         }
       } else if (isMoving) {
-        const frameIndex = Math.floor(this.walkAnimTimer) % 6;
-        img = (this.type === 'lubu' || this.type === 'cavalry') ? sprite.walkGetter(frameIndex) : sprite.walkGetter(this.dir, frameIndex);
-        scale = sprite.walkScale || 1.0;
+        if (this.type === 'archer' && this.aggro) {
+          // 弓箭手追踪赵云时使用8方向切片，确保正面朝向赵云
+          img = sprite.sliceGetter(this.dir);
+          scale = 1.0;
+          flipX = false;
+        } else {
+          const frameIndex = Math.floor(this.walkAnimTimer) % 6;
+          img = (this.type === 'lubu' || this.type === 'cavalry') ? sprite.walkGetter(frameIndex) : sprite.walkGetter(this.dir, frameIndex);
+          scale = sprite.walkScale || 1.0;
+          if (this.type === 'lubu' || this.type === 'cavalry' || this.type === 'archer') {
+            // 吕布/骑兵/弓箭手只有向左移动动画，向右时水平翻转
+            flipX = a >= -Math.PI / 2 && a <= Math.PI / 2;
+          } else {
+            flipX = a > Math.PI / 2 || a < -Math.PI / 2;
+          }
+        }
+      } else {
+        // 待机使用8方向切片
+        img = sprite.sliceGetter(this.dir);
+        if (this.type === 'lubu' || this.type === 'cavalry' || this.type === 'archer') {
+          flipX = a >= -Math.PI / 2 && a <= Math.PI / 2;
+        } else {
+          flipX = a > Math.PI / 2 || a < -Math.PI / 2;
+        }
       }
       if (!img || !img.complete || img.naturalWidth <= 0) {
         img = sprite.sliceGetter(this.dir);
         scale = 1.0;
+        flipX = false;
       }
       drawH *= scale;
       if (img && img.complete && img.naturalWidth > 0) {
