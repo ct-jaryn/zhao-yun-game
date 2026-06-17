@@ -78,7 +78,7 @@ function handleKey(e, game) {
 
   if (e.code === 'Tab') {
     e.preventDefault();
-    if (!game || !game.running || game.paused || game.levelUpOpen) return;
+    if (!game || !game.running || game.levelUpOpen) return;
     game.equipPanelOpen = !game.equipPanelOpen;
     document.getElementById('equipPanel').style.display = game.equipPanelOpen ? 'block' : 'none';
     if (game.equipPanelOpen) game.ui.updateEquipPanel();

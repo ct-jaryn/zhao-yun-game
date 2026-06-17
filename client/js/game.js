@@ -1,5 +1,5 @@
 import { W, H, MAP_W, MAP_H, SKILLS, REWARD_TYPES } from './config.js';
-import { Player, genEquip, equipPower, equipStatText } from './entities/player.js';
+import { Player, genEquip, equipPower, equipStatText, createInitialEquip } from './entities/player.js';
 import { Enemy } from './entities/enemy.js';
 import { Particle } from './entities/particle.js';
 import { FloatingText } from './entities/floatingText.js';
@@ -17,10 +17,15 @@ export class Game {
     this.projectiles = [];
     this.drops = [];
     this.cam = { x: 0, y: 0 };
-    this.wave = 0;
-    this.waveTimer = 3;
+    // 新关卡流程：击败20个枪兵 → 曹操 → 狂暴曹操 + 吕布
+    this.phase = 'soldiers';
+    this.soldierKills = 0;
+    this.soldiersRequired = 20;
+    this.caocaoDefeated = false;
+    this.enhancedCaocaoDefeated = false;
+    this.lubuDefeated = false;
     this.autoSpawnTimer = 0;
-    this.autoSpawnInterval = 2;
+    this.autoSpawnInterval = 1.2;
     this.totalKills = 0;
     this.score = 0;
     this.gameTime = 0;
@@ -31,19 +36,31 @@ export class Game {
     this.killLog = [];
     this.nearestDrop = null;
     this.pendingRewards = [];
+    this.lastKillMilestone = 0;
 
     this.ui = new UI(this);
 
     if (savedData) this.loadSave(savedData);
-    else this.spawnWave();
+    else this.startLevel();
   }
 
   loadSave(data) {
     Object.assign(this.player, data.player);
+    // 兼容旧存档：补齐缺失的装备槽位
+    if (!this.player.equip) this.player.equip = createInitialEquip();
+    for (const type of ['武器', '铠甲', '头盔', '靴子', '饰品']) {
+      if (!this.player.equip[type]) this.player.equip[type] = createInitialEquip()[type];
+    }
     this.score = data.score || 0;
     this.gameTime = data.gameTime || 0;
     this.totalKills = data.totalKills || 0;
-    this.spawnWave(data.wave || 1);
+    this.lastKillMilestone = Math.floor(this.totalKills / 100) * 100;
+    this.phase = data.phase || 'soldiers';
+    this.soldierKills = data.soldierKills || 0;
+    this.caocaoDefeated = data.caocaoDefeated || false;
+    this.enhancedCaocaoDefeated = data.enhancedCaocaoDefeated || false;
+    this.lubuDefeated = data.lubuDefeated || false;
+    this.startLevel();
   }
 
   shakeScreen(intensity) { shakeScreen(intensity); }
@@ -63,7 +80,7 @@ export class Game {
 
   showWaveAnnounce(num, sub) {
     const el = document.getElementById('waveAnnounce');
-    document.getElementById('waNum').textContent = `第 ${num} 波`;
+    document.getElementById('waNum').textContent = num > 0 ? `第 ${num} 波` : '关卡进度';
     document.getElementById('waSub').textContent = sub || '';
     el.style.display = 'block';
     el.style.animation = 'none';
@@ -77,33 +94,74 @@ export class Game {
     if (this.killLog.length > 6) this.killLog.pop();
   }
 
-  pickEnemyType() {
-    // 骑兵比例随游戏时间递增：开局5%，20分钟(1200秒)时80%，之后逐渐全骑兵
-    const cavRate = Math.min(1, 0.05 + (this.gameTime / 1200) * 0.75);
-    if (Math.random() < cavRate) return 'cavalry';
-    const roll = Math.random();
-    if (this.wave >= 5 && roll < 0.2) return 'general';
-    if (this.wave >= 2 && roll < 0.5) return 'archer';
-    return 'soldier';
+  getEnemyLevel(type) {
+    // 新流程：曹操Lv.3，狂暴曹操/吕布Lv.5，小兵随时间小幅成长
+    if (type === 'lubu') return 5;
+    if (type === 'boss') return 3;
+    const minutes = Math.floor(this.gameTime / 60);
+    const maxLevel = type === 'cavalry' ? 5 : 3;
+    return Math.min(maxLevel, 1 + minutes);
   }
 
-  spawnWave(forceWave = null) {
-    if (forceWave !== null) this.wave = forceWave;
-    else this.wave++;
-    const base = 15 + this.wave * 5;
-    const bossWave = this.wave === 1 || this.wave % 5 === 0;
-    this.showWaveAnnounce(this.wave, bossWave ? '⚠ Boss 来袭!' : '消灭所有敌人!');
+  startLevel() {
+    // 根据当前阶段恢复对应敌人
+    if (this.phase === 'caocao') this.spawnCaocao();
+    else if (this.phase === 'final') this.spawnFinalBosses();
+    else this.showWaveAnnounce(0, '击败20个枪兵，引出曹操！');
+  }
 
-    for (let i = 0; i < base; i++) {
-      const pos = this.randomSpawnPos();
-      const type = this.pickEnemyType();
-      this.enemies.push(new Enemy(pos.x, pos.y, type, this.wave));
+  spawnPhaseMinions() {
+    if (this.phase === 'soldiers') {
+      // 前期混合刷新：枪兵 40%、弓箭手 35%、骑兵 25%；场上数量翻倍，更热闹
+      const aliveMinions = this.enemies.filter(e => !e.dead && ['soldier', 'archer', 'cavalry'].includes(e.type)).length;
+      if (aliveMinions < 20) {
+        const pos = this.randomSpawnPos();
+        const r = Math.random();
+        const type = r < 0.4 ? 'soldier' : (r < 0.75 ? 'archer' : 'cavalry');
+        this.enemies.push(new Enemy(pos.x, pos.y, type, this.getEnemyLevel(type)));
+      }
+    } else if (this.phase === 'final') {
+      // 最终双Boss阶段持续刷小怪增加压力
+      const aliveMinions = this.enemies.filter(e => !e.dead && e.type !== 'boss' && e.type !== 'lubu').length;
+      if (aliveMinions < 5) {
+        const pos = this.randomSpawnPos();
+        const r = Math.random();
+        const type = r < 0.3 ? 'archer' : (r < 0.6 ? 'cavalry' : 'soldier');
+        this.enemies.push(new Enemy(pos.x, pos.y, type, this.getEnemyLevel(type)));
+      }
     }
+  }
 
-    if (bossWave) {
-      const bx = Math.max(100, Math.min(MAP_W - 100, this.player.x + rand(-300, 300)));
-      const by = Math.max(100, Math.min(MAP_H - 100, this.player.y - 400));
-      this.enemies.push(new Enemy(bx, by, 'boss', this.wave));
+  spawnCaocao() {
+    this.phase = 'caocao';
+    const pos = this.randomBossSpawnPos();
+    const caocao = new Enemy(pos.x, pos.y, 'boss', this.getEnemyLevel('boss'), { skipRevive: true });
+    this.enemies.push(caocao);
+    this.showWaveAnnounce(0, '⚠ 曹操 来袭!');
+    this.addKillLog('曹操出现！');
+    this.addText(this.player.x, this.player.y - 80, '曹操出现！', '#ff44ff', 24, '#000');
+    this.shakeScreen(6);
+  }
+
+  spawnFinalBosses() {
+    this.phase = 'final';
+    const pos1 = this.randomBossSpawnPos();
+    const pos2 = this.randomBossSpawnPos();
+    const enhanced = new Enemy(pos1.x, pos1.y, 'boss', 5, { enhanced: true, skipRevive: true });
+    const lubu = new Enemy(pos2.x, pos2.y, 'lubu', 5, { skipRevive: true });
+    this.enemies.push(enhanced);
+    this.enemies.push(lubu);
+    this.showWaveAnnounce(0, '⚠ 曹操·狂暴 & 吕布 同时来袭!');
+    this.addKillLog('狂暴曹操与吕布同时降临！');
+    this.addText(this.player.x, this.player.y - 90, '曹操·狂暴 & 吕布 同时降临！', '#ff0000', 28, '#000');
+    this.shakeScreen(10);
+    this.flashScreen('rgba(255,0,0,0.5)', 0.6);
+    this.addParticles(this.player.x, this.player.y, '#ff44ff', 50, 200);
+  }
+
+  checkFinalVictory() {
+    if (this.enhancedCaocaoDefeated && this.lubuDefeated) {
+      this.gameWin();
     }
   }
 
@@ -119,23 +177,51 @@ export class Game {
   }
 
   onEnemyKilled(e) {
-    // 曹操二次倒下后召唤吕布，不算通关
-    if (e.type === 'boss' && e.hasRevived) {
-      this.onCaoCaoDefeated(e);
+    // Boss 处理
+    if (e.type === 'boss') {
+      this.totalKills++;
+      this.checkKillMilestone();
+      this.score += e.score;
+      if (e.enhanced) {
+        // 狂暴曹操击败
+        this.enhancedCaocaoDefeated = true;
+        this.rewardBossKill(e, false);
+        this.addKillLog('曹操·狂暴 被击败！');
+        this.addText(e.x, e.y - e.radius - 50, '曹操·狂暴 被击败！', '#ff0000', 26, '#000');
+        this.checkFinalVictory();
+        return;
+      }
+      // 普通曹操击败 → 进入狂暴曹操+吕布阶段
+      this.caocaoDefeated = true;
+      this.rewardBossKill(e, false);
+      this.addKillLog('曹操败退！狂暴曹操与吕布同时降临！');
+      this.addText(e.x, e.y - e.radius - 50, '曹操败退！狂暴曹操与吕布同时降临！', '#ff0000', 28, '#000');
+      this.shakeScreen(10);
+      this.flashScreen('rgba(255,0,0,0.5)', 0.6);
+      this.spawnFinalBosses();
       return;
     }
 
-    // 击败吕布后才是真正通关
+    // 吕布击败
     if (e.type === 'lubu') {
-      this.gameWin(e);
+      this.totalKills++;
+      this.checkKillMilestone();
+      this.score += e.score;
+      this.lubuDefeated = true;
+      this.rewardBossKill(e, false);
+      this.addKillLog('吕布被击败！');
+      this.addText(e.x, e.y - e.radius - 50, '吕布被击败！', '#ff0000', 28, '#000');
+      this.checkFinalVictory();
       return;
     }
 
+    // 普通敌人
     this.totalKills++;
+    this.checkKillMilestone();
     const comboBonus = 1 + Math.floor(this.player.combo / 5) * 0.2;
     this.score += Math.floor(e.score * comboBonus);
     this.player.addExp(e.exp, this);
-    this.addKillLog(`击杀 ${e.name} +${e.score}分`);
+    this.addKillLog(`击杀 Lv.${e.level} ${e.name} +${e.score}分`);
     this.addParticles(e.x, e.y, '#ff4444', 15, 110);
 
     for (let i = 0; i < 8; i++) {
@@ -144,25 +230,81 @@ export class Game {
     }
 
     if (Math.random() < e.dropRate) {
-      const eq = genEquip(this.wave);
+      const eq = genEquip(Math.max(1, this.player.level));
       this.drops.push(new DropItem(e.x, e.y, eq));
+    }
+
+    // 枪兵击杀计数，达到20个触发曹操
+    if (e.type === 'soldier') {
+      this.soldierKills++;
+      if (this.phase === 'soldiers' && this.soldierKills >= this.soldiersRequired) {
+        this.spawnCaocao();
+      }
     }
   }
 
-  onCaoCaoDefeated(caoCao) {
-    this.rewardBossKill(caoCao, false);
-    this.totalKills++;
-    this.score += Math.floor(caoCao.score * 2);
-    this.addKillLog('曹操败逃！吕布降临！');
-    this.addText(caoCao.x, caoCao.y - caoCao.radius - 50, '曹操逃跑，吕布出现！', '#ff0000', 28, '#000');
-    this.shakeScreen(10);
-    this.flashScreen('rgba(255,0,0,0.5)', 0.6);
-    this.addParticles(caoCao.x, caoCao.y, '#ff44ff', 50, 200);
+  getKillMilestoneTitle(kills) {
+    const titles = {
+      100: '一骑当千',
+      200: '锐不可当',
+      300: '所向披靡',
+      400: '横扫千军',
+      500: '万人敌',
+      600: '神勇无双',
+      700: '霸气纵横',
+      800: '修罗降世',
+      900: '九天揽月',
+      1000: '千古传奇'
+    };
+    return titles[kills] || (kills >= 1000 ? '传说再临' : '勇冠三军');
+  }
 
-    // 在屏幕边缘生成吕布
-    const spawnPos = this.randomBossSpawnPos();
-    const lubu = new Enemy(spawnPos.x, spawnPos.y, 'lubu', this.wave + 3);
-    this.enemies.push(lubu);
+  checkKillMilestone() {
+    const milestone = Math.floor(this.totalKills / 100) * 100;
+    if (milestone > 0 && milestone > this.lastKillMilestone) {
+      this.lastKillMilestone = milestone;
+      this.showKillMilestone(milestone);
+    }
+  }
+
+  showKillMilestone(kills) {
+    const title = this.getKillMilestoneTitle(kills);
+    const el = document.getElementById('killMilestone');
+    document.getElementById('kmText').textContent = `${kills}斩`;
+    document.getElementById('kmSub').textContent = title;
+
+    // 强烈视觉冲击
+    this.shakeScreen(16);
+    this.flashScreen('rgba(255,160,40,0.45)', 0.55);
+
+    // 粒子爆发
+    const p = this.player;
+    const colors = ['#ffd700', '#ff4422', '#ffaa44', '#ff6644', '#fff5c8'];
+    for (let i = 0; i < 80; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = rand(120, 320);
+      this.particles.push(new Particle(p.x, p.y, Math.cos(a) * s, Math.sin(a) * s, pick(colors), rand(0.6, 1.4), rand(3, 9)));
+    }
+    // 向上飘散的火星
+    for (let i = 0; i < 30; i++) {
+      const x = p.x + rand(-120, 120);
+      const y = p.y + rand(-80, 80);
+      this.particles.push(new Particle(x, y, rand(-30, 30), rand(-180, -60), pick(['#ffd700','#ffaa44','#ff6644']), rand(0.8, 1.6), rand(2, 5)));
+    }
+
+    // 浮动文字
+    this.addText(p.x, p.y - 110, `★ ${kills}斩 · ${title} ★`, '#ffd700', 30, '#000');
+    this.addKillLog(`★ ${kills}斩 · ${title} ★`);
+
+    // DOM 动画触发
+    el.style.display = 'block';
+    el.classList.remove('active');
+    void el.offsetWidth;
+    el.classList.add('active');
+    setTimeout(() => {
+      el.classList.remove('active');
+      el.style.display = 'none';
+    }, 2400);
   }
 
   randomBossSpawnPos() {
@@ -178,14 +320,14 @@ export class Game {
   }
 
   rewardBossKill(boss, isFinal = false) {
-    // 曹操每次倒下都让玩家直接升一级
+    // 击败Boss直接升一级
     this.player.addExp(this.player.expToLevel, this);
-    this.addText(this.player.x, this.player.y - 90, isFinal ? '通关奖励：等级提升！' : '击败曹操：等级提升！', '#ffd700', 22, '#000');
+    this.addText(this.player.x, this.player.y - 90, isFinal ? '通关奖励：等级提升！' : '击败Boss：等级提升！', '#ffd700', 22, '#000');
 
-    // 随机掉落多件装备（首次 3~5 件，最终 5~8 件）
-    const dropCount = isFinal ? randInt(5, 8) : randInt(3, 5);
+    // 每个Boss只掉落1件装备
+    const dropCount = 1;
     for (let i = 0; i < dropCount; i++) {
-      const eq = genEquip(Math.max(1, this.wave + (isFinal ? 3 : 1)));
+      const eq = genEquip(Math.max(1, this.player.level + (isFinal ? 2 : 0)));
       const angle = Math.random() * Math.PI * 2;
       const dist = rand(20, 80);
       this.drops.push(new DropItem(boss.x + Math.cos(angle) * dist, boss.y + Math.sin(angle) * dist, eq));
@@ -245,11 +387,20 @@ export class Game {
     const eq = d.equip;
     const slot = eq.type;
     const old = this.player.equip[slot];
-    if (!old || this.shouldEquip(eq, old)) {
+    const equipped = !old || this.shouldEquip(eq, old);
+    if (equipped) {
       this.player.equip[slot] = eq;
       this.addText(this.player.x, this.player.y - 50, `装备 ${eq.name}`, eq.quality.color, 16, '#000');
       if (slot === '铠甲' || slot === '头盔' || slot === '饰品') {
         this.player.hp = Math.min(this.player.hp + 20, this.player.maxHpTotal);
+      }
+      // 拾取赵云最强一套（tier 4）时额外提醒
+      if (eq.tier === 4) {
+        this.addText(this.player.x, this.player.y - 90, `✨ 获得最终装备：${eq.name}！`, '#ffd700', 26, '#000');
+        this.addKillLog(`获得最终装备：${eq.name}`);
+        this.shakeScreen(4);
+        this.flashScreen('rgba(255,215,0,0.25)', 0.3);
+        this.addParticles(this.player.x, this.player.y, '#ffd700', 20, 120);
       }
     } else {
       this.addText(this.player.x, this.player.y - 50, `${eq.name} 不如当前装备`, '#888', 12, null);
@@ -348,28 +499,11 @@ export class Game {
     this.autoPickupDrops();
     this.checkNearestDrop();
 
-    // 自动补充小兵：场上存活敌人少于阈值时持续生成
+    // 阶段化刷怪：清兵阶段刷枪兵，最终阶段刷小怪助兴
     this.autoSpawnTimer -= dt;
     if (this.autoSpawnTimer <= 0) {
       this.autoSpawnTimer = this.autoSpawnInterval;
-      const aliveCount = this.enemies.filter(e => !e.dead).length;
-      const minEnemies = 12 + this.wave * 3;
-      const maxEnemies = 40 + this.wave * 6;
-      if (aliveCount < minEnemies) {
-        const toSpawn = Math.min(6, maxEnemies - aliveCount);
-        for (let i = 0; i < toSpawn; i++) {
-          const pos = this.randomSpawnPos();
-          const type = this.pickEnemyType();
-          this.enemies.push(new Enemy(pos.x, pos.y, type, this.wave));
-        }
-      }
-    }
-
-    const aliveEnemies = this.enemies.filter(e => !e.dead);
-    const revivingBoss = this.enemies.some(e => e.type === 'boss' && e.dead && e.reviveTimer > 0);
-    if (aliveEnemies.length === 0 && !revivingBoss) {
-      this.waveTimer -= dt;
-      if (this.waveTimer <= 0) { this.waveTimer = 4; this.spawnWave(); }
+      this.spawnPhaseMinions();
     }
 
     this.ui.update();
@@ -392,6 +526,11 @@ export class Game {
     Renderer.drawMinimap(this.player, this.cam, this.enemies, this.drops);
   }
 
+  getPhaseName() {
+    const names = { soldiers: '清兵阶段', caocao: '曹操', final: '双Boss', victory: '通关' };
+    return names[this.phase] || this.phase;
+  }
+
   gameOver() {
     if (!this.running) return;
     this.running = false;
@@ -402,14 +541,13 @@ export class Game {
     document.getElementById('finalScore').textContent = Math.floor(this.score);
     const m = Math.floor(this.gameTime / 60), s = Math.floor(this.gameTime % 60);
     document.getElementById('finalTime').textContent = `${m}分${s}秒`;
-    document.getElementById('finalWave').textContent = this.wave;
+    document.getElementById('finalWave').textContent = this.getPhaseName();
     document.getElementById('finalLevel').textContent = this.player.level;
   }
 
-  gameWin(boss) {
+  gameWin() {
     if (!this.running) return;
-    // 通关奖励：玩家直接升级 + 大量随机掉落
-    if (boss) this.rewardBossKill(boss, true);
+    this.phase = 'victory';
     this.running = false;
     document.getElementById('victoryScreen').style.display = 'flex';
     document.getElementById('gameOverScreen').style.display = 'none';
@@ -418,9 +556,9 @@ export class Game {
     document.getElementById('winScore').textContent = Math.floor(this.score);
     const m = Math.floor(this.gameTime / 60), s = Math.floor(this.gameTime % 60);
     document.getElementById('winTime').textContent = `${m}分${s}秒`;
-    document.getElementById('winWave').textContent = this.wave;
+    document.getElementById('winWave').textContent = this.getPhaseName();
     document.getElementById('winLevel').textContent = this.player.level;
-    this.addText(this.player.x, this.player.y - 80, '通关！曹操已被彻底击败！', '#ffd700', 32, '#000');
+    this.addText(this.player.x, this.player.y - 80, '通关！曹操与吕布皆已被击败！', '#ffd700', 32, '#000');
     this.shakeScreen(12);
     this.flashScreen('rgba(255,215,0,0.6)', 0.8);
   }
@@ -440,7 +578,11 @@ export class Game {
         bonusHp: this.player.bonusHp, bonusMpRegen: this.player.bonusMpRegen,
         combo: this.player.combo, maxCombo: this.player.maxCombo
       },
-      wave: this.wave,
+      phase: this.phase,
+      soldierKills: this.soldierKills,
+      caocaoDefeated: this.caocaoDefeated,
+      enhancedCaocaoDefeated: this.enhancedCaocaoDefeated,
+      lubuDefeated: this.lubuDefeated,
       score: this.score,
       gameTime: this.gameTime,
       totalKills: this.totalKills

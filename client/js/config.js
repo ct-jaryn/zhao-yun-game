@@ -5,15 +5,84 @@ export const MAP_H = 2000;
 export const ASPECT = W / H;
 
 export const EQUIP_TYPES = ['武器', '铠甲', '头盔', '靴子', '饰品'];
-export const EQUIP_NAMES = {
-  '武器': ['青釭剑','丈八蛇矛','方天画戟','龙胆枪','倚天剑','古锭刀','七星刀','雌雄双股剑'],
-  '铠甲': ['锁子甲','明光铠','鱼鳞甲','山文甲','百花战袍','兽面吞头铠'],
-  '头盔': ['铁兜鍪','凤翅金盔','束发金冠','紫金冠','狮子盔'],
-  '靴子': ['飞云靴','追风靴','踏雪靴','疾风靴','腾云靴'],
-  '饰品': ['玉佩','护心镜','赤兔铃','龙纹璧','虎符']
-};
 export const EQUIP_ICONS = { '武器':'⚔️', '铠甲':'🛡️', '头盔':'⛑️', '靴子':'👢', '饰品':'💎' };
+export const EQUIP_TYPE_TIER_IMAGES = {
+  '武器': [
+    'assets/equipment/weapon_0.png',
+    'assets/equipment/weapon_1.png',
+    'assets/equipment/weapon_2.png',
+    'assets/equipment/weapon_3.png',
+    'assets/equipment/weapon_4.png'
+  ],
+  '铠甲': [
+    'assets/equipment/armor_0.png',
+    'assets/equipment/armor_1.png',
+    'assets/equipment/armor_2.png',
+    'assets/equipment/armor_3.png',
+    'assets/equipment/armor_4.png'
+  ],
+  '头盔': [
+    'assets/equipment/helmet_0.png',
+    'assets/equipment/helmet_1.png',
+    'assets/equipment/helmet_2.png',
+    'assets/equipment/helmet_3.png',
+    'assets/equipment/helmet_4.png'
+  ],
+  '靴子': [
+    'assets/equipment/boots_0.png',
+    'assets/equipment/boots_1.png',
+    'assets/equipment/boots_2.png',
+    'assets/equipment/boots_3.png',
+    'assets/equipment/boots_4.png'
+  ],
+  '饰品': [
+    'assets/equipment/accessory_0.png',
+    'assets/equipment/accessory_1.png',
+    'assets/equipment/accessory_2.png',
+    'assets/equipment/accessory_3.png',
+    'assets/equipment/accessory_4.png'
+  ]
+};
 export const EQUIP_STAT_LABELS = { atk:'攻击', def:'防御', hp:'生命', mp:'法力', crit:'暴击', spd:'速度' };
+
+// 赵云专属装备套装：从初始布衣木枪到最终最强一套
+export const ZHAO_YUN_EQUIP_TIERS = [
+  { // 初始
+    '武器': { name:'木枪', stats:{ atk:3 } },
+    '铠甲': { name:'布衣', stats:{ def:2, hp:10 } },
+    '头盔': { name:'布巾', stats:{ def:1, hp:5 } },
+    '靴子': { name:'草鞋', stats:{ spd:1 } },
+    '饰品': { name:'木佩', stats:{ hp:5, mp:5 } }
+  },
+  { // 前期
+    '武器': { name:'铁枪', stats:{ atk:6 } },
+    '铠甲': { name:'皮甲', stats:{ def:4, hp:20 } },
+    '头盔': { name:'皮盔', stats:{ def:2, hp:10 } },
+    '靴子': { name:'皮靴', stats:{ spd:2, def:1 } },
+    '饰品': { name:'铜镜', stats:{ hp:10, mp:10 } }
+  },
+  { // 中期
+    '武器': { name:'亮银枪', stats:{ atk:10, crit:3 } },
+    '铠甲': { name:'锁子甲', stats:{ def:7, hp:35 } },
+    '头盔': { name:'精钢盔', stats:{ def:4, hp:18 } },
+    '靴子': { name:'战靴', stats:{ spd:3, def:2 } },
+    '饰品': { name:'龙纹玉', stats:{ hp:18, mp:15 } }
+  },
+  { // 后期
+    '武器': { name:'涯角枪', stats:{ atk:16, crit:5 } },
+    '铠甲': { name:'明光铠', stats:{ def:11, hp:55 } },
+    '头盔': { name:'凤翅盔', stats:{ def:6, hp:28 } },
+    '靴子': { name:'追风靴', stats:{ spd:4, def:3 } },
+    '饰品': { name:'龙胆佩', stats:{ hp:28, mp:25 } }
+  },
+  { // 最终 / 赵云最强一套
+    '武器': { name:'龙胆亮银枪', stats:{ atk:25, crit:8 } },
+    '铠甲': { name:'龙鳞宝甲', stats:{ def:18, hp:90 } },
+    '头盔': { name:'飞龙盔', stats:{ def:10, hp:45 } },
+    '靴子': { name:'腾云靴', stats:{ spd:6, def:5 } },
+    '饰品': { name:'真龙璧', stats:{ hp:45, mp:40 } }
+  }
+];
 
 export const QUALITY = [
   { name:'普通', color:'#999', mult:1 },
@@ -32,13 +101,19 @@ export const SKILLS = [
 ];
 
 export const ENEMY_TYPES = {
-  soldier: { name:'枪兵', color:'#556b2f', radius:28, hp:40, atk:8, def:2, speed:80, exp:15, score:10, dropRate:0.12 },
-  archer:  { name:'弓箭手', color:'#8b4513', radius:26, hp:30, atk:12, def:1, speed:60, exp:18, score:15, dropRate:0.15, ranged:true, shootCd:2 },
-  cavalry: { name:'骑兵', color:'#4a4a4a', radius:36, hp:80, atk:15, def:5, speed:130, exp:30, score:25, dropRate:0.2 },
-  general: { name:'曹将', color:'#8b0000', radius:40, hp:200, atk:22, def:8, speed:100, exp:80, score:60, dropRate:0.5 },
+  soldier: { name:'枪兵', color:'#556b2f', radius:28, hp:40, atk:12, def:2, speed:80, exp:15, score:10, dropRate:0.12 },
+  archer:  { name:'弓箭手', color:'#8b4513', radius:26, hp:30, atk:16, def:1, speed:60, exp:18, score:15, dropRate:0.15, ranged:true, shootCd:2 },
+  cavalry: { name:'骑兵', color:'#4a4a4a', radius:36, hp:80, atk:22, def:5, speed:130, exp:30, score:25, dropRate:0.2 },
+  general: { name:'曹将', color:'#8b0000', radius:40, hp:200, atk:30, def:8, speed:100, exp:80, score:60, dropRate:0.5 },
   boss:    { name:'曹操', color:'#4a0080', radius:56, hp:800, atk:35, def:12, speed:90, exp:300, score:200, dropRate:1.0 },
   lubu:    { name:'吕布', color:'#8b0000', radius:64, hp:2000, atk:60, def:20, speed:110, exp:1000, score:1000, dropRate:1.0 }
 };
+
+// 敌人追踪赵云参数：进入范围开始追，超出范围停止追，追击速度比正常慢
+export const ENEMY_AGGRO_RANGE = 420;        // 进入此距离开始追击
+export const ENEMY_LOSE_AGGRO_RANGE = 650;   // 超出此距离才放弃追击（防止来回抖动）
+export const ENEMY_CHASE_SPEED_RATIO = 0.55; // 追击速度倍数（较慢）
+export const ENEMY_WANDER_SPEED_RATIO = 0.35; // 游荡速度倍数
 
 export const TERRAIN = [
   { x:300, y:300, r:60 }, { x:800, y:500, r:80 }, { x:1500, y:400, r:100 },

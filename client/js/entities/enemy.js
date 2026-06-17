@@ -1,14 +1,14 @@
-import { ENEMY_TYPES } from '../config.js';
+import { ENEMY_TYPES, ENEMY_AGGRO_RANGE, ENEMY_LOSE_AGGRO_RANGE, ENEMY_CHASE_SPEED_RATIO, ENEMY_WANDER_SPEED_RATIO } from '../config.js';
 import { rand, randInt, vdist, vsub, vnorm, vec, pick } from '../utils.js';
-import { getSpearmanSlice, getGeneralSlice, getGeneralAttackFrame, getGeneralWalkFrame, getSpearmanWalkFrame, getSpearmanAttackFrame, getLubuSlice, getLubuWalkFrame, getLubuAttackFrame, getLubuSkillFrame, getCavalrySlice, getCavalryWalkFrame, getCavalryAttackFrame } from '../assets.js';
+import { getSpearmanSlice, getGeneralSlice, getGeneralAttackFrame, getGeneralWalkFrame, getSpearmanWalkFrame, getSpearmanAttackFrame, getLubuSlice, getLubuWalkFrame, getLubuAttackFrame, getLubuSkillFrame, getCavalrySlice, getCavalryWalkFrame, getCavalryAttackFrame, getArcherSlice, getArcherWalkFrame, getArcherAttackFrame, arrowImage } from '../assets.js';
 import { Projectile } from './projectile.js';
 
 export class Enemy {
-  constructor(x, y, type, level) {
+  constructor(x, y, type, level, options = {}) {
     const t = ENEMY_TYPES[type];
     this.x = x; this.y = y; this.type = type; this.name = t.name;
     this.color = t.color; this.radius = t.radius; this.level = level;
-    const scale = 1 + (level - 1) * 0.15;
+    const scale = 1 + (level - 1) * 0.25;
     this.maxHp = Math.floor(t.hp * scale); this.hp = this.maxHp;
     this.atk = Math.floor(t.atk * scale); this.def = Math.floor(t.def * scale);
     this.speed = t.speed; this.exp = Math.floor(t.exp * scale);
@@ -26,6 +26,8 @@ export class Enemy {
     this.walkAnimTimer = 0;
     this.attacking = false;
     this.attackAnimTimer = 0;
+    this.arrowFired = false; // 弓箭手本次攻击是否已射出箭矢
+    this.aggro = false; // 是否正在追踪赵云
 
     // Boss 特殊机制
     this.baseRadius = this.radius;
@@ -34,9 +36,25 @@ export class Enemy {
     this.baseDef = this.def;
     this.sizeScale = 1;
     this.hpRegen = type === 'boss' ? 0.05 : 0;
-    this.hasRevived = false;
+    this.hasRevived = options.skipRevive ? true : false;
     this.reviveTimer = 0;
     this.enraged = false;
+
+    // 增强版曹操（最终阶段）
+    this.enhanced = options.enhanced || false;
+    if (this.enhanced && type === 'boss') {
+      this.name = '曹操·狂暴';
+      this.maxHp = Math.floor(this.maxHp * 1.8);
+      this.hp = this.maxHp;
+      this.baseMaxHp = this.maxHp;
+      this.atk = Math.floor(this.atk * 1.4);
+      this.def = Math.floor(this.def * 1.4);
+      this.baseAtk = this.atk;
+      this.baseDef = this.def;
+      this.sizeScale = 1.4;
+      this.radius = this.baseRadius * this.sizeScale;
+      this.hpRegen = 0.08;
+    }
   }
 
   takeDamage(dmg, isCrit, fromDir, game) {
@@ -124,24 +142,44 @@ export class Enemy {
 
     const p = game.player;
     const dist = vdist(vec(this.x, this.y), vec(p.x, p.y));
-    const aggroRange = this.ranged ? 350 : 250;
 
-    if (dist < aggroRange) {
+    // 追踪判定：进入范围开始追，超出更远的范围才放弃（带滞后，避免来回切换）
+    if (!this.aggro && dist < ENEMY_AGGRO_RANGE) this.aggro = true;
+    if (this.aggro && dist > ENEMY_LOSE_AGGRO_RANGE) this.aggro = false;
+
+    if (this.aggro) {
       this.state = 'chase';
       const dir = vnorm(vsub(vec(p.x, p.y), vec(this.x, this.y)));
       this.dir = Math.atan2(dir.y, dir.x);
+      // 追击速度比正常慢，所有敌人（含Boss）统一使用倍率
+      const chaseSpeed = this.speed * ENEMY_CHASE_SPEED_RATIO;
       if (this.ranged) {
-        if (dist < 150) { this.x -= dir.x * this.speed * dt; this.y -= dir.y * this.speed * dt; }
-        this.shootTimer -= dt;
-        if (this.shootTimer <= 0) {
-          this.shootTimer = this.shootCd;
-          const a = Math.atan2(p.y - this.y, p.x - this.x) + rand(-0.15, 0.15);
-          game.projectiles.push(new Projectile(this.x, this.y, a, 260, this.atk, 'enemy', '#ffaa00', 4, 2.5));
+        if (this.attacking) {
+          // 射箭时站定并持续面向赵云
+          this.dir = Math.atan2(p.y - this.y, p.x - this.x);
+          // 在动画中段（拉满弓时）射出箭矢
+          if (!this.arrowFired && this.attackAnimTimer <= 0.25) {
+            this.arrowFired = true;
+            const a = this.dir + rand(-0.15, 0.15);
+            game.projectiles.push(new Projectile(this.x, this.y, a, 260, this.atk, 'enemy', '#ffaa00', 6, 2.5, arrowImage));
+          }
+        } else {
+          // 攻击前始终面向赵云
+          this.dir = Math.atan2(p.y - this.y, p.x - this.x);
+          if (dist < 150) { this.x -= dir.x * chaseSpeed * dt; this.y -= dir.y * chaseSpeed * dt; }
+          this.shootTimer -= dt;
+          if (this.shootTimer <= 0) {
+            this.shootTimer = this.shootCd;
+            this.attacking = true;
+            this.attackAnimTimer = 0.5;
+            this.arrowFired = false;
+            this.dir = Math.atan2(p.y - this.y, p.x - this.x);
+          }
         }
       } else {
         if (dist > this.radius + p.radius + 10) {
-          this.x += dir.x * this.speed * dt;
-          this.y += dir.y * this.speed * dt;
+          this.x += dir.x * chaseSpeed * dt;
+          this.y += dir.y * chaseSpeed * dt;
         } else if (this.attackCd <= 0) {
           // 曹将和枪兵靠近赵云自动攻击，频率 1 秒 1 次
           this.attackCd = 1.0;
@@ -158,8 +196,8 @@ export class Enemy {
         this.state = Math.random() > 0.3 ? 'wander' : 'idle';
       }
       if (this.state === 'wander') {
-        this.x += Math.cos(this.dir) * this.speed * 0.4 * dt;
-        this.y += Math.sin(this.dir) * this.speed * 0.4 * dt;
+        this.x += Math.cos(this.dir) * this.speed * ENEMY_WANDER_SPEED_RATIO * dt;
+        this.y += Math.sin(this.dir) * this.speed * ENEMY_WANDER_SPEED_RATIO * dt;
       }
     }
     this.x = Math.max(this.radius, Math.min(3000 - this.radius, this.x));
@@ -178,6 +216,7 @@ export class Enemy {
     const isMoving = this.state === 'chase' || this.state === 'wander';
     const spriteMap = {
       soldier: { sliceGetter: getSpearmanSlice, walkGetter: getSpearmanWalkFrame, attackGetter: getSpearmanAttackFrame, drawH: 160, walkScale: 1.10, attackScale: 1.05 },
+      archer: { sliceGetter: getArcherSlice, walkGetter: getArcherWalkFrame, attackGetter: getArcherAttackFrame, drawH: 160, walkScale: 1.10, attackScale: 1.05 },
       cavalry: { sliceGetter: getCavalrySlice, walkGetter: getCavalryWalkFrame, attackGetter: getCavalryAttackFrame, drawH: 180, walkScale: 1.48, attackScale: 1.24 },
       general: { sliceGetter: getGeneralSlice, walkGetter: getGeneralWalkFrame, attackGetter: getGeneralAttackFrame, drawH: 220, walkScale: 1.26, attackScale: 1.22 },
       boss: { sliceGetter: getGeneralSlice, walkGetter: getGeneralWalkFrame, attackGetter: getGeneralAttackFrame, drawH: 300, walkScale: 1.26, attackScale: 1.22 },
@@ -191,8 +230,8 @@ export class Enemy {
       let drawH = sprite.drawH * this.sizeScale;
       let flipX = false;
       const a = this.dir;
-      if (this.type === 'lubu' || this.type === 'cavalry') {
-        // 吕布/骑兵只有向左移动动画，向右时水平翻转
+      if (this.type === 'lubu' || this.type === 'cavalry' || this.type === 'archer') {
+        // 吕布/骑兵/弓箭手只有向左移动动画，向右时水平翻转
         flipX = a >= -Math.PI / 2 && a <= Math.PI / 2;
       } else {
         flipX = a > Math.PI / 2 || a < -Math.PI / 2;
@@ -202,6 +241,10 @@ export class Enemy {
         const frameIndex = Math.min(5, Math.floor(progress * 6));
         img = sprite.attackGetter(frameIndex);
         scale = sprite.attackScale || 1.0;
+        if (this.type === 'archer') {
+          // 弓箭手攻击帧本身是朝右拉弓，向左射击时才需要翻转
+          flipX = a > Math.PI / 2 || a < -Math.PI / 2;
+        }
       } else if (isMoving) {
         const frameIndex = Math.floor(this.walkAnimTimer) % 6;
         img = (this.type === 'lubu' || this.type === 'cavalry') ? sprite.walkGetter(frameIndex) : sprite.walkGetter(this.dir, frameIndex);
@@ -245,15 +288,16 @@ export class Enemy {
     }
 
     if (!this.dead) {
-      ctx.fillStyle = this.type === 'lubu' ? '#ff0000' : this.type === 'boss' ? '#ff44ff' : this.type === 'general' ? '#ff8844' : this.type === 'cavalry' ? '#aaaaaa' : '#bbb';
+      ctx.fillStyle = this.type === 'lubu' ? '#ff0000' : this.type === 'boss' ? (this.enhanced ? '#ff0000' : '#ff44ff') : this.type === 'general' ? '#ff8844' : this.type === 'cavalry' ? '#aaaaaa' : '#bbb';
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 2;
       ctx.font = (this.type === 'boss' || this.type === 'lubu' ? 'bold 13px' : '11px') + ' "Microsoft YaHei"';
       ctx.textAlign = 'center';
       const hasHpBar = this.hp < this.maxHp;
+      const nameText = this.type === 'boss' || this.type === 'lubu' ? this.name : `${this.name} Lv.${this.level}`;
       const nameY = hasHpBar ? spriteTopY - 10 : spriteTopY - 4;
-      ctx.strokeText(this.name, sx, nameY);
-      ctx.fillText(this.name, sx, nameY);
+      ctx.strokeText(nameText, sx, nameY);
+      ctx.fillText(nameText, sx, nameY);
     }
 
     ctx.globalAlpha = 1;

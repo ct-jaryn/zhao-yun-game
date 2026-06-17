@@ -48,14 +48,17 @@
         </div>
       </div>
 
+      <!-- Pause Button -->
+      <button id="pauseBtn" title="暂停 (Esc)">⏸</button>
+
       <!-- Score Panel -->
       <div id="scorePanel">
-        <div class="row"><span class="label">波次</span><span class="value wave" id="waveNum">1</span></div>
+        <div class="row"><span class="label">阶段</span><span class="value wave" id="waveNum">清兵阶段</span></div>
         <div class="row"><span class="label">击杀</span><span class="value" id="killCount">0</span></div>
         <div class="row"><span class="label">连击</span><span class="value combo" id="comboCount">0</span></div>
         <div class="row"><span class="label">得分</span><span class="value" id="score">0</span></div>
         <div class="row"><span class="label">时间</span><span class="value" id="timeDisplay">0:00</span></div>
-        <div class="row wave-countdown"><span class="label">下一波</span><span class="value" id="waveCountdown">—</span></div>
+        <div class="row wave-countdown"><span class="label">目标</span><span class="value" id="waveCountdown">0/20</span></div>
       </div>
 
       <!-- Skill Bar -->
@@ -88,8 +91,17 @@
         <div class="wa-sub" id="waSub"></div>
       </div>
 
+      <!-- Kill Milestone (xx斩) -->
+      <div id="killMilestone">
+        <div class="km-ring"></div>
+        <div class="km-ring km-ring2"></div>
+        <div class="km-text" id="kmText">100斩</div>
+        <div class="km-sub" id="kmSub">一骑当千</div>
+      </div>
+
       <!-- Pickup Hint -->
       <div id="pickupHint">
+        <img class="ph-img" id="phImg" src="" alt="装备">
         <div class="ph-name" id="phName"></div>
         <div class="ph-stats" id="phStats"></div>
         <div class="ph-compare" id="phCompare"></div>
@@ -112,10 +124,21 @@
 
     <!-- Pause Overlay -->
     <div id="pauseOverlay">
-      <h2>⏸ 暂停</h2>
-      <p>按 ESC 继续</p>
-      <div class="pause-actions">
-        <button class="btn small" id="saveBtn">💾 保存存档</button>
+      <div class="pause-card">
+        <div class="pause-icon">⏸</div>
+        <h2>游戏暂停</h2>
+        <p class="pause-hint">按 ESC 继续 · 按 Tab 查看装备</p>
+        <div class="pause-stats">
+          <div class="pause-stat"><span class="pause-label">等级</span><span class="pause-value" id="pauseLevel">1</span></div>
+          <div class="pause-stat"><span class="pause-label">击杀</span><span class="pause-value" id="pauseKills">0</span></div>
+          <div class="pause-stat"><span class="pause-label">得分</span><span class="pause-value" id="pauseScore">0</span></div>
+          <div class="pause-stat"><span class="pause-label">时间</span><span class="pause-value" id="pauseTime">0:00</span></div>
+        </div>
+        <div class="pause-actions">
+          <button class="btn pause-resume" id="resumeBtn">▶ 继续游戏</button>
+          <button class="btn small" id="viewEquipBtn">🎒 查看装备</button>
+          <button class="btn small" id="saveBtn">💾 保存存档</button>
+        </div>
         <span id="saveStatus"></span>
       </div>
     </div>
@@ -123,34 +146,60 @@
     <!-- Start Screen -->
     <div id="startScreen">
       <canvas id="bgParticles"></canvas>
-      <div class="title-wrap">
-        <div class="subtitle">三国</div>
-        <h1>赵云传</h1>
-        <div class="scene-name">— 长坂坡 —</div>
-      </div>
-      <div class="start-layout">
-        <div class="controls">
-          <div class="ctrl-row"><span class="ctrl-key">W A S D</span><span class="ctrl-desc">移动 / 方向</span></div>
-          <div class="ctrl-row"><span class="ctrl-key">🖱️</span><span class="ctrl-desc">按住鼠标瞄准</span></div>
-          <div class="ctrl-row"><span class="ctrl-key">J</span><span class="ctrl-desc">普通攻击</span></div>
-          <div class="ctrl-row"><span class="ctrl-key">K</span><span class="ctrl-desc">枪刃旋风（AOE）</span></div>
-          <div class="ctrl-row"><span class="ctrl-key">L</span><span class="ctrl-desc">突刺（突进）</span></div>
-          <div class="ctrl-row"><span class="ctrl-key">U</span><span class="ctrl-desc">烽火燎原（大范围）</span></div>
-          <div class="ctrl-row"><span class="ctrl-key">I</span><span class="ctrl-desc">龙胆枪绝（终极技）</span></div>
-          <div class="ctrl-row"><span class="ctrl-key">Space</span><span class="ctrl-desc">闪避翻滚（无敌帧）</span></div>
-          <div class="ctrl-row"><span class="ctrl-key">E</span><span class="ctrl-desc">拾取装备</span></div>
-          <div class="ctrl-row"><span class="ctrl-key">Tab</span><span class="ctrl-desc">装备面板</span></div>
-          <div class="ctrl-row"><span class="ctrl-key">Esc</span><span class="ctrl-desc">暂停</span></div>
+      <div class="start-vignette"></div>
+
+      <div class="start-hero">
+        <div class="start-avatar-wrap">
+          <div class="start-avatar-ring"></div>
+          <img class="start-avatar" src="assets/generated/avatar.png" alt="赵云">
         </div>
-        <div class="leaderboard-preview">
-          <h4>🏆 排行榜</h4>
-          <div id="startLeaderboard">加载中…</div>
+        <div class="start-title-block">
+          <div class="start-subtitle">三国 · 幸存者动作游戏</div>
+          <h1>赵云传</h1>
+          <div class="start-scene">— 长坂坡 —</div>
+          <p class="start-tagline">单骑闯曹营，七进七出，唯我常山赵子龙！</p>
         </div>
       </div>
+
+      <div class="start-content">
+        <div class="start-tabs">
+          <button class="start-tab active" data-tab="features">🎮 游戏特色</button>
+          <button class="start-tab" data-tab="controls">⌨️ 操作说明</button>
+          <button class="start-tab" data-tab="leaderboard">🏆 排行榜</button>
+        </div>
+        <div class="start-panel">
+          <div class="start-panel-body active" id="tab-features">
+            <ul class="feature-list">
+              <li><span class="feature-icon">⚔️</span><span>割草式战斗，五技能自由组合</span></li>
+              <li><span class="feature-icon">🐴</span><span>击败20个枪兵引出曹操</span></li>
+              <li><span class="feature-icon">👑</span><span>双 Boss 挑战：狂暴曹操与吕布同时降临</span></li>
+              <li><span class="feature-icon">🎲</span><span>装备掉落、升级奖励、通关结算</span></li>
+            </ul>
+          </div>
+          <div class="start-panel-body" id="tab-controls">
+            <div class="controls-grid">
+              <div class="ctrl-row"><span class="ctrl-key">W A S D</span><span class="ctrl-desc">移动 / 方向</span></div>
+              <div class="ctrl-row"><span class="ctrl-key">J</span><span class="ctrl-desc">普通攻击</span></div>
+              <div class="ctrl-row"><span class="ctrl-key">K</span><span class="ctrl-desc">枪刃旋风（AOE）</span></div>
+              <div class="ctrl-row"><span class="ctrl-key">L</span><span class="ctrl-desc">突刺（突进）</span></div>
+              <div class="ctrl-row"><span class="ctrl-key">U</span><span class="ctrl-desc">烽火燎原（大范围）</span></div>
+              <div class="ctrl-row"><span class="ctrl-key">I</span><span class="ctrl-desc">龙胆枪绝（终极技）</span></div>
+              <div class="ctrl-row"><span class="ctrl-key">Space</span><span class="ctrl-desc">闪避翻滚（无敌帧）</span></div>
+              <div class="ctrl-row"><span class="ctrl-key">Tab</span><span class="ctrl-desc">装备面板</span></div>
+              <div class="ctrl-row"><span class="ctrl-key">Esc</span><span class="ctrl-desc">暂停</span></div>
+            </div>
+          </div>
+          <div class="start-panel-body" id="tab-leaderboard">
+            <div id="startLeaderboard">加载中…</div>
+          </div>
+        </div>
+      </div>
+
       <div class="start-actions">
-        <button class="btn" id="startBtn">开始游戏</button>
-        <button class="btn secondary" id="loadBtn">📂 读取存档</button>
+        <button class="btn start-btn-main" id="startBtn">⚔️ 开始游戏</button>
+        <button class="btn start-btn-secondary" id="loadBtn">📂 读取存档</button>
       </div>
+      <div class="start-footer">赵云传 · 长坂坡 Web 版</div>
     </div>
 
     <!-- Game Over -->
@@ -161,7 +210,7 @@
         <span class="gs-label">最高连击</span><span class="gs-value" id="finalCombo">0</span>
         <span class="gs-label">得分</span><span class="gs-value" id="finalScore">0</span>
         <span class="gs-label">存活</span><span class="gs-value" id="finalTime">0秒</span>
-        <span class="gs-label">到达波次</span><span class="gs-value" id="finalWave">1</span>
+        <span class="gs-label">到达阶段</span><span class="gs-value" id="finalWave">清兵阶段</span>
         <span class="gs-label">等级</span><span class="gs-value" id="finalLevel">1</span>
       </div>
       <div class="submit-score">
@@ -178,13 +227,13 @@
     <!-- Victory Screen -->
     <div id="victoryScreen">
       <h1>🎉 通关大吉</h1>
-      <p class="win-subtitle">曹操二次殒命，长坂坡之围已解！</p>
+      <p class="win-subtitle">曹操与吕布皆殒命，长坂坡之围已解！</p>
       <div class="go-stats">
         <span class="gs-label">击杀</span><span class="gs-value" id="winKills">0</span>
         <span class="gs-label">最高连击</span><span class="gs-value" id="winCombo">0</span>
         <span class="gs-label">得分</span><span class="gs-value" id="winScore">0</span>
         <span class="gs-label">存活</span><span class="gs-value" id="winTime">0秒</span>
-        <span class="gs-label">到达波次</span><span class="gs-value" id="winWave">1</span>
+        <span class="gs-label">到达阶段</span><span class="gs-value" id="winWave">通关</span>
         <span class="gs-label">等级</span><span class="gs-value" id="winLevel">1</span>
       </div>
       <div class="submit-score">

@@ -53,6 +53,35 @@ const CAVALRY_SLICE_PATHS = {
   front_left: 'assets/enemy_cavalry/slices_png/front_left.webp'
 };
 
+const ARCHER_SLICE_PATHS = {
+  front: 'assets/enemy_archer/slices_png/front.webp',
+  front_right: 'assets/enemy_archer/slices_png/front_right.webp',
+  right: 'assets/enemy_archer/slices_png/right.webp',
+  back_right: 'assets/enemy_archer/slices_png/back_right.webp',
+  back: 'assets/enemy_archer/slices_png/back.webp',
+  back_left: 'assets/enemy_archer/slices_png/back_left.webp',
+  left: 'assets/enemy_archer/slices_png/left.webp',
+  front_left: 'assets/enemy_archer/slices_png/front_left.webp'
+};
+
+const ARCHER_WALK_LEFT_FRAMES = [
+  'assets/enemy_archer/walk_left_frames/frames/frame_001.webp',
+  'assets/enemy_archer/walk_left_frames/frames/frame_002.webp',
+  'assets/enemy_archer/walk_left_frames/frames/frame_003.webp',
+  'assets/enemy_archer/walk_left_frames/frames/frame_004.webp',
+  'assets/enemy_archer/walk_left_frames/frames/frame_005.webp',
+  'assets/enemy_archer/walk_left_frames/frames/frame_006.webp'
+];
+
+const ARCHER_ATTACK_FRAMES = [
+  'assets/enemy_archer/attack_frames/frames/frame_001.webp',
+  'assets/enemy_archer/attack_frames/frames/frame_002.webp',
+  'assets/enemy_archer/attack_frames/frames/frame_003.webp',
+  'assets/enemy_archer/attack_frames/frames/frame_004.webp',
+  'assets/enemy_archer/attack_frames/frames/frame_005.webp',
+  'assets/enemy_archer/attack_frames/frames/frame_006.webp'
+];
+
 const SKILL_FRAMES = {
   0: [ // 普攻
     'assets/attack/frames_png/frame_001.png',
@@ -246,15 +275,20 @@ export const lubuAttackFrames = [];
 export const cavalrySlices = {};
 export const cavalryWalkLeftFrames = [];
 export const cavalryAttackFrames = [];
+export const archerSlices = {};
+export const archerWalkLeftFrames = [];
+export const archerAttackFrames = [];
 export const playerUltimateFrames = [];
 export const playerWalkFrames = [];
 
 const BACKGROUND_IMAGE = 'assets/generated/background.png';
+const ARROW_IMAGE = 'assets/generated/arrow.png';
 
 export const backgroundImage = new Image();
+export const arrowImage = new Image();
 
 let loadedCount = 0;
-let totalCount = Object.keys(SLICE_PATHS).length + Object.keys(SPEARMAN_SLICE_PATHS).length + Object.keys(GENERAL_SLICE_PATHS).length + Object.keys(LUBU_SLICE_PATHS).length + Object.keys(CAVALRY_SLICE_PATHS).length + 1; // +1 for background
+let totalCount = Object.keys(SLICE_PATHS).length + Object.keys(SPEARMAN_SLICE_PATHS).length + Object.keys(GENERAL_SLICE_PATHS).length + Object.keys(LUBU_SLICE_PATHS).length + Object.keys(CAVALRY_SLICE_PATHS).length + Object.keys(ARCHER_SLICE_PATHS).length + 2; // +2 for background & arrow
 for (const frames of Object.values(SKILL_FRAMES)) totalCount += frames.length;
 totalCount += DODGE_FRAMES.length;
 totalCount += HURT_FRAMES.length;
@@ -265,6 +299,7 @@ totalCount += SPEARMAN_WALK_RIGHT_FRAMES.length + SPEARMAN_WALK_DOWN_FRAMES.leng
 totalCount += SPEARMAN_ATTACK_FRAMES.length;
 totalCount += LUBU_WALK_LEFT_FRAMES.length + LUBU_SKILL_FRAMES.length + LUBU_ATTACK_FRAMES.length;
 totalCount += CAVALRY_WALK_LEFT_FRAMES.length + CAVALRY_ATTACK_FRAMES.length;
+totalCount += ARCHER_WALK_LEFT_FRAMES.length + ARCHER_ATTACK_FRAMES.length;
 totalCount += PLAYER_ULTIMATE_FRAMES.length;
 totalCount += PLAYER_WALK_FRAMES.length;
 let onLoadCallback = null;
@@ -287,6 +322,10 @@ export function loadPlayerAssets(callback) {
   backgroundImage.onload = onImageLoad;
   backgroundImage.onerror = () => onImageError(BACKGROUND_IMAGE);
   backgroundImage.src = BACKGROUND_IMAGE;
+
+  arrowImage.onload = onImageLoad;
+  arrowImage.onerror = () => onImageError(ARROW_IMAGE);
+  arrowImage.src = ARROW_IMAGE;
 
   for (const [dir, path] of Object.entries(SLICE_PATHS)) {
     const img = new Image();
@@ -366,6 +405,30 @@ export function loadPlayerAssets(callback) {
     img.onerror = () => onImageError(path);
     img.src = path;
     cavalryAttackFrames.push(img);
+  }
+
+  for (const [dir, path] of Object.entries(ARCHER_SLICE_PATHS)) {
+    const img = new Image();
+    img.onload = onImageLoad;
+    img.onerror = () => onImageError(path);
+    img.src = path;
+    archerSlices[dir] = img;
+  }
+
+  for (const path of ARCHER_WALK_LEFT_FRAMES) {
+    const img = new Image();
+    img.onload = onImageLoad;
+    img.onerror = () => onImageError(path);
+    img.src = path;
+    archerWalkLeftFrames.push(img);
+  }
+
+  for (const path of ARCHER_ATTACK_FRAMES) {
+    const img = new Image();
+    img.onload = onImageLoad;
+    img.onerror = () => onImageError(path);
+    img.src = path;
+    archerAttackFrames.push(img);
   }
 
   for (const [skillIdx, frames] of Object.entries(SKILL_FRAMES)) {
@@ -574,6 +637,20 @@ export function getLubuAttackFrame(frameIndex) {
 
 export function getCavalrySlice(dir) {
   return cavalrySlices[resolveSliceDir(dir)];
+}
+
+export function getArcherSlice(dir) {
+  return archerSlices[resolveSliceDir(dir)];
+}
+
+export function getArcherWalkFrame(frameIndex) {
+  if (!archerWalkLeftFrames || archerWalkLeftFrames.length === 0) return null;
+  return archerWalkLeftFrames[frameIndex % archerWalkLeftFrames.length];
+}
+
+export function getArcherAttackFrame(frameIndex) {
+  if (!archerAttackFrames || archerAttackFrames.length === 0) return null;
+  return archerAttackFrames[frameIndex % archerAttackFrames.length];
 }
 
 export function getCavalryWalkFrame(frameIndex) {

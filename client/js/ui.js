@@ -1,5 +1,11 @@
-import { SKILLS, EQUIP_TYPES, EQUIP_ICONS } from './config.js';
+import { SKILLS, EQUIP_TYPES, EQUIP_ICONS, EQUIP_TYPE_TIER_IMAGES } from './config.js';
 import { equipStatText } from './entities/player.js';
+
+function equipImageUrl(eq) {
+  if (!eq) return '';
+  const list = EQUIP_TYPE_TIER_IMAGES[eq.type];
+  return list && list[eq.tier] ? list[eq.tier] : '';
+}
 
 export class UI {
   constructor(game) {
@@ -50,7 +56,7 @@ export class UI {
     document.getElementById('statCrit').textContent = p.crit;
     document.getElementById('statSpd').textContent = Math.round(p.speedTotal);
 
-    document.getElementById('waveNum').textContent = this.game.wave;
+    document.getElementById('waveNum').textContent = this.game.getPhaseName();
     document.getElementById('killCount').textContent = this.game.totalKills;
     document.getElementById('comboCount').textContent = p.combo;
     document.getElementById('score').textContent = Math.floor(this.game.score);
@@ -58,12 +64,28 @@ export class UI {
     const secs = Math.floor(this.game.gameTime % 60);
     document.getElementById('timeDisplay').textContent = `${mins}:${secs.toString().padStart(2,'0')}`;
 
+    // 暂停面板统计
+    document.getElementById('pauseLevel').textContent = p.level;
+    document.getElementById('pauseKills').textContent = this.game.totalKills;
+    document.getElementById('pauseScore').textContent = Math.floor(this.game.score);
+    document.getElementById('pauseTime').textContent = `${mins}:${secs.toString().padStart(2,'0')}`;
+
     const wc = document.getElementById('waveCountdown');
     const wrow = wc.parentElement;
-    if (this.game.enemies.filter(e => !e.dead).length === 0 && this.game.waveTimer > 0) {
-      wc.textContent = this.game.waveTimer.toFixed(1) + 's';
+    const phase = this.game.phase;
+    if (phase === 'soldiers') {
+      wc.textContent = `${this.game.soldierKills}/${this.game.soldiersRequired}`;
+      wrow.classList.add('active');
+    } else if (phase === 'caocao') {
+      wc.textContent = '击败曹操';
+      wrow.classList.add('active');
+    } else if (phase === 'final') {
+      const enhancedAlive = this.game.enemies.some(e => e.type === 'boss' && e.enhanced && !e.dead);
+      const lubuAlive = this.game.enemies.some(e => e.type === 'lubu' && !e.dead);
+      wc.textContent = `狂暴曹${enhancedAlive ? '●' : '○'} 吕布${lubuAlive ? '●' : '○'}`;
       wrow.classList.add('active');
     } else {
+      wc.textContent = '—';
       wrow.classList.remove('active');
     }
 
@@ -136,7 +158,11 @@ export class UI {
     const d = this.game.nearestDrop;
     if (d) {
       const eq = d.equip;
+      // 拾取提示按装备部位与阶数显示对应配图
+      const imgUrl = equipImageUrl(eq);
       phEl.style.display = 'block';
+      document.getElementById('phImg').src = imgUrl;
+      document.getElementById('phImg').style.display = imgUrl ? 'block' : 'none';
       document.getElementById('phName').innerHTML = `<span style="color:${eq.quality.color}">[${eq.quality.name}] ${eq.name}</span>`;
       document.getElementById('phStats').textContent = `${EQUIP_ICONS[eq.type]} ${eq.type} · ${equipStatText(eq)}`;
       const old = this.game.player.equip[eq.type];
@@ -160,8 +186,10 @@ export class UI {
     grid.innerHTML = EQUIP_TYPES.map(type => {
       const eq = p.equip[type];
       if (eq) {
+        // 各部位按阶数显示对应配图
+        const iconHtml = `<img class="slot-icon-img" src="${equipImageUrl(eq)}" alt="${type}" title="${type}">`;
         return `<div class="equip-slot">
-          <span class="slot-icon">${EQUIP_ICONS[type]}</span>
+          ${iconHtml}
           <div class="slot-info">
             <div class="slot-name" style="color:${eq.quality.color}">${eq.name}</div>
             <div class="slot-type">${type} · ${eq.quality.name}</div>

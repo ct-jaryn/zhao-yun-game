@@ -56,6 +56,23 @@ document.getElementById('loadBtn').addEventListener('click', () => startGame(tru
 document.getElementById('restartBtn').addEventListener('click', () => startGame(false));
 document.getElementById('restartBtn2').addEventListener('click', () => startGame(false));
 
+// 开始界面选项卡切换
+function initStartTabs() {
+  const tabs = document.querySelectorAll('.start-tab');
+  const bodies = document.querySelectorAll('.start-panel-body');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      tabs.forEach(t => t.classList.remove('active'));
+      bodies.forEach(b => b.classList.remove('active'));
+      tab.classList.add('active');
+      const body = document.getElementById(`tab-${target}`);
+      if (body) body.classList.add('active');
+    });
+  });
+}
+initStartTabs();
+
 document.getElementById('saveBtn').addEventListener('click', async () => {
   if (!game || !game.running) return;
   const status = document.getElementById('saveStatus');
@@ -64,15 +81,37 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   setTimeout(() => status.textContent = '', 2000);
 });
 
+function togglePause() {
+  if (!game || !game.running || game.levelUpOpen) return;
+  game.paused = !game.paused;
+  document.getElementById('pauseOverlay').style.display = game.paused ? 'flex' : 'none';
+  // 继续游戏时自动关闭装备面板
+  if (!game.paused && game.equipPanelOpen) {
+    game.equipPanelOpen = false;
+    document.getElementById('equipPanel').style.display = 'none';
+  }
+}
+
+document.getElementById('pauseBtn').addEventListener('click', togglePause);
+document.getElementById('resumeBtn').addEventListener('click', togglePause);
+
+document.getElementById('viewEquipBtn').addEventListener('click', () => {
+  if (!game || !game.running || game.levelUpOpen) return;
+  game.equipPanelOpen = true;
+  document.getElementById('equipPanel').style.display = 'block';
+  game.ui.updateEquipPanel();
+});
+
 document.getElementById('submitScoreBtn').addEventListener('click', async () => {
   if (!game) return;
   const nameInput = document.getElementById('playerName');
   const name = nameInput.value.trim() || '无名英雄';
+  const phaseCode = { soldiers: 1, caocao: 2, final: 3, victory: 4 }[game.phase] || 1;
   await submitScore({
     name,
     score: Math.floor(game.score),
     kills: game.totalKills,
-    wave: game.wave,
+    wave: phaseCode,
     level: game.player.level,
     time: Math.floor(game.gameTime)
   });
@@ -84,11 +123,12 @@ document.getElementById('submitWinScoreBtn').addEventListener('click', async () 
   if (!game) return;
   const nameInput = document.getElementById('winPlayerName');
   const name = nameInput.value.trim() || '无名英雄';
+  const phaseCode = { soldiers: 1, caocao: 2, final: 3, victory: 4 }[game.phase] || 1;
   await submitScore({
     name,
     score: Math.floor(game.score),
     kills: game.totalKills,
-    wave: game.wave,
+    wave: phaseCode,
     level: game.player.level,
     time: Math.floor(game.gameTime)
   });

@@ -1,37 +1,65 @@
-import { MAP_W, MAP_H, SKILLS, EQUIP_TYPES, EQUIP_NAMES, EQUIP_ICONS, QUALITY, REWARD_TYPES } from '../config.js';
+import { MAP_W, MAP_H, SKILLS, EQUIP_TYPES, EQUIP_ICONS, QUALITY, REWARD_TYPES, ZHAO_YUN_EQUIP_TIERS } from '../config.js';
 import { rand, vdist, vnorm, vec, pick, clamp, angleDiff } from '../utils.js';
 import { getPlayerSlice, getPlayerSkillFrame, getPlayerDodgeFrame, getPlayerHurtFrame, getPlayerDeathFrame, getPlayerWalkFrame, getPlayerUltimateFrame } from '../assets.js';
 import { Projectile } from './projectile.js';
 
+export function getEquipTier(level) {
+  // 所有阶数的装备都可能随机爆出，概率随等级提升向高阶偏移；可重复爆出
+  const weights = [
+    Math.max(0.10, 0.60 - level * 0.03), // 初始套：随等级降低
+    Math.min(0.45, 0.25 + level * 0.01), // 前期套
+    Math.min(0.35, 0.08 + level * 0.015), // 中期套
+    Math.min(0.30, 0.04 + level * 0.015), // 后期套
+    Math.min(0.45, 0.01 + level * 0.02)  // 最终最强套：随等级升高
+  ];
+  const total = weights.reduce((a, b) => a + b, 0);
+  const roll = Math.random() * total;
+  let cumulative = 0;
+  for (let i = 0; i < weights.length; i++) {
+    cumulative += weights[i];
+    if (roll < cumulative) return i;
+  }
+  return 0;
+}
+
 export function genEquip(level) {
   const type = pick(EQUIP_TYPES);
-  const name = pick(EQUIP_NAMES[type]);
+  const tier = getEquipTier(level);
+  const tierData = ZHAO_YUN_EQUIP_TIERS[tier][type];
+
+  // 品质随等级有更高概率出现好品质
   const qRoll = Math.random();
   let qi = 0;
-  if (qRoll < 0.02) qi = 4;
-  else if (qRoll < 0.08) qi = 3;
-  else if (qRoll < 0.25) qi = 2;
-  else if (qRoll < 0.55) qi = 1;
+  const legendary = Math.min(0.25, 0.02 + level * 0.008);
+  const epic = Math.min(0.45, 0.08 + level * 0.015);
+  const rare = Math.min(0.7, 0.25 + level * 0.02);
+  const fine = Math.min(0.9, 0.55 + level * 0.015);
+  if (qRoll < legendary) qi = 4;
+  else if (qRoll < epic) qi = 3;
+  else if (qRoll < rare) qi = 2;
+  else if (qRoll < fine) qi = 1;
   const q = QUALITY[qi];
-  const base = level * 2 + 5;
+
+  // 在套装基础数值上加入品质倍率和随机浮动
   const stats = {};
-  if (type === '武器') {
-    stats.atk = Math.floor(base * q.mult * rand(0.8, 1.2));
-    if (qi >= 2) stats.crit = Math.floor(rand(3, 8) * q.mult);
-  } else if (type === '铠甲') {
-    stats.def = Math.floor(base * q.mult * rand(0.8, 1.2));
-    stats.hp = Math.floor(base * 3 * q.mult * rand(0.8, 1.2));
-  } else if (type === '头盔') {
-    stats.def = Math.floor(base * 0.5 * q.mult * rand(0.8, 1.2));
-    stats.hp = Math.floor(base * 2 * q.mult * rand(0.8, 1.2));
-  } else if (type === '靴子') {
-    stats.spd = Math.floor(rand(1, 3) * q.mult);
-    stats.def = Math.floor(base * 0.3 * q.mult);
-  } else {
-    stats.hp = Math.floor(base * 2 * q.mult * rand(0.8, 1.2));
-    stats.mp = Math.floor(base * q.mult * rand(0.8, 1.2));
+  for (const [k, v] of Object.entries(tierData.stats)) {
+    stats[k] = Math.floor(v * q.mult * rand(0.85, 1.15));
   }
-  return { type, name, quality: q, stats, level };
+  return { type, name: tierData.name, quality: q, stats, level, tier };
+}
+
+export function createInitialEquip() {
+  // 赵云出门一套：布衣、木枪等
+  const equip = {};
+  const tierData = ZHAO_YUN_EQUIP_TIERS[0];
+  for (const type of EQUIP_TYPES) {
+    const stats = {};
+    for (const [k, v] of Object.entries(tierData[type].stats)) {
+      stats[k] = Math.floor(v * QUALITY[0].mult);
+    }
+    equip[type] = { type, name: tierData[type].name, quality: QUALITY[0], stats, level: 1, tier: 0 };
+  }
+  return equip;
 }
 
 export function equipStatText(eq) {
@@ -53,7 +81,8 @@ export class Player {
     this.maxHp = 150; this.hp = 150;
     this.maxMp = 80; this.mp = 80;
     this.baseAtk = 20; this.baseDef = 8; this.critRate = 5; this.mpRegen = 3;
-    this.equip = { '武器': null, '铠甲': null, '头盔': null, '靴子': null, '饰品': null };
+    // 默认装备一套初始装备（布衣、木枪等）
+    this.equip = createInitialEquip();
     this.skillCd = [0, 0, 0, 0, 0];
     this.attacking = false; this.attackTimer = 0; this.attackAnim = 0; this.currentSkill = 0;
     this.dodging = false; this.dodgeTimer = 0; this.dodgeDir = 0; this.dodgeCd = 0;
@@ -425,14 +454,19 @@ export class Player {
     if (img && img.complete && img.naturalWidth > 0) {
       const drawH = 192 * scale;
       const drawW = drawH * (img.naturalWidth / img.naturalHeight);
+      // 站立切片脚下留白较多，向下偏移让脚底贴合阴影；移动帧也微调
+      let spriteYOffset = 0;
+      if (idle) spriteYOffset = 24;
+      else if (canWalk) spriteYOffset = 8;
+      const drawY = sy - drawH * 0.78 + spriteYOffset;
       if (flipX) {
         ctx.save();
         ctx.translate(sx, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(img, -drawW / 2, sy - drawH * 0.78, drawW, drawH);
+        ctx.drawImage(img, -drawW / 2, drawY, drawW, drawH);
         ctx.restore();
       } else {
-        ctx.drawImage(img, sx - drawW / 2, sy - drawH * 0.78, drawW, drawH);
+        ctx.drawImage(img, sx - drawW / 2, drawY, drawW, drawH);
       }
     } else {
       // Fallback circle avatar
