@@ -200,7 +200,7 @@ export class Enemy {
         const progress = Math.max(0, Math.min(1, 1 - this.attackAnimTimer / 0.5));
         const frameIndex = Math.min(5, Math.floor(progress * 6));
         img = sprite.attackGetter(frameIndex);
-        drawH = sprite.drawH * this.sizeScale + 10;
+        drawH = sprite.drawH * this.sizeScale;
       } else if (isMoving) {
         const frameIndex = Math.floor(this.walkAnimTimer) % 6;
         img = (this.type === 'lubu' || this.type === 'cavalry') ? sprite.walkGetter(frameIndex) : sprite.walkGetter(this.dir, frameIndex);
