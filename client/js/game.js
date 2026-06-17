@@ -78,8 +78,8 @@ export class Game {
   }
 
   pickEnemyType() {
-    // 骑兵比例随波次递增：第1波5%，第5波55%，第10波起100%全是骑兵
-    const cavRate = Math.min(1, 0.05 + this.wave * 0.1);
+    // 骑兵比例随游戏时间递增：开局5%，20分钟(1200秒)时80%，之后逐渐全骑兵
+    const cavRate = Math.min(1, 0.05 + (this.gameTime / 1200) * 0.75);
     if (Math.random() < cavRate) return 'cavalry';
     const roll = Math.random();
     if (this.wave >= 5 && roll < 0.2) return 'general';
