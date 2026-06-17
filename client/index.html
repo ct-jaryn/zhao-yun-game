@@ -48,17 +48,35 @@
         </div>
       </div>
 
-      <!-- Pause Button -->
-      <button id="pauseBtn" title="暂停 (Esc)">⏸</button>
+      <!-- Right HUD Panel -->
+      <div id="rightPanel">
+        <!-- Pause Button -->
+        <button id="pauseBtn" title="暂停 (Esc)">⏸</button>
 
-      <!-- Score Panel -->
-      <div id="scorePanel">
-        <div class="row"><span class="label">阶段</span><span class="value wave" id="waveNum">清兵阶段</span></div>
-        <div class="row"><span class="label">击杀</span><span class="value" id="killCount">0</span></div>
-        <div class="row"><span class="label">连击</span><span class="value combo" id="comboCount">0</span></div>
-        <div class="row"><span class="label">得分</span><span class="value" id="score">0</span></div>
-        <div class="row"><span class="label">时间</span><span class="value" id="timeDisplay">0:00</span></div>
-        <div class="row wave-countdown"><span class="label">目标</span><span class="value" id="waveCountdown">0/20</span></div>
+        <!-- Score Panel -->
+        <div id="scorePanel">
+          <div class="row"><span class="label">阶段</span><span class="value wave" id="waveNum">清兵阶段</span></div>
+          <div class="row"><span class="label">击杀</span><span class="value" id="killCount">0</span></div>
+          <div class="row"><span class="label">连击</span><span class="value combo" id="comboCount">0</span></div>
+          <div class="row"><span class="label">得分</span><span class="value" id="score">0</span></div>
+          <div class="row"><span class="label">时间</span><span class="value" id="timeDisplay">0:00</span></div>
+          <div class="row wave-countdown"><span class="label">目标</span><span class="value" id="waveCountdown">0/20</span></div>
+        </div>
+
+        <!-- Kill Log -->
+        <div id="killLog"></div>
+
+        <!-- Equipment Sidebar -->
+        <div id="equipSidebar">
+          <div class="es-title">🎒 装备</div>
+          <div class="es-list" id="esList"></div>
+        </div>
+
+        <!-- Minimap -->
+        <div id="minimapWrap">
+          <canvas id="minimap" width="140" height="110"></canvas>
+          <span id="minimapLabel">长坂坡</span>
+        </div>
       </div>
 
       <!-- Skill Bar -->
@@ -69,21 +87,6 @@
         <div class="dodge-icon ready" id="dodgeIcon"><span>💨</span></div>
         <span>闪避<kbd>Space</kbd></span>
       </div>
-
-      <!-- Minimap -->
-      <div id="minimapWrap">
-        <canvas id="minimap" width="140" height="110"></canvas>
-        <span id="minimapLabel">长坂坡</span>
-      </div>
-
-      <!-- Equipment Sidebar -->
-      <div id="equipSidebar">
-        <div class="es-title">🎒 装备</div>
-        <div class="es-list" id="esList"></div>
-      </div>
-
-      <!-- Kill Log -->
-      <div id="killLog"></div>
 
       <!-- Combo Display -->
       <div id="comboDisplay">
