@@ -1,6 +1,6 @@
 import { ENEMY_TYPES } from '../config.js';
 import { rand, randInt, vdist, vsub, vnorm, vec, pick } from '../utils.js';
-import { getSpearmanSlice, getGeneralSlice, getGeneralAttackFrame, getGeneralWalkFrame, getSpearmanWalkFrame, getSpearmanAttackFrame, getLubuSlice, getLubuWalkFrame, getLubuAttackFrame, getLubuSkillFrame } from '../assets.js';
+import { getSpearmanSlice, getGeneralSlice, getGeneralAttackFrame, getGeneralWalkFrame, getSpearmanWalkFrame, getSpearmanAttackFrame, getLubuSlice, getLubuWalkFrame, getLubuAttackFrame, getLubuSkillFrame, getCavalrySlice, getCavalryWalkFrame, getCavalryAttackFrame } from '../assets.js';
 import { Projectile } from './projectile.js';
 
 export class Enemy {
@@ -178,6 +178,7 @@ export class Enemy {
     const isMoving = this.state === 'chase' || this.state === 'wander';
     const spriteMap = {
       soldier: { sliceGetter: getSpearmanSlice, walkGetter: getSpearmanWalkFrame, attackGetter: getSpearmanAttackFrame, drawH: 160 },
+      cavalry: { sliceGetter: getCavalrySlice, walkGetter: getCavalryWalkFrame, attackGetter: getCavalryAttackFrame, drawH: 180 },
       general: { sliceGetter: getGeneralSlice, walkGetter: getGeneralWalkFrame, attackGetter: getGeneralAttackFrame, drawH: 220 },
       boss: { sliceGetter: getGeneralSlice, walkGetter: getGeneralWalkFrame, attackGetter: getGeneralAttackFrame, drawH: 300 },
       lubu: { sliceGetter: getLubuSlice, walkGetter: getLubuWalkFrame, attackGetter: getLubuAttackFrame, skillGetter: getLubuSkillFrame, drawH: 360 }
@@ -189,8 +190,8 @@ export class Enemy {
       let drawH = sprite.drawH * this.sizeScale;
       let flipX = false;
       const a = this.dir;
-      if (this.type === 'lubu') {
-        // 吕布只有向左移动动画，向右时水平翻转
+      if (this.type === 'lubu' || this.type === 'cavalry') {
+        // 吕布/骑兵只有向左移动动画，向右时水平翻转
         flipX = a >= -Math.PI / 2 && a <= Math.PI / 2;
       } else {
         flipX = a > Math.PI / 2 || a < -Math.PI / 2;
@@ -202,7 +203,7 @@ export class Enemy {
         drawH = sprite.drawH * this.sizeScale + 10;
       } else if (isMoving) {
         const frameIndex = Math.floor(this.walkAnimTimer) % 6;
-        img = this.type === 'lubu' ? sprite.walkGetter(frameIndex) : sprite.walkGetter(this.dir, frameIndex);
+        img = (this.type === 'lubu' || this.type === 'cavalry') ? sprite.walkGetter(frameIndex) : sprite.walkGetter(this.dir, frameIndex);
       }
       if (!img || !img.complete || img.naturalWidth <= 0) {
         img = sprite.sliceGetter(this.dir);
@@ -240,7 +241,7 @@ export class Enemy {
     }
 
     if (!this.dead) {
-      ctx.fillStyle = this.type === 'lubu' ? '#ff0000' : this.type === 'boss' ? '#ff44ff' : this.type === 'general' ? '#ff8844' : '#bbb';
+      ctx.fillStyle = this.type === 'lubu' ? '#ff0000' : this.type === 'boss' ? '#ff44ff' : this.type === 'general' ? '#ff8844' : this.type === 'cavalry' ? '#aaaaaa' : '#bbb';
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 2;
       ctx.font = (this.type === 'boss' || this.type === 'lubu' ? 'bold 13px' : '11px') + ' "Microsoft YaHei"';

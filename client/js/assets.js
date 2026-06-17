@@ -42,6 +42,17 @@ const LUBU_SLICE_PATHS = {
   front_left: 'assets/enemy_lubu/slices_png/front_left.webp'
 };
 
+const CAVALRY_SLICE_PATHS = {
+  front: 'assets/enemy_cavalry/slices_png/front.webp',
+  front_right: 'assets/enemy_cavalry/slices_png/front_right.webp',
+  right: 'assets/enemy_cavalry/slices_png/right.webp',
+  back_right: 'assets/enemy_cavalry/slices_png/back_right.webp',
+  back: 'assets/enemy_cavalry/slices_png/back.webp',
+  back_left: 'assets/enemy_cavalry/slices_png/back_left.webp',
+  left: 'assets/enemy_cavalry/slices_png/left.webp',
+  front_left: 'assets/enemy_cavalry/slices_png/front_left.webp'
+};
+
 const SKILL_FRAMES = {
   0: [ // 普攻
     'assets/attack/frames_png/frame_001.png',
@@ -177,6 +188,24 @@ const LUBU_ATTACK_FRAMES = [
   'assets/enemy_lubu/attack_frames/frames/frame_006.webp'
 ];
 
+const CAVALRY_WALK_LEFT_FRAMES = [
+  'assets/enemy_cavalry/walk_left_frames/frames/frame_001.webp',
+  'assets/enemy_cavalry/walk_left_frames/frames/frame_002.webp',
+  'assets/enemy_cavalry/walk_left_frames/frames/frame_003.webp',
+  'assets/enemy_cavalry/walk_left_frames/frames/frame_004.webp',
+  'assets/enemy_cavalry/walk_left_frames/frames/frame_005.webp',
+  'assets/enemy_cavalry/walk_left_frames/frames/frame_006.webp'
+];
+
+const CAVALRY_ATTACK_FRAMES = [
+  'assets/enemy_cavalry/attack_frames/frames/frame_001.webp',
+  'assets/enemy_cavalry/attack_frames/frames/frame_002.webp',
+  'assets/enemy_cavalry/attack_frames/frames/frame_003.webp',
+  'assets/enemy_cavalry/attack_frames/frames/frame_004.webp',
+  'assets/enemy_cavalry/attack_frames/frames/frame_005.webp',
+  'assets/enemy_cavalry/attack_frames/frames/frame_006.webp'
+];
+
 const PLAYER_ULTIMATE_FRAMES = [
   'assets/player_ultimate/frames/frame_001.webp',
   'assets/player_ultimate/frames/frame_002.webp',
@@ -214,6 +243,9 @@ export const lubuSlices = {};
 export const lubuWalkLeftFrames = [];
 export const lubuSkillFrames = [];
 export const lubuAttackFrames = [];
+export const cavalrySlices = {};
+export const cavalryWalkLeftFrames = [];
+export const cavalryAttackFrames = [];
 export const playerUltimateFrames = [];
 export const playerWalkFrames = [];
 
@@ -222,7 +254,7 @@ const BACKGROUND_IMAGE = 'assets/background.png';
 export const backgroundImage = new Image();
 
 let loadedCount = 0;
-let totalCount = Object.keys(SLICE_PATHS).length + Object.keys(SPEARMAN_SLICE_PATHS).length + Object.keys(GENERAL_SLICE_PATHS).length + Object.keys(LUBU_SLICE_PATHS).length + 1; // +1 for background
+let totalCount = Object.keys(SLICE_PATHS).length + Object.keys(SPEARMAN_SLICE_PATHS).length + Object.keys(GENERAL_SLICE_PATHS).length + Object.keys(LUBU_SLICE_PATHS).length + Object.keys(CAVALRY_SLICE_PATHS).length + 1; // +1 for background
 for (const frames of Object.values(SKILL_FRAMES)) totalCount += frames.length;
 totalCount += DODGE_FRAMES.length;
 totalCount += HURT_FRAMES.length;
@@ -232,6 +264,7 @@ totalCount += GENERAL_WALK_RIGHT_FRAMES.length + GENERAL_WALK_DOWN_FRAMES.length
 totalCount += SPEARMAN_WALK_RIGHT_FRAMES.length + SPEARMAN_WALK_DOWN_FRAMES.length + SPEARMAN_WALK_UP_FRAMES.length;
 totalCount += SPEARMAN_ATTACK_FRAMES.length;
 totalCount += LUBU_WALK_LEFT_FRAMES.length + LUBU_SKILL_FRAMES.length + LUBU_ATTACK_FRAMES.length;
+totalCount += CAVALRY_WALK_LEFT_FRAMES.length + CAVALRY_ATTACK_FRAMES.length;
 totalCount += PLAYER_ULTIMATE_FRAMES.length;
 totalCount += PLAYER_WALK_FRAMES.length;
 let onLoadCallback = null;
@@ -309,6 +342,30 @@ export function loadPlayerAssets(callback) {
     img.onerror = () => onImageError(path);
     img.src = path;
     lubuAttackFrames.push(img);
+  }
+
+  for (const [dir, path] of Object.entries(CAVALRY_SLICE_PATHS)) {
+    const img = new Image();
+    img.onload = onImageLoad;
+    img.onerror = () => onImageError(path);
+    img.src = path;
+    cavalrySlices[dir] = img;
+  }
+
+  for (const path of CAVALRY_WALK_LEFT_FRAMES) {
+    const img = new Image();
+    img.onload = onImageLoad;
+    img.onerror = () => onImageError(path);
+    img.src = path;
+    cavalryWalkLeftFrames.push(img);
+  }
+
+  for (const path of CAVALRY_ATTACK_FRAMES) {
+    const img = new Image();
+    img.onload = onImageLoad;
+    img.onerror = () => onImageError(path);
+    img.src = path;
+    cavalryAttackFrames.push(img);
   }
 
   for (const [skillIdx, frames] of Object.entries(SKILL_FRAMES)) {
@@ -513,6 +570,20 @@ export function getLubuSkillFrame(frameIndex) {
 export function getLubuAttackFrame(frameIndex) {
   if (!lubuAttackFrames || lubuAttackFrames.length === 0) return null;
   return lubuAttackFrames[frameIndex % lubuAttackFrames.length];
+}
+
+export function getCavalrySlice(dir) {
+  return cavalrySlices[resolveSliceDir(dir)];
+}
+
+export function getCavalryWalkFrame(frameIndex) {
+  if (!cavalryWalkLeftFrames || cavalryWalkLeftFrames.length === 0) return null;
+  return cavalryWalkLeftFrames[frameIndex % cavalryWalkLeftFrames.length];
+}
+
+export function getCavalryAttackFrame(frameIndex) {
+  if (!cavalryAttackFrames || cavalryAttackFrames.length === 0) return null;
+  return cavalryAttackFrames[frameIndex % cavalryAttackFrames.length];
 }
 
 export function getPlayerWalkFrame(frameIndex) {
