@@ -15,9 +15,10 @@ export class UI {
       slot.className = 'skill-slot ready';
       slot.id = `skill${i}`;
       slot.dataset.idx = i;
+      const iconNames = ['skill_normal', 'skill_whirlwind', 'skill_dash', 'skill_fire', 'skill_ultimate'];
       slot.innerHTML = `
         <span class="key">${sk.key}</span>
-        <span class="icon">${sk.icon}</span>
+        <img class="icon" src="assets/generated/${iconNames[i]}.png" alt="${sk.name}">
         <span class="sname">${sk.name}</span>
         <canvas class="cd-ring" width="52" height="58"></canvas>
         <span class="mp-cost">${sk.mp}</span>

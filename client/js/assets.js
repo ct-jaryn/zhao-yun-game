@@ -249,7 +249,7 @@ export const cavalryAttackFrames = [];
 export const playerUltimateFrames = [];
 export const playerWalkFrames = [];
 
-const BACKGROUND_IMAGE = 'assets/background.png';
+const BACKGROUND_IMAGE = 'assets/generated/background.png';
 
 export const backgroundImage = new Image();
 
