@@ -1,27 +1,28 @@
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
+// 后端服务已禁用，当前为纯静态发布版本
+// const express = require('express');
+// const path = require('path');
+// const fs = require('fs');
 
-const leaderboardRouter = require('./routes/leaderboard');
-const savesRouter = require('./routes/saves');
+// const leaderboardRouter = require('./routes/leaderboard');
+// const savesRouter = require('./routes/saves');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const CLIENT_DIR = path.join(__dirname, '..', 'client');
-const DATA_DIR = path.join(__dirname, 'data');
+// const app = express();
+// const PORT = process.env.PORT || 3000;
+// const CLIENT_DIR = path.join(__dirname, '..', 'client');
+// const DATA_DIR = path.join(__dirname, 'data');
 
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+// if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-app.use(express.json({ limit: '1mb' }));
-app.use(express.static(CLIENT_DIR));
+// app.use(express.json({ limit: '1mb' }));
+// app.use(express.static(CLIENT_DIR));
 
-app.use('/api/leaderboard', leaderboardRouter);
-app.use('/api/saves', savesRouter);
+// app.use('/api/leaderboard', leaderboardRouter);
+// app.use('/api/saves', savesRouter);
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(CLIENT_DIR, 'index.html'));
-});
+// app.get('/', (req, res) => {
+//   res.sendFile(path.join(CLIENT_DIR, 'index.html'));
+// });
 
-app.listen(PORT, () => {
-  console.log(`🎮 赵云传服务端已启动: http://localhost:${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`🎮 赵云传服务端已启动: http://localhost:${PORT}`);
+// });

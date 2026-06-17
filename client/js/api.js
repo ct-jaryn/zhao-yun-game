@@ -1,32 +1,22 @@
 const API_BASE = '/api';
 
 async function request(url, options = {}) {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options
-  });
-  const data = await res.json().catch(() => ({}));
-  return { ok: res.ok, status: res.status, ...data };
+  // 后端已禁用，直接返回空结果
+  return { ok: false, status: 0, data: null };
 }
 
 export async function fetchLeaderboard(limit = 10) {
-  return request(`${API_BASE}/leaderboard?limit=${limit}`);
+  return { ok: false, data: [] };
 }
 
 export async function submitScore(record) {
-  return request(`${API_BASE}/leaderboard`, {
-    method: 'POST',
-    body: JSON.stringify(record)
-  });
+  return { ok: false };
 }
 
 export async function fetchSave() {
-  return request(`${API_BASE}/saves`);
+  return { ok: false };
 }
 
 export async function saveGame(data) {
-  return request(`${API_BASE}/saves`, {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
+  return { ok: false };
 }
