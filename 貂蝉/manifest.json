@@ -1,0 +1,45 @@
+{
+  "type": "character",
+  "character_id": "5dedbd5e-255b-4c55-9392-aa47dfd7b36d",
+  "task_id": "5dedbd5e-255b-4c55-9392-aa47dfd7b36d",
+  "character_name": "貂蝉",
+  "art_style": "pixel",
+  "prompt": "# 角色规格：貂蝉 (Pixel Style)\n\n## 视觉描述\n- **全身姿态**：全身正面站立，重心稳定，脚底锚点清晰，比例匀称，适合后续制作游戏动画。\n- **发型与面部**：头顶精致发髻，采用半披发造型，乌黑长发柔顺垂落两侧；手持精致团扇半遮面庞，神情柔美灵动，眼波流转。\n- **服装细节**：身着华丽的古典汉服长裙，拥有极具流动感的宽大衣袖与层叠繁复的裙摆，衣纹细节精致。\n- **色彩主调**：以喜庆的红粉系为主色，辅以柔和的暖色渐变与金色滚边装饰，突显华贵与妩媚的气质。\n\n## 画面设置\n- **风格**：复古像素风格 (Pixel Art)，注重像素排列的整洁与色彩的层次感。\n- **背景**：纯透明背景 (Transparent Background)。\n- **限制**：不要场景背景，不要额外角色，不要文字、水印或 UI 元素。",
+  "created_at": "2026-06-17T12:51:07.860253Z",
+  "source_image": "source/source.png",
+  "preview_gif": "preview.gif",
+  "slices": [
+    {
+      "direction": "front",
+      "file": "slices/front.webp"
+    },
+    {
+      "direction": "front_right",
+      "file": "slices/front_right.webp"
+    },
+    {
+      "direction": "right",
+      "file": "slices/right.webp"
+    },
+    {
+      "direction": "back_right",
+      "file": "slices/back_right.webp"
+    },
+    {
+      "direction": "back",
+      "file": "slices/back.webp"
+    },
+    {
+      "direction": "back_left",
+      "file": "slices/back_left.webp"
+    },
+    {
+      "direction": "left",
+      "file": "slices/left.webp"
+    },
+    {
+      "direction": "front_left",
+      "file": "slices/front_left.webp"
+    }
+  ]
+}

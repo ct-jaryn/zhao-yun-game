@@ -1,0 +1,39 @@
+{
+  "type": "animation",
+  "animation_id": "a72f3981-021e-45ff-b3fe-5f182406a82f",
+  "task_id": "a72f3981-021e-45ff-b3fe-5f182406a82f",
+  "character_id": "b1238c1c-af8d-440f-8c64-bd00e6b5c889",
+  "character_name": "机甲赵云",
+  "animation_name": "被击败",
+  "frame_count": 6,
+  "prompt": "被击败",
+  "created_at": "2026-06-17T15:51:59.544873Z",
+  "source_sheet": "source/source.png",
+  "preview_gif": "preview.gif",
+  "frames": [
+    {
+      "index": 1,
+      "file": "frames/frame_001.webp"
+    },
+    {
+      "index": 2,
+      "file": "frames/frame_002.webp"
+    },
+    {
+      "index": 3,
+      "file": "frames/frame_003.webp"
+    },
+    {
+      "index": 4,
+      "file": "frames/frame_004.webp"
+    },
+    {
+      "index": 5,
+      "file": "frames/frame_005.webp"
+    },
+    {
+      "index": 6,
+      "file": "frames/frame_006.webp"
+    }
+  ]
+}

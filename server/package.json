@@ -8,7 +8,7 @@
     "dev": "node server.js"
   },
   "dependencies": {
-    "// express": "后端已禁用，静态发布不需要"
+    "express": "^4.18.2"
   },
   "license": "MIT"
 }

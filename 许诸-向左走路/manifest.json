@@ -1,0 +1,39 @@
+{
+  "type": "animation",
+  "animation_id": "d7bdeeb6-73c3-4520-9415-317c56300252",
+  "task_id": "d7bdeeb6-73c3-4520-9415-317c56300252",
+  "character_id": "27efd601-c4ee-41df-87a1-6055a46ba5f4",
+  "character_name": "许诸",
+  "animation_name": "向左走路",
+  "frame_count": 6,
+  "prompt": "向左走路",
+  "created_at": "2026-06-17T13:26:38.782937Z",
+  "source_sheet": "source/source.png",
+  "preview_gif": "preview.gif",
+  "frames": [
+    {
+      "index": 1,
+      "file": "frames/frame_001.webp"
+    },
+    {
+      "index": 2,
+      "file": "frames/frame_002.webp"
+    },
+    {
+      "index": 3,
+      "file": "frames/frame_003.webp"
+    },
+    {
+      "index": 4,
+      "file": "frames/frame_004.webp"
+    },
+    {
+      "index": 5,
+      "file": "frames/frame_005.webp"
+    },
+    {
+      "index": 6,
+      "file": "frames/frame_006.webp"
+    }
+  ]
+}

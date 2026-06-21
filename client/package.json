@@ -1,0 +1,21 @@
+{
+  "name": "zhao-yun-game-phaser",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node test-runner.mjs test-phaser-boot.mjs",
+    "test:full": "node test-runner.mjs test-phaser-full.mjs",
+    "test:regression": "node test-runner.mjs test-phaser-regression.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.0",
+    "vite": "^5.4.0"
+  },
+  "dependencies": {
+    "phaser": "^3.80.1"
+  }
+}
