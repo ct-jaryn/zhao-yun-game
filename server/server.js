@@ -6,7 +6,7 @@ const leaderboardRouter = require('./routes/leaderboard');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const CLIENT_DIR = path.join(__dirname, '..', 'client');
+const CLIENT_DIR = path.join(__dirname, '..', 'client', 'dist');
 const DATA_DIR = path.join(__dirname, 'data');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
