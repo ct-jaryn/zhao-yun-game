@@ -1,4 +1,4 @@
-import { MAP_W, MAP_H, TERRAIN } from '../config.js';
+import { MAP_W, MAP_H, TERRAIN } from '../config/index.js';
 
 export class MinimapRenderer {
   constructor(game) {

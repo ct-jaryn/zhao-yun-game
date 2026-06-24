@@ -1,5 +1,5 @@
 import { MAP_W, MAP_H } from './utils/index.js';
-import { ENEMY_TYPES, SKILLS, REWARD_TYPES, EQUIP_TYPES, QUALITY, ZHAO_YUN_EQUIP_TIERS } from '../config.js';
+import { ENEMY_TYPES, SKILLS, REWARD_TYPES, EQUIP_TYPES, QUALITY, ZHAO_YUN_EQUIP_TIERS } from '../config/index.js';
 import { rand, randInt, pick } from './utils/index.js';
 import { Player } from './entities/Player.js';
 import { Projectile } from './entities/Projectile.js';

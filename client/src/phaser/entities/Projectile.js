@@ -1,4 +1,4 @@
-import { MAP_W, MAP_H } from '../../config.js';
+import { MAP_W, MAP_H } from '../../config/index.js';
 
 export class Projectile {
   constructor(scene, x, y, dir, speed, dmg, owner, color = '#ff8800', size = 6, life = 2.0, imgKey = null, pierce = false) {

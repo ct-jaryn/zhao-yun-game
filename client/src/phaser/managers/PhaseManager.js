@@ -1,7 +1,7 @@
 import { MAP_W, MAP_H } from '../utils/index.js';
 import { vdist, vec } from '../utils/index.js';
 import { DiaoChan } from '../entities/DiaoChan.js';
-import { DIAOCHAN_AVATAR } from '../../config.js';
+import { DIAOCHAN_AVATAR } from '../../config/index.js';
 
 export class PhaseManager {
   constructor(game) {

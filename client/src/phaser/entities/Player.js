@@ -1,4 +1,4 @@
-import { MAP_W, MAP_H, SKILLS, EQUIP_TYPES, QUALITY, ZHAO_YUN_EQUIP_TIERS } from '../../config.js';
+import { MAP_W, MAP_H, SKILLS, EQUIP_TYPES, QUALITY, ZHAO_YUN_EQUIP_TIERS } from '../../config/index.js';
 import { vnorm, vec, vdist, angleDiff, pick } from '../utils/index.js';
 import { AssetLoader } from '../plugins/AssetLoader.js';
 

@@ -1,4 +1,4 @@
-import { MAP_W, MAP_H, ENEMY_TYPES, ENEMY_AGGRO_RANGE, ENEMY_LOSE_AGGRO_RANGE, ENEMY_CHASE_SPEED_RATIO, ENEMY_WANDER_SPEED_RATIO } from '../../config.js';
+import { MAP_W, MAP_H, ENEMY_TYPES, ENEMY_AGGRO_RANGE, ENEMY_LOSE_AGGRO_RANGE, ENEMY_CHASE_SPEED_RATIO, ENEMY_WANDER_SPEED_RATIO } from '../../config/index.js';
 import { rand, randInt, vdist, vsub, vnorm, vec } from '../utils/index.js';
 import { AssetLoader } from '../plugins/AssetLoader.js';
 import { Projectile } from './Projectile.js';
