@@ -7,9 +7,9 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node test-runner.mjs test-phaser-boot.mjs",
-    "test:full": "node test-runner.mjs test-phaser-full.mjs",
-    "test:regression": "node test-runner.mjs test-phaser-regression.mjs"
+    "test": "node test-runner.mjs tests/test-phaser-boot.mjs",
+    "test:full": "node test-runner.mjs tests/test-phaser-full.mjs",
+    "test:regression": "node test-runner.mjs tests/test-phaser-regression.mjs"
   },
   "devDependencies": {
     "playwright": "^1.61.0",
