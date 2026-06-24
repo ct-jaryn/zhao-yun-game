@@ -105,6 +105,11 @@ export class GameController {
     this.enemies = [];
     this.projectiles.forEach(p => p.destroy());
     this.projectiles = [];
+    if (this.dropManager) {
+      this.dropManager.drops.forEach(d => d.destroy());
+      this.dropManager.drops = [];
+      this.dropManager.nearestDrop = null;
+    }
   }
 
   setupCamera() {
@@ -124,16 +129,23 @@ export class GameController {
     if (this.pauseToggleCd > 0) this.pauseToggleCd -= dt;
     if (this.equipToggleCd > 0) this.equipToggleCd -= dt;
 
+    // Esc 始终响应：对话期间关闭对话，否则切换暂停
+    // （升级面板打开时 levelUpOpen 已在上方 return，不会走到这里）
+    if (input.isDown('Escape') && this.pauseToggleCd <= 0) {
+      this.pauseToggleCd = 0.15;
+      if (this.pauseReasons.has('dialogue')) {
+        if (this.uiSync && this.uiSync.hideDialogue) this.uiSync.hideDialogue();
+      } else {
+        this.togglePause();
+      }
+    }
+
     if (!this.paused) {
       this.gameTime += dt;
       this.player.update(dt, input, this);
 
       if (input.justDown('KeyE')) {
         this.dropManager.pickupDrop();
-      }
-      if (input.isDown('Escape') && this.pauseToggleCd <= 0) {
-        this.pauseToggleCd = 0.15;
-        this.togglePause();
       }
       if (input.isDown('Tab') && this.equipToggleCd <= 0) {
         this.equipToggleCd = 0.15;
@@ -268,7 +280,6 @@ export class GameController {
     this.effectManager.shakeScreen(10);
     this.effectManager.flashScreen('#ff0000', 0.5);
     this.effectManager.addParticles(boss.x, boss.y, '#ff0000', 50, 200);
-    boss.hp = boss.maxHp;
   }
 
   // ===== 玩家技能命中 =====

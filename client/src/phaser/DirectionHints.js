@@ -15,11 +15,12 @@ export class DirectionHints {
     const cx = W / 2;
     const cy = H / 2;
 
-    this.graphics.clear();
-
     // 复用箭头对象
     let used = 0;
     const useTexture = this.scene.textures.exists('hint_arrow');
+
+    // 仅在 fallback（非纹理）模式下使用 graphics，避免无意义的每帧 clear
+    if (!useTexture) this.graphics.clear();
 
     for (const e of enemies) {
       if (e.dead) continue;

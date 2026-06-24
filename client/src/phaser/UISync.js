@@ -150,6 +150,7 @@ export class UISync {
     const html = log.map(k => `<div class="kill-item">${k.text}</div>`).join('');
     if (this.cache['killLogHtml'] !== html) {
       el.innerHTML = html;
+      el.style.display = html ? 'block' : 'none';
       this.cache['killLogHtml'] = html;
     }
   }
@@ -240,7 +241,7 @@ export class UISync {
     speakerEl.textContent = speaker;
     textEl.textContent = text;
     if (portraitEl) {
-      const portraitSrc = options.portrait === '👩' || speaker === '貂蝉'
+      const portraitSrc = speaker === '貂蝉'
         ? DIAOCHAN_AVATAR
         : (options.portrait || PLAYER_AVATAR);
       portraitEl.src = portraitSrc;
@@ -314,7 +315,8 @@ export class UISync {
       value.textContent = `${pm.soldierKills}/${pm.soldiersRequired}`;
     } else {
       row.classList.remove('active');
-      value.textContent = '0/20';
+      // 非 soldiers 阶段无清兵目标，显示占位符而非误导性的 0/20
+      value.textContent = '—';
     }
   }
 

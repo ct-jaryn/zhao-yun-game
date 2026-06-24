@@ -75,63 +75,89 @@ export class AssetLoader {
     }
   }
 
-  loadEnemyAssets() {
-    // 枪兵
-    this.loadSliceSet('spearman', 'enemy_spearman/slices_png', 'png');
-    this.loadFrameSet('spearman_walk_right', 'enemy_spearman/walk_right_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('spearman_walk_down', 'enemy_spearman/walk_down_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('spearman_walk_up', 'enemy_spearman/walk_up_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('spearman_attack', 'enemy_spearman/attack_frames/frames/frame_', 6, 'webp', 3);
+  // 章节所需的敌人 sprite 类型（基于 CHAPTER_CONFIG 的 boss/finalBosses + 通用小兵）
+  // 小兵 soldier(=spearman)/archer/cavalry 所有章节都需要
+  static getChapterEnemyTypes(chapter) {
+    const types = new Set(['spearman', 'archer', 'cavalry']);
+    const bossMap = { lubu: 'lubu', dianwei: 'dianwei', xuzhu: 'xuzhu', boss: 'general' };
+    // 中 Boss
+    const cfgBoss = { 1: 'lubu', 2: 'dianwei', 3: 'xuzhu', 4: 'lubu' }[chapter];
+    if (cfgBoss && bossMap[cfgBoss]) types.add(bossMap[cfgBoss]);
+    // finalBosses：ch2/3/4 含 boss(=general)，ch1/ch4 含 lubu
+    if (chapter === 2 || chapter === 3 || chapter === 4) types.add('general');
+    if (chapter === 1 || chapter === 4) types.add('lubu');
+    if (chapter === 2) types.add('dianwei');
+    if (chapter === 3) types.add('xuzhu');
+    return types;
+  }
 
-    // 曹将 / Boss
-    this.loadSliceSet('general', 'enemy_general/slices_png', 'png');
-    this.loadFrameSet('general_attack', 'enemy_general/attack_frames_png/frame_', 6, 'png', 3);
-    this.loadFrameSet('general_ultimate', 'enemy_general/skill_ultimate_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('general_walk_right', 'enemy_general/walk_right_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('general_walk_down', 'enemy_general/walk_down_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('general_walk_up', 'enemy_general/walk_up_frames/frames/frame_', 6, 'webp', 3);
+  loadEnemyType(type) {
+    switch (type) {
+      case 'spearman':
+        this.loadSliceSet('spearman', 'enemy_spearman/slices_png', 'png');
+        this.loadFrameSet('spearman_walk_right', 'enemy_spearman/walk_right_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('spearman_walk_down', 'enemy_spearman/walk_down_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('spearman_walk_up', 'enemy_spearman/walk_up_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('spearman_attack', 'enemy_spearman/attack_frames/frames/frame_', 6, 'webp', 3);
+        break;
+      case 'general':
+        this.loadSliceSet('general', 'enemy_general/slices_png', 'png');
+        this.loadFrameSet('general_attack', 'enemy_general/attack_frames_png/frame_', 6, 'png', 3);
+        this.loadFrameSet('general_ultimate', 'enemy_general/skill_ultimate_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('general_walk_right', 'enemy_general/walk_right_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('general_walk_down', 'enemy_general/walk_down_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('general_walk_up', 'enemy_general/walk_up_frames/frames/frame_', 6, 'webp', 3);
+        break;
+      case 'lubu':
+        this.loadSliceSet('lubu', 'enemy_lubu/slices_png', 'webp');
+        this.loadFrameSet('lubu_walk', 'enemy_lubu/walk_left_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('lubu_attack', 'enemy_lubu/attack_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('lubu_skill', 'enemy_lubu/skill_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('lubu_ultimate', 'enemy_lubu/skill_ultimate_frames/frames/frame_', 6, 'webp', 3);
+        break;
+      case 'dianwei':
+        this.loadSliceSet('dianwei', 'enemy_dianwei/slices_png', 'webp');
+        this.loadFrameSet('dianwei_walk', 'enemy_dianwei/walk_left_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('dianwei_attack', 'enemy_dianwei/attack_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('dianwei_ultimate', 'enemy_dianwei/skill_frames/frames/frame_', 6, 'webp', 3);
+        break;
+      case 'xuzhu':
+        this.loadSliceSet('xuzhu', 'enemy_xuzhu/slices_png', 'webp');
+        this.loadFrameSet('xuzhu_walk', 'enemy_xuzhu/walk_left_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('xuzhu_attack', 'enemy_xuzhu/attack_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('xuzhu_skill', 'enemy_xuzhu/skill_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('xuzhu_ultimate', 'enemy_xuzhu/skill_ultimate_frames/frames/frame_', 6, 'webp', 3);
+        break;
+      case 'cavalry':
+        this.loadSliceSet('cavalry', 'enemy_cavalry/slices_png', 'webp');
+        this.loadFrameSet('cavalry_walk', 'enemy_cavalry/walk_left_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('cavalry_attack', 'enemy_cavalry/attack_frames/frames/frame_', 6, 'webp', 3);
+        break;
+      case 'archer':
+        this.loadSliceSet('archer', 'enemy_archer/slices_png', 'webp');
+        this.loadFrameSet('archer_walk', 'enemy_archer/walk_left_frames/frames/frame_', 6, 'webp', 3);
+        this.loadFrameSet('archer_attack', 'enemy_archer/attack_frames/frames/frame_', 6, 'webp', 3);
+        break;
+    }
+  }
 
-    // 吕布
-    this.loadSliceSet('lubu', 'enemy_lubu/slices_png', 'webp');
-    this.loadFrameSet('lubu_walk', 'enemy_lubu/walk_left_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('lubu_attack', 'enemy_lubu/attack_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('lubu_skill', 'enemy_lubu/skill_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('lubu_ultimate', 'enemy_lubu/skill_ultimate_frames/frames/frame_', 6, 'webp', 3);
+  loadChapterAssets(chapter) {
+    // 仅加载该章节所需的敌人、背景、貂蝉
+    const types = AssetLoader.getChapterEnemyTypes(chapter);
+    for (const t of types) this.loadEnemyType(t);
+    this.loadChapterBackgrounds(chapter);
+    if (chapter === 1) this.loadDiaoChanAssets();
+  }
 
-    // 典韦
-    this.loadSliceSet('dianwei', 'enemy_dianwei/slices_png', 'webp');
-    this.loadFrameSet('dianwei_walk', 'enemy_dianwei/walk_left_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('dianwei_attack', 'enemy_dianwei/attack_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('dianwei_ultimate', 'enemy_dianwei/skill_frames/frames/frame_', 6, 'webp', 3);
-
-    // 许褚
-    this.loadSliceSet('xuzhu', 'enemy_xuzhu/slices_png', 'webp');
-    this.loadFrameSet('xuzhu_walk', 'enemy_xuzhu/walk_left_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('xuzhu_attack', 'enemy_xuzhu/attack_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('xuzhu_skill', 'enemy_xuzhu/skill_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('xuzhu_ultimate', 'enemy_xuzhu/skill_ultimate_frames/frames/frame_', 6, 'webp', 3);
-
-    // 骑兵
-    this.loadSliceSet('cavalry', 'enemy_cavalry/slices_png', 'webp');
-    this.loadFrameSet('cavalry_walk', 'enemy_cavalry/walk_left_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('cavalry_attack', 'enemy_cavalry/attack_frames/frames/frame_', 6, 'webp', 3);
-
-    // 弓箭手
-    this.loadSliceSet('archer', 'enemy_archer/slices_png', 'webp');
-    this.loadFrameSet('archer_walk', 'enemy_archer/walk_left_frames/frames/frame_', 6, 'webp', 3);
-    this.loadFrameSet('archer_attack', 'enemy_archer/attack_frames/frames/frame_', 6, 'webp', 3);
+  loadChapterBackgrounds(chapter) {
+    // 第一章背景文件名为 background，其余为 bg_chapterN
+    const file = chapter === 1 ? 'background' : `bg_chapter${chapter}`;
+    this.scene.load.image(`bg_chapter_${chapter}`, `generated/${file}.webp`);
   }
 
   loadDiaoChanAssets() {
     this.loadSliceSet('diaochan', 'diaochan/slices', 'webp');
     this.loadFrameSet('diaochan_tied', 'diaochan_tied/frames/frame_', 6, 'webp', 3);
-  }
-
-  loadChapterBackgrounds() {
-    this.scene.load.image('bg_chapter_1', 'generated/background.png');
-    this.scene.load.image('bg_chapter_2', 'generated/bg_chapter2.png');
-    this.scene.load.image('bg_chapter_3', 'generated/bg_chapter3.png');
-    this.scene.load.image('bg_chapter_4', 'generated/bg_chapter4.png');
   }
 
   loadCommonAssets() {
@@ -160,11 +186,10 @@ export class AssetLoader {
     this.scene.load.image('minimap_drop', 'generated_effects/minimap_drop.png');
   }
 
-  loadAll() {
+  // 启动阶段加载：玩家两套皮肤 + 通用 UI + 特效纹理
+  // 不含敌人、章节背景、貂蝉（这些在进入章节时按需加载）
+  loadBootAssets() {
     this.loadAllPlayerAssets();
-    this.loadEnemyAssets();
-    this.loadDiaoChanAssets();
-    this.loadChapterBackgrounds();
     this.loadCommonAssets();
     this.loadEffectAssets();
   }

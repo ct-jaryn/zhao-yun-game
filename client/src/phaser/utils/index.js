@@ -1,5 +1,5 @@
-export const W = 1000;
-export const H = 700;
+export const W = 1200;
+export const H = 675;
 export const MAP_W = 3000;
 export const MAP_H = 2000;
 

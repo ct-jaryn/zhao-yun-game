@@ -89,17 +89,16 @@
 /* Right HUD Panel */
 #rightPanel {
   position: absolute;
-  top: 0; right: 0; bottom: 0;
-  width: 188px;
+  top: 12px; right: 12px;
+  width: 160px;
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 12px 12px 12px 16px;
+  gap: 8px;
   pointer-events: none;
   z-index: 10;
-  background: linear-gradient(to left, rgba(6, 5, 8, 0.88) 0%, rgba(8, 7, 10, 0.72) 60%, rgba(10, 10, 12, 0) 100%);
-  border-left: 1px solid rgba(200, 162, 85, 0.18);
-  box-shadow: inset 12px 0 30px rgba(0, 0, 0, 0.25);
+  background: transparent;
+  border: none;
+  box-shadow: none;
   overflow: hidden;
 }
 #rightPanel > * {
@@ -110,21 +109,20 @@
 /* Score Panel */
 #scorePanel {
   position: relative;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 6px 4px 12px;
-  box-shadow: none;
-  backdrop-filter: none;
-  border-bottom: 1px solid rgba(200, 162, 85, 0.15);
+  background: rgba(8, 6, 4, 0.72);
+  border: 1px solid rgba(200, 162, 85, 0.22);
+  border-radius: 8px;
+  padding: 6px 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
 }
 #scorePanel .row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  margin-bottom: 5px;
-  line-height: 1.3;
+  margin-bottom: 3px;
+  line-height: 1.25;
 }
 #scorePanel .row:last-child { margin-bottom: 0; }
 #scorePanel .label { color: rgba(255, 255, 255, 0.55); font-size: 11px; }
@@ -305,13 +303,15 @@
 /* Kill Log */
 #killLog {
   position: relative;
-  max-height: 110px;
-  min-height: 40px;
+  max-height: 90px;
+  min-height: 36px;
   overflow: hidden;
   text-align: right;
-  padding: 8px 4px;
+  padding: 6px 8px;
   pointer-events: none;
-  border-bottom: 1px solid rgba(200, 162, 85, 0.12);
+  background: rgba(8, 6, 4, 0.62);
+  border: 1px solid rgba(200, 162, 85, 0.15);
+  border-radius: 6px;
   mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 70%, rgba(0,0,0,0));
   -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 70%, rgba(0,0,0,0));
   scrollbar-width: none;
@@ -330,17 +330,17 @@
 /* Equipment Sidebar */
 #equipSidebar {
   position: relative;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 10px 2px;
-  box-shadow: none;
-  backdrop-filter: none;
-  flex: 1;
+  background: rgba(8, 6, 4, 0.72);
+  border: 1px solid rgba(200, 162, 85, 0.18);
+  border-radius: 8px;
+  padding: 6px 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+  flex: 0 0 auto;
   min-height: 0;
+  max-height: 240px;
   overflow-y: auto;
   overflow-x: hidden;
-  border-bottom: 1px solid rgba(200, 162, 85, 0.12);
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -409,25 +409,25 @@
 #minimapWrap {
   position: relative;
   margin-top: auto;
-  padding-top: 10px;
-  border: none;
-  border-radius: 0;
+  padding: 5px;
+  border: 1px solid rgba(200, 162, 85, 0.18);
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: none;
-  background: transparent;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  background: rgba(8, 6, 4, 0.72);
   pointer-events: auto;
 }
 #minimap {
   display: block;
-  width: 100%;
-  height: auto;
+  width: 130px;
+  height: 90px;
   border-radius: 6px;
   border: 1px solid rgba(200, 162, 85, 0.2);
   background: rgba(0, 0, 0, 0.4);
 }
 #minimapLabel {
   position: absolute;
-  top: 14px; left: 8px;
+  top: 9px; left: 10px;
   font-size: 9px;
   color: rgba(255, 255, 255, 0.45);
   pointer-events: none;
@@ -556,7 +556,7 @@
 /* Pickup Hint */
 #pickupHint {
   position: absolute;
-  bottom: 90px;
+  bottom: 110px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.8);
@@ -1647,8 +1647,6 @@
 }
 
 .dialogue-portrait-img {
-  width: 100%;
-  height: 100%;
   object-fit: cover;
   display: block;
   border-radius: 50%;
@@ -1828,19 +1826,20 @@
   .stat-icon { width: 10px; height: 10px; }
   #pauseBtn { width: 22px; height: 22px; font-size: 10px; }
 
-  #rightPanel { width: 140px; padding: 6px 6px 6px 10px; }
-  #scorePanel { padding: 4px 2px 8px; }
+  #rightPanel { width: 140px; top: 6px; right: 6px; gap: 6px; }
+  #scorePanel { padding: 5px 6px; }
   #scorePanel .row { font-size: 10px; margin-bottom: 3px; }
   #scorePanel .label { font-size: 9px; }
-  #killLog { max-height: 80px; min-height: 30px; }
+  #killLog { max-height: 70px; min-height: 30px; }
   .kill-item { font-size: 9px; }
+  #equipSidebar { padding: 5px 6px; max-height: 220px; }
   #equipSidebar .es-title { font-size: 9px; margin-bottom: 5px; }
   #equipSidebar .es-item { padding: 3px 5px; gap: 5px; }
   #equipSidebar .es-icon,
   #equipSidebar .es-empty { width: 24px; height: 24px; }
   #equipSidebar .es-name { font-size: 9px; }
   #equipSidebar .es-type { font-size: 8px; }
-  #minimapWrap { padding-top: 6px; }
+  #minimapWrap { padding: 5px; }
   #minimap { width: 110px; height: 86px; }
   #minimapLabel { font-size: 8px; }
 
@@ -1858,7 +1857,7 @@
   #comboDisplay .combo-num { font-size: 36px; }
   #comboDisplay .combo-label { font-size: 14px; }
 
-  #pickupHint { bottom: 70px; padding: 6px 12px; }
+  #pickupHint { bottom: 86px; padding: 6px 12px; }
   #pickupHint .ph-img { width: 44px; height: 44px; }
   #pickupHint .ph-name { font-size: 11px; }
   #pickupHint .ph-stats,

@@ -10,8 +10,8 @@ export class GameApp {
 
     this.config = {
       type: Phaser.CANVAS,
-      width: 1000,
-      height: 700,
+      width: 1200,
+      height: 675,
       canvas,
       parent,
       backgroundColor: '#000000',

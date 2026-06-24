@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { InputManager } from '../InputManager.js';
 import { GameController } from '../GameController.js';
 import { AnimationFactory } from '../plugins/AnimationFactory.js';
+import { AssetLoader } from '../plugins/AssetLoader.js';
 import { W, H, MAP_W, MAP_H } from '../utils/index.js';
 
 export class GameScene extends Phaser.Scene {
@@ -14,15 +15,33 @@ export class GameScene extends Phaser.Scene {
     this.skin = data.skin || 'classic';
   }
 
+  preload() {
+    // 按章节加载敌人/背景/貂蝉资源（启动阶段只加载了玩家与通用资源）
+    const loader = new AssetLoader(this);
+    loader.loadChapterAssets(this.chapter);
+
+    // 章节资源量较小，通常已缓存，加载极快；这里仍提供轻量进度提示
+    const tip = this.add.text(W / 2, H / 2, '进入战场…', {
+      fontFamily: 'Noto Serif SC',
+      fontSize: '22px',
+      color: '#ffd700'
+    }).setOrigin(0.5).setDepth(1000);
+    this.load.once('complete', () => tip.destroy());
+  }
+
   create() {
-    AnimationFactory.createAllAnimations(this);
+    // 仅创建本章节所需的动画（避免为未加载纹理创建空动画）
+    AnimationFactory.createPlayerAnimations(this, 'classic');
+    AnimationFactory.createPlayerAnimations(this, 'mecha');
+    const enemyTypes = AssetLoader.getChapterEnemyTypes(this.chapter);
+    for (const t of enemyTypes) AnimationFactory.createEnemyAnimations(this, t);
+    if (this.chapter === 1) AnimationFactory.createDiaoChanAnimation(this);
 
     this.inputManager = new InputManager(this);
     this.controller = new GameController(this);
     this.controller.start(this.chapter, this.skin);
 
     this.setupBackground();
-    this.setupUIEventBridge();
 
     const canvas = this.game.canvas;
     if (canvas && canvas.focus) canvas.focus();
@@ -61,10 +80,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   setupUIEventBridge() {
-    this._onPause = () => { if (this.controller) this.controller.paused = true; };
-    this._onResume = () => { if (this.controller) this.controller.paused = false; };
-    this.events.on('pause', this._onPause);
-    this.events.on('resume', this._onResume);
+    // 已移除：原代码监听 Phaser 场景 pause/resume 事件并直接置 controller.paused，
+    // 绕过暂停栈（pauseStack/pauseReasons），会导致暂停状态不一致。
+    // 且该事件从未被触发，属死代码。暂停统一由 GameController.addPause/removePause 管理。
   }
 
   update(time, delta) {
@@ -85,12 +103,6 @@ export class GameScene extends Phaser.Scene {
     if (this.inputManager) {
       this.inputManager.destroy();
       this.inputManager = null;
-    }
-    if (this._onPause) {
-      this.events.off('pause', this._onPause);
-      this.events.off('resume', this._onResume);
-      this._onPause = null;
-      this._onResume = null;
     }
   }
 }

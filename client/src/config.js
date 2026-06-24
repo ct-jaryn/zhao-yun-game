@@ -97,8 +97,8 @@ export const DIAOCHAN_AVATAR = '/generated/diaochan_avatar.png';
 export const PLAYER_AVATAR = '/generated/avatar.png';
 
 export const TITLE_LOGO_IMAGE = '/generated/title_logo.png';
-export const VICTORY_BG_IMAGE = '/generated/bg_victory.png';
-export const DEFEAT_BG_IMAGE = '/generated/bg_defeat.png';
+export const VICTORY_BG_IMAGE = '/generated/bg_victory.webp';
+export const DEFEAT_BG_IMAGE = '/generated/bg_defeat.webp';
 
 export const DODGE_ICON_IMAGE = '/generated/icon_dodge.png';
 export const LOCK_ICON_IMAGE = '/generated/icon_lock.png';

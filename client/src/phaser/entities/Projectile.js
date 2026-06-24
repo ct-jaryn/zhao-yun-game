@@ -1,3 +1,5 @@
+import { MAP_W, MAP_H } from '../../config.js';
+
 export class Projectile {
   constructor(scene, x, y, dir, speed, dmg, owner, color = '#ff8800', size = 6, life = 2.0, imgKey = null, pierce = false) {
     this.scene = scene;
@@ -52,6 +54,12 @@ export class Projectile {
     this.sprite.setRotation(this.dir);
 
     if (this.life <= 0) {
+      this.destroy();
+      return false;
+    }
+    // 飞出地图边界一定距离即淘汰，避免持续更新无意义位置
+    const M = 200;
+    if (this.x < -M || this.x > MAP_W + M || this.y < -M || this.y > MAP_H + M) {
       this.destroy();
       return false;
     }

@@ -16,6 +16,6 @@
     "vite": "^5.4.0"
   },
   "dependencies": {
-    "phaser": "^3.80.1"
+    "phaser": "^3.90.0"
   }
 }

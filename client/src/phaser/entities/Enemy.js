@@ -3,8 +3,6 @@ import { rand, randInt, vdist, vsub, vnorm, vec } from '../utils/index.js';
 import { AssetLoader } from '../plugins/AssetLoader.js';
 import { Projectile } from './Projectile.js';
 
-let enemyIdCounter = 0;
-
 const SPRITE_CONFIG = {
   soldier: { drawH: 160, type: 'spearman' },
   archer: { drawH: 160, type: 'archer' },
@@ -20,7 +18,6 @@ export class Enemy {
   constructor(scene, x, y, type, level, options = {}) {
     const t = ENEMY_TYPES[type];
     this.scene = scene;
-    this.id = `enemy_${++enemyIdCounter}`;
     this.x = x;
     this.y = y;
     this.type = type;
@@ -161,8 +158,8 @@ export class Enemy {
     if (this.hp <= 0) {
       if (this.type === 'boss' && !this.hasRevived) {
         this.dead = true;
-        this.deathTimer = 60;
-        this.reviveTimer = 60;
+        this.deathTimer = 0.6;   // 死亡淡出动画时长
+        this.reviveTimer = 60;   // 复活等待（独立计时）
         this.hasRevived = true;
         if (game.onBossFirstDeath) game.onBossFirstDeath(this);
       } else {
@@ -213,15 +210,16 @@ export class Enemy {
 
   update(dt, game) {
     if (this.dead) {
+      // 死亡淡出动画计时（与复活等待分离）
+      if (this.deathTimer > 0) this.deathTimer -= dt;
+      // Boss 首次死亡后倒计时复活
       if (this.type === 'boss' && this.reviveTimer > 0) {
         this.reviveTimer -= dt;
         if (this.reviveTimer <= 0) {
           this.reviveBoss();
           if (game.onBossRevived) game.onBossRevived(this);
         }
-        return;
       }
-      this.deathTimer -= dt;
       this.syncSprite();
       return;
     }
@@ -237,9 +235,12 @@ export class Enemy {
 
     if (this.hitKnockbackTimer > 0) {
       this.hitKnockbackTimer -= dt;
-      const kb = this.hitKnockbackTimer > 0 ? 120 * this.hitKnockbackTimer : 0;
-      this.x += Math.cos(this.hitKnockbackDir) * kb * dt;
-      this.y += Math.sin(this.hitKnockbackDir) * kb * dt;
+      // 速度随剩余时间线性衰减（0.12s 为 takeDamage 中设定的击退总时长）
+      const KNOCKBACK_DUR = 0.12;
+      const ratio = Math.max(0, this.hitKnockbackTimer / KNOCKBACK_DUR);
+      const kbSpeed = 120 * ratio;
+      this.x += Math.cos(this.hitKnockbackDir) * kbSpeed * dt;
+      this.y += Math.sin(this.hitKnockbackDir) * kbSpeed * dt;
     }
 
     this.hitFlash -= dt;
@@ -303,7 +304,7 @@ export class Enemy {
             this.attacking = true;
             const ultRange = (this.radius + p.radius + 10) * 2.5;
             if (dist <= ultRange) {
-              p.takeDamage(Math.floor(this.atk * 1.5));
+              p.takeDamage(Math.floor(this.atk * 1.5), game);
             }
           } else {
             this.isUltimate = false;
@@ -312,7 +313,7 @@ export class Enemy {
             this.attackCd = this.isSkill ? 1.5 : 1.0;
             this.attacking = true;
             this.attackAnimTimer = this.isSkill ? 0.7 : 0.5;
-            p.takeDamage(this.isSkill ? Math.floor(this.atk * 1.3) : this.atk);
+            p.takeDamage(this.isSkill ? Math.floor(this.atk * 1.3) : this.atk, game);
           }
         }
       }
@@ -339,7 +340,8 @@ export class Enemy {
     this.sprite.setPosition(this.x, this.y);
 
     if (this.dead) {
-      const progress = Math.max(0, this.deathTimer / 0.6);
+      const FADE_DUR = 0.6;
+      const progress = Math.max(0, Math.min(1, this.deathTimer / FADE_DUR));
       this.sprite.setAlpha(progress);
       const baseScale = 0.4 * this.sizeScale;
       this.sprite.setScale(baseScale * (0.6 + 0.4 * progress));
@@ -359,7 +361,11 @@ export class Enemy {
     }
     if (this.nameLabel) {
       this.nameLabel.setPosition(this.x, this.y - this.radius * this.sizeScale - 28);
-      this.nameLabel.text = `Lv.${this.level} ${this.name}`;
+      const text = `Lv.${this.level} ${this.name}`;
+      if (this._lastNameText !== text) {
+        this.nameLabel.text = text;
+        this._lastNameText = text;
+      }
     }
 
     if (this.hitFlash > 0) {

@@ -131,6 +131,10 @@ export class AnimationFactory {
     }
   }
 
+  static createDiaoChanAnimation(scene) {
+    createAnim(scene, 'diaochan_tied', 'diaochan_tied', 6, 8, -1);
+  }
+
   static createAllAnimations(scene) {
     this.createPlayerAnimations(scene, 'classic');
     this.createPlayerAnimations(scene, 'mecha');
@@ -140,6 +144,6 @@ export class AnimationFactory {
       this.createEnemyAnimations(scene, type);
     }
 
-    createAnim(scene, 'diaochan_tied', 'diaochan_tied', 6, 8, -1);
+    this.createDiaoChanAnimation(scene);
   }
 }
