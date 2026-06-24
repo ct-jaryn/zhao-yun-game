@@ -1,6 +1,6 @@
 import { MAP_W, MAP_H } from './utils/index.js';
-import { ENEMY_TYPES, SKILLS, REWARD_TYPES, EQUIP_TYPES, QUALITY, ZHAO_YUN_EQUIP_TIERS } from '../config/index.js';
-import { rand, randInt, pick } from './utils/index.js';
+import { ENEMY_TYPES, SKILLS } from '../config/index.js';
+import { rand, pick } from './utils/index.js';
 import { Player } from './entities/Player.js';
 import { Projectile } from './entities/Projectile.js';
 import { EffectManager } from './managers/EffectManager.js';
@@ -11,6 +11,8 @@ import { DropManager } from './managers/DropManager.js';
 import { UISync } from './UISync.js';
 import { MinimapRenderer } from './MinimapRenderer.js';
 import { DirectionHints } from './DirectionHints.js';
+import { PauseManager } from './systems/PauseManager.js';
+import { RewardSystem } from './systems/RewardSystem.js';
 
 const CHAPTER_CONFIG = {
   1: {
@@ -54,9 +56,8 @@ export class GameController {
     this.score = 0;
     this.gameTime = 0;
     this.running = true;
-    this.paused = false;
-    this.pauseStack = 0;
-    this.pauseReasons = new Set();
+    this.pauseManager = new PauseManager(this);
+    this.rewardSystem = new RewardSystem(this);
     this.levelUpOpen = false;
     this.pendingRewards = [];
     this.equipPanelOpen = false;
@@ -77,9 +78,7 @@ export class GameController {
     this.score = 0;
     this.gameTime = 0;
     this.running = true;
-    this.paused = false;
-    this.pauseStack = 0;
-    this.pauseReasons.clear();
+    this.pauseManager.reset();
     this.levelUpOpen = false;
     this.pendingRewards = [];
     this.equipPanelOpen = false;
@@ -133,14 +132,14 @@ export class GameController {
     // （升级面板打开时 levelUpOpen 已在上方 return，不会走到这里）
     if (input.isDown('Escape') && this.pauseToggleCd <= 0) {
       this.pauseToggleCd = 0.15;
-      if (this.pauseReasons.has('dialogue')) {
+      if (this.pauseManager.hasReason('dialogue')) {
         if (this.uiSync && this.uiSync.hideDialogue) this.uiSync.hideDialogue();
       } else {
         this.togglePause();
       }
     }
 
-    if (!this.paused) {
+    if (!this.pauseManager.isPaused()) {
       this.gameTime += dt;
       this.player.update(dt, input, this);
 
@@ -295,95 +294,10 @@ export class GameController {
     if (this.player.combo > this.player.maxCombo) this.player.maxCombo = this.player.combo;
   }
 
-  // ===== 暂停栈 =====
-
-  addPause(reason) {
-    if (this.pauseReasons.has(reason)) return;
-    this.pauseReasons.add(reason);
-    this.pauseStack++;
-    if (this.pauseStack === 1) {
-      this.paused = true;
-    }
-  }
-
-  removePause(reason) {
-    if (!this.pauseReasons.has(reason)) return;
-    this.pauseReasons.delete(reason);
-    this.pauseStack--;
-    if (this.pauseStack <= 0) {
-      this.pauseStack = 0;
-      this.paused = false;
-    }
-  }
-
   // ===== 升级奖励 =====
 
-  getMissingGodEquipTypes() {
-    return EQUIP_TYPES.filter(type => {
-      const eq = this.player.equip[type];
-      return !eq || eq.quality.name !== '传说';
-    });
-  }
-
-  genGodEquip(type) {
-    const level = this.player.level;
-    const tier = Math.min(4, Math.max(2, 1 + Math.floor(level / 5)));
-    const tierData = ZHAO_YUN_EQUIP_TIERS[tier][type];
-    const q = QUALITY[4];
-    const stats = {};
-    for (const [k, v] of Object.entries(tierData.stats)) {
-      stats[k] = Math.floor(v * q.mult * (0.9 + Math.random() * 0.2));
-    }
-    return { type, name: tierData.name, quality: q, stats, level, tier };
-  }
-
-  grantGodEquip() {
-    const missing = this.getMissingGodEquipTypes();
-    if (missing.length === 0) return null;
-    const type = pick(missing);
-    const eq = this.genGodEquip(type);
-    this.player.equip[type] = eq;
-    return eq;
-  }
-
   showLevelUp() {
-    this.addPause('levelup');
-    this.levelUpOpen = true;
-    const pool = REWARD_TYPES.filter(r => {
-      if (r.id === 'godEquip') {
-        return this.player.level >= 10 && this.getMissingGodEquipTypes().length > 0;
-      }
-      return true;
-    });
-    const rewards = [];
-    while (rewards.length < 3 && pool.length > 0) {
-      const idx = randInt(0, pool.length - 1);
-      rewards.push(pool.splice(idx, 1)[0]);
-    }
-    this.pendingRewards = rewards;
-    if (this.uiSync && this.uiSync.showLevelUp) {
-      this.uiSync.showLevelUp(rewards, (r) => {
-        if (r.id === 'godEquip') {
-          const eq = this.grantGodEquip();
-          if (eq) {
-            this.effectManager.addText(this.player.x, this.player.y - 60, `获得 ${eq.name}`, eq.quality.color, 18, '#000');
-          }
-        } else {
-          r.apply(this.player);
-          this.effectManager.addText(this.player.x, this.player.y - 60, r.name, '#ffd700', 18, '#000');
-        }
-        this.levelUpOpen = false;
-        this.removePause('levelup');
-      });
-    } else {
-      // 无 UI 时自动选择第一个
-      if (rewards[0]) {
-        if (rewards[0].id === 'godEquip') this.grantGodEquip();
-        else rewards[0].apply(this.player);
-      }
-      this.levelUpOpen = false;
-      this.removePause('levelup');
-    }
+    this.rewardSystem.showLevelUp();
   }
 
   // ===== 游戏结束 / 胜利 =====
@@ -438,19 +352,19 @@ export class GameController {
 
   togglePause() {
     if (this.levelUpOpen || !this.running) return;
-    if (this.pauseReasons.has('pause')) {
-      this.removePause('pause');
+    if (this.pauseManager.hasReason('pause')) {
+      this.pauseManager.removePause('pause');
     } else {
-      this.addPause('pause');
+      this.pauseManager.addPause('pause');
     }
     const overlay = document.getElementById('pauseOverlay');
-    if (overlay) overlay.style.display = this.paused ? 'flex' : 'none';
-    if (!this.paused && this.equipPanelOpen) {
+    if (overlay) overlay.style.display = this.pauseManager.isPaused() ? 'flex' : 'none';
+    if (!this.pauseManager.isPaused() && this.equipPanelOpen) {
       this.equipPanelOpen = false;
       const panel = document.getElementById('equipPanel');
       if (panel) panel.style.display = 'none';
     }
-    if (this.paused && this.uiSync && this.uiSync.updatePause) {
+    if (this.pauseManager.isPaused() && this.uiSync && this.uiSync.updatePause) {
       this.uiSync.updatePause(this.player);
     }
   }
