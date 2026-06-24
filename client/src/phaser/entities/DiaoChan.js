@@ -26,7 +26,7 @@ export class DiaoChan {
       : AssetLoader.getEnemySliceKey('diaochan', this.dir);
     if (AssetLoader.hasTexture(this.scene, key)) {
       this.sprite = this.scene.add.sprite(this.x, this.y, key);
-      this.sprite.setScale(0.5);
+      this.sprite.setScale(0.62);
     } else {
       this.sprite = this.scene.add.sprite(this.x, this.y, '__WHITE');
       this.sprite.setDisplaySize(this.radius * 2, this.radius * 2);

@@ -111,10 +111,13 @@ export class Player {
     this.maxCombo = 0;
 
     this.bonusAtk = 0;
+    this.bonusDef = 0;
     this.bonusCrit = 0;
     this.bonusSpd = 0;
     this.bonusCdr = 0;
     this.bonusHp = 0;
+    this.hpRegen = 1;
+    this.bonusHpRegen = 0;
     this.bonusMpRegen = 0;
 
     this.moving = false;
@@ -132,7 +135,7 @@ export class Player {
   get def() {
     let v = this.baseDef + this.level;
     for (const k of ['铠甲', '头盔']) if (this.equip[k]) v += this.equip[k].stats.def || 0;
-    return v;
+    return Math.floor(v * (1 + this.bonusDef));
   }
   get crit() {
     let v = this.critRate + this.bonusCrit;
@@ -160,7 +163,7 @@ export class Player {
     while (this.exp >= this.expToLevel) {
       this.exp -= this.expToLevel;
       this.level++;
-      this.expToLevel = Math.floor(this.expToLevel * 1.4);
+      this.expToLevel = Math.floor(this.expToLevel * 1.25);
       this.hp = this.maxHpTotal;
       this.mp = this.maxMpTotal;
       this.baseAtk += 3;
@@ -191,13 +194,13 @@ export class Player {
     if (!this.sprite || !this.sprite.texture) return;
     const source = this.sprite.texture.getSourceImage();
     if (!source || source.height <= 0) return;
-    const targetH = this.skin === 'mecha' ? 220 : 170;
+    const targetH = this.skin === 'mecha' ? 270 : 210;
     const scale = targetH / source.height;
     this.sprite.setScale(scale);
   }
 
   update(dt, input, game) {
-    this.hp = Math.min(this.maxHpTotal, this.hp);
+    this.hp = Math.min(this.maxHpTotal, this.hp + this.hpRegen * (1 + this.bonusHpRegen) * dt);
     this.mp = Math.min(this.maxMpTotal, this.mp + this.mpRegen * (1 + this.bonusMpRegen) * dt);
     for (let i = 0; i < 5; i++) {
       if (this.skillCd[i] > 0) this.skillCd[i] -= dt;
@@ -285,12 +288,6 @@ export class Player {
     this.sprite.setPosition(this.x, this.y);
     this.updateFlip();
 
-    if (this.flashTimer > 0 && Math.floor(this.flashTimer * 20) % 2) {
-      this.sprite.setVisible(false);
-    } else {
-      this.sprite.setVisible(true);
-    }
-
     if (this.dead) {
       const key = `${this.animPrefix}_death`;
       if (this.scene.anims.exists(key)) {
@@ -344,6 +341,27 @@ export class Player {
       flipX = a >= -Math.PI / 2 && a <= Math.PI / 2;
     }
     this.sprite.setFlipX(flipX);
+  }
+
+  showAttackArc(range, arc) {
+    if (!this.scene) return;
+    const g = this.scene.add.graphics();
+    g.setDepth(9);
+    const start = this.dir - arc / 2;
+    const end = this.dir + arc / 2;
+    g.fillStyle(0xffdd99, 0.10);
+    g.slice(this.x, this.y, range, start, end, false);
+    g.fillPath();
+    g.lineStyle(1.5, 0xffeecc, 0.28);
+    g.beginPath();
+    g.arc(this.x, this.y, range, start, end);
+    g.strokePath();
+    this.scene.tweens.add({
+      targets: g,
+      alpha: 0,
+      duration: 220,
+      onComplete: () => g.destroy()
+    });
   }
 
   playLoopAnimation(name) {
@@ -400,6 +418,10 @@ export class Player {
       game.hitEnemyWithSkill(e, idx);
     }
 
+    if (idx === 0) {
+      this.showAttackArc(sk.range + this.radius, sk.arc);
+    }
+
     if (idx === 4) {
       for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) {
         game.addProjectile(this.x, this.y, a, 350, this.atk * 0.5, 'player', '#ffd700', 5, 1.5, null, true);
@@ -429,7 +451,7 @@ export class Player {
     this.dodgeCd = isMecha ? 1.0 : 0.8;
     this.dodgeDir = this.dir;
     this.dodgeSpeed = isMecha ? 500 : 400;
-    this.invulnTimer = isMecha ? 0.5 : 0.3;
+    this.invulnTimer = this.dodgeTimer + 0.15;
     game.addParticles(this.x, this.y, '#aaccff', 10, 70);
   }
 
@@ -437,15 +459,12 @@ export class Player {
     if (this.invulnTimer > 0 || this.dead) return;
     const actual = Math.max(1, dmg - this.def);
     this.hp -= actual;
-    this.flashTimer = 0.3;
     this.invulnTimer = 0.5;
     this.hurtTimer = 0.4;
 
     if (game && game.effectManager) {
       game.effectManager.addText(this.x, this.y - this.radius - 40, `-${actual}`, '#ff4444', 18, '#000');
-      game.effectManager.addParticles(this.x, this.y, '#ff4444', 8, 80, 3);
-      game.effectManager.shakeScreen(4);
-      game.effectManager.flashScreen('#ffffff', 0.08);
+      game.effectManager.addParticles(this.x, this.y, '#ff4444', 6, 60, 2);
     }
 
     if (this.hp <= 0) {

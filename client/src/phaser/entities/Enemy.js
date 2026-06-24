@@ -8,10 +8,10 @@ const SPRITE_CONFIG = {
   archer: { drawH: 160, type: 'archer' },
   cavalry: { drawH: 180, type: 'cavalry' },
   general: { drawH: 220, type: 'general' },
-  boss: { drawH: 300, type: 'general' },
-  lubu: { drawH: 360, type: 'lubu' },
-  dianwei: { drawH: 340, type: 'dianwei' },
-  xuzhu: { drawH: 340, type: 'xuzhu' }
+  boss: { drawH: 420, type: 'general' },
+  lubu: { drawH: 450, type: 'lubu' },
+  dianwei: { drawH: 440, type: 'dianwei' },
+  xuzhu: { drawH: 440, type: 'xuzhu' }
 };
 
 export class Enemy {
@@ -80,9 +80,22 @@ export class Enemy {
     }
 
     this.spriteConfig = SPRITE_CONFIG[type] || SPRITE_CONFIG.soldier;
+    this.baseSpriteScale = null;
     this.createSprite();
     this.createHpBar();
     this.createNameLabel();
+  }
+
+  getBaseSpriteScale() {
+    if (this.baseSpriteScale != null) return this.baseSpriteScale;
+    if (this.sprite && this.sprite.texture) {
+      const source = this.sprite.texture.getSourceImage();
+      if (source && source.height > 0) {
+        this.baseSpriteScale = this.spriteConfig.drawH / source.height;
+        return this.baseSpriteScale;
+      }
+    }
+    return 0.5;
   }
 
   getHpBarColor() {
@@ -96,7 +109,7 @@ export class Enemy {
     if (AssetLoader.hasTexture(this.scene, key)) {
       this.sprite = this.scene.add.sprite(this.x, this.y, key);
       const s = this.sizeScale;
-      this.sprite.setScale(0.4 * s);
+      this.sprite.setScale(this.getBaseSpriteScale() * s);
     } else {
       this.sprite = this.scene.add.sprite(this.x, this.y, '__WHITE');
       this.sprite.setDisplaySize(this.radius * 2, this.radius * 2);
@@ -197,7 +210,7 @@ export class Enemy {
     if (this.sprite) {
       this.sprite.setAlpha(1);
       this.sprite.setRotation(0);
-      this.sprite.setScale(0.4 * this.sizeScale);
+      this.sprite.setScale(this.getBaseSpriteScale() * this.sizeScale);
       this.sprite.clearTint();
     }
     if (this.hpBarBg) this.hpBarBg.setVisible(true);
@@ -343,7 +356,7 @@ export class Enemy {
       const FADE_DUR = 0.6;
       const progress = Math.max(0, Math.min(1, this.deathTimer / FADE_DUR));
       this.sprite.setAlpha(progress);
-      const baseScale = 0.4 * this.sizeScale;
+      const baseScale = this.getBaseSpriteScale() * this.sizeScale;
       this.sprite.setScale(baseScale * (0.6 + 0.4 * progress));
       this.sprite.setRotation((1 - progress) * (Math.PI / 6) * (this.x > MAP_W / 2 ? -1 : 1));
       if (this.hpBarBg) this.hpBarBg.setVisible(false);
@@ -420,7 +433,7 @@ export class Enemy {
     this.sprite.setFlipX(flipX);
 
     const s = this.sizeScale;
-    this.sprite.setScale(0.4 * s);
+    this.sprite.setScale(this.getBaseSpriteScale() * s);
   }
 
   setSliceTexture() {

@@ -1,5 +1,5 @@
 import { MAP_W, MAP_H } from './utils/index.js';
-import { ENEMY_TYPES, SKILLS, REWARD_TYPES } from '../config.js';
+import { ENEMY_TYPES, SKILLS, REWARD_TYPES, EQUIP_TYPES, QUALITY, ZHAO_YUN_EQUIP_TIERS } from '../config.js';
 import { rand, randInt, pick } from './utils/index.js';
 import { Player } from './entities/Player.js';
 import { Projectile } from './entities/Projectile.js';
@@ -318,10 +318,43 @@ export class GameController {
 
   // ===== 升级奖励 =====
 
+  getMissingGodEquipTypes() {
+    return EQUIP_TYPES.filter(type => {
+      const eq = this.player.equip[type];
+      return !eq || eq.quality.name !== '传说';
+    });
+  }
+
+  genGodEquip(type) {
+    const level = this.player.level;
+    const tier = Math.min(4, Math.max(2, 1 + Math.floor(level / 5)));
+    const tierData = ZHAO_YUN_EQUIP_TIERS[tier][type];
+    const q = QUALITY[4];
+    const stats = {};
+    for (const [k, v] of Object.entries(tierData.stats)) {
+      stats[k] = Math.floor(v * q.mult * (0.9 + Math.random() * 0.2));
+    }
+    return { type, name: tierData.name, quality: q, stats, level, tier };
+  }
+
+  grantGodEquip() {
+    const missing = this.getMissingGodEquipTypes();
+    if (missing.length === 0) return null;
+    const type = pick(missing);
+    const eq = this.genGodEquip(type);
+    this.player.equip[type] = eq;
+    return eq;
+  }
+
   showLevelUp() {
     this.addPause('levelup');
     this.levelUpOpen = true;
-    const pool = [...REWARD_TYPES];
+    const pool = REWARD_TYPES.filter(r => {
+      if (r.id === 'godEquip') {
+        return this.player.level >= 10 && this.getMissingGodEquipTypes().length > 0;
+      }
+      return true;
+    });
     const rewards = [];
     while (rewards.length < 3 && pool.length > 0) {
       const idx = randInt(0, pool.length - 1);
@@ -330,14 +363,24 @@ export class GameController {
     this.pendingRewards = rewards;
     if (this.uiSync && this.uiSync.showLevelUp) {
       this.uiSync.showLevelUp(rewards, (r) => {
-        r.apply(this.player);
-        this.effectManager.addText(this.player.x, this.player.y - 60, r.name, '#ffd700', 18, '#000');
+        if (r.id === 'godEquip') {
+          const eq = this.grantGodEquip();
+          if (eq) {
+            this.effectManager.addText(this.player.x, this.player.y - 60, `获得 ${eq.name}`, eq.quality.color, 18, '#000');
+          }
+        } else {
+          r.apply(this.player);
+          this.effectManager.addText(this.player.x, this.player.y - 60, r.name, '#ffd700', 18, '#000');
+        }
         this.levelUpOpen = false;
         this.removePause('levelup');
       });
     } else {
       // 无 UI 时自动选择第一个
-      if (rewards[0]) rewards[0].apply(this.player);
+      if (rewards[0]) {
+        if (rewards[0].id === 'godEquip') this.grantGodEquip();
+        else rewards[0].apply(this.player);
+      }
       this.levelUpOpen = false;
       this.removePause('levelup');
     }

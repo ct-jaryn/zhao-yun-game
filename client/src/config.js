@@ -192,10 +192,10 @@ export const ENEMY_TYPES = {
   archer:  { name:'弓箭手', color:'#8b4513', radius:26, hp:30, atk:16, def:1, speed:60, exp:18, score:15, dropRate:0.15, ranged:true, shootCd:2 },
   cavalry: { name:'骑兵', color:'#4a4a4a', radius:36, hp:80, atk:22, def:5, speed:130, exp:30, score:25, dropRate:0.2 },
   general: { name:'曹将', color:'#8b0000', radius:40, hp:200, atk:30, def:8, speed:100, exp:80, score:60, dropRate:0.5 },
-  boss:    { name:'曹操', color:'#4a0080', radius:56, hp:800, atk:35, def:12, speed:90, exp:300, score:200, dropRate:1.0 },
-  lubu:    { name:'吕布', color:'#8b0000', radius:64, hp:2000, atk:60, def:20, speed:110, exp:1000, score:1000, dropRate:1.0 },
-  dianwei: { name:'典韦', color:'#2a1a10', radius:58, hp:1200, atk:45, def:15, speed:95, exp:400, score:300, dropRate:1.0 },
-  xuzhu:   { name:'许褚', color:'#3d2817', radius:60, hp:1500, atk:50, def:18, speed:90, exp:500, score:400, dropRate:1.0 }
+  boss:    { name:'曹操', color:'#4a0080', radius:110, hp:800, atk:35, def:12, speed:90, exp:300, score:200, dropRate:1.0 },
+  lubu:    { name:'吕布', color:'#8b0000', radius:130, hp:2000, atk:60, def:20, speed:110, exp:1000, score:1000, dropRate:1.0 },
+  dianwei: { name:'典韦', color:'#2a1a10', radius:115, hp:1200, atk:45, def:15, speed:95, exp:400, score:300, dropRate:1.0 },
+  xuzhu:   { name:'许褚', color:'#3d2817', radius:120, hp:1500, atk:50, def:18, speed:90, exp:500, score:400, dropRate:1.0 }
 };
 
 // 敌人追踪赵云参数：进入范围开始追，超出范围停止追，追击速度比正常慢
@@ -212,11 +212,11 @@ export const TERRAIN = [
 ];
 
 export const REWARD_TYPES = [
-  { id:'atkUp', icon:'⚔️', name:'锐不可当', desc:'攻击力 +10%', apply: (p) => p.bonusAtk = (p.bonusAtk||0)+0.1 },
-  { id:'critUp', icon:'💥', name:'会心一击', desc:'暴击率 +5%', apply: (p) => p.bonusCrit = (p.bonusCrit||0)+5 },
-  { id:'spdUp', icon:'👢', name:'疾风步', desc:'移动速度 +10%', apply: (p) => p.bonusSpd = (p.bonusSpd||0)+0.1 },
-  { id:'cdDown', icon:'⚡', name:'行云流水', desc:'技能冷却 -8%', apply: (p) => p.bonusCdr = (p.bonusCdr||0)+0.08 },
-  { id:'hpUp', icon:'❤️', name:'体魄强健', desc:'最大生命 +15%', apply: (p) => p.bonusHp = (p.bonusHp||0)+0.15 },
-  { id:'mpUp', icon:'💧', name:'气定神闲', desc:'法力回复 +30%', apply: (p) => p.bonusMpRegen = (p.bonusMpRegen||0)+0.3 },
-  { id:'heal', icon:'🍖', name:'战场急救', desc:'立即恢复 40% 生命', apply: (p) => { p.hp = Math.min(p.hp + p.maxHpTotal*0.4, p.maxHpTotal); } }
+  { id:'atkUp', icon:'⚔️', name:'攻击强化', desc:'攻击力 +10%', apply: (p) => p.bonusAtk = (p.bonusAtk||0)+0.1 },
+  { id:'defUp', icon:'🛡️', name:'防御强化', desc:'防御力 +15%', apply: (p) => p.bonusDef = (p.bonusDef||0)+0.15 },
+  { id:'critUp', icon:'💥', name:'暴击强化', desc:'暴击率 +5%', apply: (p) => p.bonusCrit = (p.bonusCrit||0)+5 },
+  { id:'hpUp', icon:'❤️', name:'生命强化', desc:'最大生命 +15%', apply: (p) => p.bonusHp = (p.bonusHp||0)+0.15 },
+  { id:'hpRegenUp', icon:'🍖', name:'恢复强化', desc:'生命恢复 +30%', apply: (p) => p.bonusHpRegen = (p.bonusHpRegen||0)+0.3 },
+  { id:'mpRegenUp', icon:'💧', name:'法力强化', desc:'法力回复 +30%', apply: (p) => p.bonusMpRegen = (p.bonusMpRegen||0)+0.3 },
+  { id:'godEquip', icon:'👑', name:'随机神装', desc:'获得一件传说装备（Lv.10 后出现）', apply: (p) => {} }
 ];
