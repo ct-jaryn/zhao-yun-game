@@ -1,9 +1,30 @@
-import { spawn } from 'child_process';
+import { spawn, exec } from 'child_process';
 import http from 'http';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import process from 'process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function killProcessTree(pid) {
+  return new Promise((resolve) => {
+    const done = () => resolve();
+    setTimeout(done, 3000);
+    if (process.platform === 'win32') {
+      exec(`taskkill /F /T /PID ${pid}`, done);
+    } else {
+      try {
+        process.kill(pid, 'SIGTERM');
+      } catch (e) {}
+      setTimeout(() => {
+        try {
+          process.kill(pid, 'SIGKILL');
+        } catch (e) {}
+        done();
+      }, 2000);
+    }
+  });
+}
 
 function waitForServer(url, timeout = 60000) {
   return new Promise((resolve, reject) => {
@@ -55,7 +76,7 @@ async function main() {
   await build();
 
   console.log('> Starting vite preview server...');
-  const server = spawn('npx', ['vite', 'preview', '--port', '5173'], {
+  const server = spawn('npx', ['vite', 'preview', '--port', '5177'], {
     cwd: __dirname,
     stdio: ['ignore', 'ignore', 'inherit'],
     shell: true
@@ -63,7 +84,7 @@ async function main() {
 
   let testExitCode = 1;
   try {
-    await waitForServer('http://localhost:5173/');
+    await waitForServer('http://localhost:5177/');
     console.log('> Server ready, running', testScript);
 
     testExitCode = await new Promise((resolve) => {
@@ -76,11 +97,10 @@ async function main() {
     });
   } finally {
     console.log('> Stopping server...');
-    server.kill('SIGTERM');
-    // force kill after 5s
-    setTimeout(() => server.kill('SIGKILL'), 5000).unref();
+    await killProcessTree(server.pid);
   }
 
+  console.log('> Exiting with code', testExitCode);
   process.exit(testExitCode);
 }
 

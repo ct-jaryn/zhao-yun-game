@@ -69,28 +69,34 @@ export function equipPower(eq) {
 }
 
 export class Player {
-  constructor(scene, x, y, skin = 'classic') {
+  constructor(scene, x, y, combatStats = null) {
+    const stats = combatStats || {};
     this.scene = scene;
-    this.skin = skin;
+    this.skin = stats.skin || 'classic';
+    this.heroId = stats.heroId || 'zhaoyun';
     this.x = x;
     this.y = y;
     this.dir = 0;
-    this.speed = 200;
-    this.radius = 36;
+    this.speed = stats.spd || 200;
+    this.radius = stats.radius || 36;
 
     this.level = 1;
     this.exp = 0;
     this.expToLevel = 100;
-    this.maxHp = 150;
-    this.hp = 150;
-    this.maxMp = 80;
-    this.mp = 80;
-    this.baseAtk = 20;
-    this.baseDef = 8;
-    this.critRate = 5;
-    this.mpRegen = 3;
+    this.maxHp = stats.maxHp || 150;
+    this.hp = this.maxHp;
+    this.maxMp = stats.maxMp || 80;
+    this.mp = this.maxMp;
+    this.baseAtk = stats.atk || 20;
+    this.baseDef = stats.def || 8;
+    this.critRate = stats.crit || 5;
+    this.mpRegen = stats.mpRegen || 3;
+    this.hpRegen = stats.hpRegen || 1;
+    this.passive = stats.passive || null;
+    this.skillDamageMult = stats.skillDamageMult || [1, 1, 1, 1, 1];
+    this.talentEffects = stats.talentEffects || [];
 
-    this.equip = createInitialEquip();
+    this.equip = stats.equipment || createInitialEquip();
     this.skillCd = [0, 0, 0, 0, 0];
     this.attacking = false;
     this.attackTimer = 0;
@@ -116,14 +122,13 @@ export class Player {
     this.bonusSpd = 0;
     this.bonusCdr = 0;
     this.bonusHp = 0;
-    this.hpRegen = 1;
     this.bonusHpRegen = 0;
     this.bonusMpRegen = 0;
 
     this.moving = false;
     this.mouseAim = false;
 
-    this.animPrefix = skin === 'mecha' ? 'mecha_player' : 'player';
+    this.animPrefix = this.skin === 'mecha' ? 'mecha_player' : 'player';
     this.createSprite();
   }
 
@@ -209,6 +214,8 @@ export class Player {
     if (this.invulnTimer > 0) this.invulnTimer -= dt;
     if (this.flashTimer > 0) this.flashTimer -= dt;
     if (this.hurtTimer > 0) this.hurtTimer -= dt;
+
+    this.applyPassives(dt, game);
 
     if (this.dead) {
       this.syncSprite();
@@ -457,7 +464,16 @@ export class Player {
 
   takeDamage(dmg, game = null) {
     if (this.invulnTimer > 0 || this.dead) return;
-    const actual = Math.max(1, dmg - this.def);
+    let actual = Math.max(1, dmg - this.def);
+
+    // 许褚被动：20% 概率减免 50% 伤害
+    if (this.heroId === 'xuzhu' && Math.random() < 0.2) {
+      actual = Math.max(1, Math.floor(actual * 0.5));
+      if (game && game.effectManager) {
+        game.effectManager.addText(this.x, this.y - this.radius - 55, '格挡!', '#44ff44', 16, '#000');
+      }
+    }
+
     this.hp -= actual;
     this.invulnTimer = 0.5;
     this.hurtTimer = 0.4;
@@ -470,6 +486,59 @@ export class Player {
     if (this.hp <= 0) {
       this.hp = 0;
       this.dead = true;
+    }
+  }
+
+  getDamageMult(target = null) {
+    let mult = 1;
+
+    // 赵云被动：低血量增伤
+    if (this.heroId === 'zhaoyun' && this.hp <= this.maxHpTotal * 0.3) {
+      mult *= 1.25;
+    }
+
+    // 吕布被动：对 Boss 增伤
+    if (this.heroId === 'lubu' && target) {
+      const bossTypes = ['boss', 'lubu', 'dianwei', 'xuzhu'];
+      if (bossTypes.includes(target.type)) {
+        mult *= 1.2;
+      }
+    }
+
+    return mult;
+  }
+
+  onKill(enemy, game) {
+    // 典韦被动：击杀回血
+    if (this.heroId === 'dianwei') {
+      const heal = Math.floor(this.maxHpTotal * 0.03);
+      this.hp = Math.min(this.maxHpTotal, this.hp + heal);
+      if (game && game.effectManager) {
+        game.effectManager.addText(this.x, this.y - this.radius - 50, `+${heal}`, '#44ff44', 16, '#000');
+      }
+    }
+  }
+
+  applyPassives(dt, game) {
+    // 貂蝉被动：每 8 秒魅惑附近敌人
+    if (this.heroId === 'diaochan') {
+      this._charmTimer = (this._charmTimer || 0) - dt;
+      if (this._charmTimer <= 0) {
+        this._charmTimer = 8;
+        let charmed = 0;
+        for (const e of game.enemies) {
+          if (e.dead || e.charmed) continue;
+          const dist = Math.hypot(e.x - this.x, e.y - this.y);
+          if (dist < 200) {
+            e.applyCharm(2.5);
+            charmed++;
+          }
+        }
+        if (charmed > 0 && game.effectManager) {
+          game.effectManager.addText(this.x, this.y - this.radius - 60, `魅惑 ×${charmed}`, '#ff69b4', 18, '#000');
+          game.effectManager.addParticles(this.x, this.y, '#ff69b4', 10, 80, 4);
+        }
+      }
     }
   }
 

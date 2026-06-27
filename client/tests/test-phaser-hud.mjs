@@ -1,4 +1,6 @@
 import { chromium } from 'playwright';
+import { startStoryChapter } from './game-helper.mjs';
+import { safeScreenshot } from './screenshot-helper.mjs';
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
@@ -14,34 +16,7 @@ import { chromium } from 'playwright';
     if (type === 'error') errors.push(`CONSOLE ERROR: ${text}`);
   });
 
-  await page.goto('http://localhost:5173/', { waitUntil: 'domcontentloaded' });
-
-  const overlay = await page.locator('vite-error-overlay').first();
-  if (await overlay.isVisible().catch(() => false)) {
-    const text = await overlay.textContent();
-    console.error('Vite error overlay:', text);
-    await browser.close();
-    process.exit(1);
-  }
-
-  await page.waitForFunction(() => {
-    const btn = document.getElementById('startBtn');
-    return btn && !btn.disabled;
-  }, { timeout: 60000 });
-
-  await page.click('#startBtn');
-  await page.waitForTimeout(300);
-  await page.locator('.chapter-card[data-chapter="1"]').click();
-  await page.waitForTimeout(300);
-  await page.locator('.skin-card[data-skin="classic"]').click();
-  await page.waitForTimeout(200);
-  await page.click('#skinStartBtn');
-
-  await page.waitForFunction(() => {
-    const scene = window.gameApp && window.gameApp.game.scene.getScene('GameScene');
-    return scene && scene.controller && scene.controller.player;
-  }, { timeout: 30000 });
-
+  await startStoryChapter(page, 1);
   await page.waitForTimeout(1000);
 
   // 设置各种 HUD 状态
@@ -50,9 +25,9 @@ import { chromium } from 'playwright';
     const g = scene.controller;
     const p = g.player;
 
-    // 连击 15
+    // 连击 15，给一个较长倒计时避免截图超时期间中断
     p.combo = 15;
-    p.comboTimer = 2;
+    p.comboTimer = 60;
 
     // 闪避 CD 1.5 秒
     p.dodgeCd = 1.5;
@@ -69,7 +44,6 @@ import { chromium } from 'playwright';
   });
 
   await page.waitForTimeout(500);
-  await page.screenshot({ path: 'test-phaser-hud.png' });
 
   const hudState = await page.evaluate(() => {
     return {
@@ -86,6 +60,9 @@ import { chromium } from 'playwright';
   });
 
   console.log('HUD state:', hudState);
+
+  await safeScreenshot(page, { path: 'test-phaser-hud.png', timeout: 5000 });
+
   console.log('Errors:', errors.length ? errors.join('\n') : 'none');
 
   await browser.close();

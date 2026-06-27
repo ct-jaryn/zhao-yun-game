@@ -42,4 +42,28 @@ export class GameApp {
       scene.startChapter(chapter, skin);
     }
   }
+
+  startRun(runConfig, onComplete) {
+    this._pendingRunCompleteCallback = onComplete;
+    const scene = this.game.scene.getScene('GameScene');
+    if (scene) {
+      scene.scene.restart({ runConfig });
+    } else {
+      this.game.scene.start('GameScene', { runConfig });
+    }
+  }
+
+  consumeRunCompleteCallback() {
+    const cb = this._pendingRunCompleteCallback;
+    this._pendingRunCompleteCallback = null;
+    return cb;
+  }
+
+  stopGame() {
+    const scene = this.game.scene.getScene('GameScene');
+    if (scene) {
+      if (scene.controller) scene.controller.shutdown();
+      scene.scene.stop();
+    }
+  }
 }

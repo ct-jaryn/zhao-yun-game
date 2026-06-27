@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/ui.css?v=17">
 <link rel="stylesheet" href="css/screens.css?v=4">
+<link rel="stylesheet" href="css/lobby.css?v=1">
 </head>
 <body>
 <div id="gameWrapper">
@@ -115,7 +116,7 @@
         <div class="ph-name" id="phName"></div>
         <div class="ph-stats" id="phStats"></div>
         <div class="ph-compare" id="phCompare"></div>
-        <div class="ph-action">按 <kbd>E</kbd> 拾取</div>
+        <div class="ph-action">靠近自动拾取</div>
       </div>
 
       <!-- Equipment Panel -->
@@ -190,8 +191,77 @@
       </div>
     </div>
 
+    <!-- Lobby / Character Management Panel -->
+    <div id="lobbyScreen" class="screen active">
+      <div class="lobby-bg"></div>
+      <div class="lobby-topbar">
+        <div class="lobby-account">
+          <span class="lobby-rank" id="lobbyRank">军阶 Lv.1</span>
+          <span class="lobby-currency" id="lobbyCoins">🪙 0</span>
+          <span class="lobby-currency" id="lobbySouls">🔥 0</span>
+          <span class="lobby-currency" id="lobbyStones">🔷 0</span>
+          <span class="lobby-currency" id="lobbyMerit">🎖️ 0</span>
+        </div>
+        <div class="lobby-actions">
+          <button class="lobby-icon-btn" id="lobbySettingsBtn" title="设置">⚙️</button>
+        </div>
+      </div>
+
+      <div class="lobby-body">
+        <aside class="lobby-sidebar" id="lobbySidebar">
+          <h3>英雄</h3>
+          <div class="hero-list" id="heroList"></div>
+        </aside>
+
+        <main class="lobby-main">
+          <div class="lobby-preview" id="lobbyPreview">
+            <img class="lobby-hero-avatar" id="lobbyHeroAvatar" src="/generated/avatar.png" alt="英雄">
+            <div class="lobby-hero-title">
+              <h2 id="lobbyHeroName">赵云 · 子龙</h2>
+              <span class="lobby-hero-level" id="lobbyHeroLevel">Lv.1</span>
+              <span class="lobby-hero-power" id="lobbyHeroPower">战力 0</span>
+            </div>
+            <p class="lobby-hero-desc" id="lobbyHeroDesc">常山赵子龙，均衡型战士。</p>
+          </div>
+
+          <div class="lobby-tabs" id="lobbyTabs">
+            <button class="lobby-tab active" data-tab="stats">属性</button>
+            <button class="lobby-tab" data-tab="equip">装备</button>
+            <button class="lobby-tab" data-tab="skills">技能</button>
+            <button class="lobby-tab" data-tab="talents">天赋</button>
+            <button class="lobby-tab" data-tab="records">战绩</button>
+          </div>
+
+          <div class="lobby-tab-content active" id="tab-stats"></div>
+          <div class="lobby-tab-content" id="tab-equip"></div>
+          <div class="lobby-tab-content" id="tab-skills"></div>
+          <div class="lobby-tab-content" id="tab-talents"></div>
+          <div class="lobby-tab-content" id="tab-records"></div>
+        </main>
+      </div>
+
+      <div class="lobby-footer" id="lobbyFooter">
+        <button class="lobby-mode-btn" data-mode="story">
+          <span class="mode-icon">📜</span>
+          <span class="mode-name">剧情模式</span>
+        </button>
+        <button class="lobby-mode-btn" data-mode="endless">
+          <span class="mode-icon">♾️</span>
+          <span class="mode-name">无尽模式</span>
+        </button>
+        <button class="lobby-mode-btn" data-mode="daily">
+          <span class="mode-icon">📅</span>
+          <span class="mode-name">每日挑战</span>
+        </button>
+        <button class="lobby-mode-btn" data-mode="shop">
+          <span class="mode-icon">🏪</span>
+          <span class="mode-name">商店</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Start Screen -->
-    <div id="startScreen">
+    <div id="startScreen" style="display:none;">
       <canvas id="bgParticles"></canvas>
       <div class="start-vignette"></div>
       <div class="start-light-rays"></div>

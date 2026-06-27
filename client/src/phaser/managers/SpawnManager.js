@@ -22,7 +22,35 @@ export class SpawnManager {
   }
 
   createEnemy(type, x, y, options = {}) {
-    return new Enemy(this.game.scene, x, y, type, this.getEnemyLevel(type), options);
+    const enemy = new Enemy(this.game.scene, x, y, type, this.getEnemyLevel(type), options);
+    this._applyDifficultyScaling(enemy, options);
+    return enemy;
+  }
+
+  _applyDifficultyScaling(enemy, options = {}) {
+    const runConfig = this.game.runConfig;
+    if (!runConfig) return;
+    const diff = runConfig.getDifficultyConfig();
+
+    enemy.maxHp = Math.floor(enemy.maxHp * diff.enemyHp);
+    enemy.hp = enemy.maxHp;
+    enemy.atk = Math.floor(enemy.atk * diff.enemyAtk);
+    enemy.def = Math.floor(enemy.def * diff.enemyDef);
+    enemy.speed = Math.floor(enemy.speed * diff.enemySpeed);
+
+    // 精英怪词缀（仅非 Boss）
+    const isBoss = ['boss', 'lubu', 'dianwei', 'xuzhu'].includes(enemy.type);
+    if (!isBoss && !options.elite && !enemy.enhanced && Math.random() < diff.eliteChance) {
+      enemy.isElite = true;
+      enemy.name = `精英·${enemy.name}`;
+      enemy.maxHp = Math.floor(enemy.maxHp * 1.5);
+      enemy.hp = enemy.maxHp;
+      enemy.atk = Math.floor(enemy.atk * 1.3);
+      enemy.exp = Math.floor(enemy.exp * 1.5);
+      enemy.score = Math.floor(enemy.score * 1.5);
+      enemy.dropRate = Math.min(1, enemy.dropRate * 1.5);
+      if (enemy.sprite) enemy.sprite.setTint(0xffaa00);
+    }
   }
 
   randomSpawnPos() {

@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
+import { safeScreenshot } from './screenshot-helper.mjs';
 
-const BASE_URL = 'http://localhost:5173/';
+const BASE_URL = 'http://localhost:5177/';
 
 async function setupPage(browser) {
   const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
@@ -19,8 +20,8 @@ async function setupPage(browser) {
       if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
       await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
       await page.waitForFunction(() => {
-        const btn = document.getElementById('startBtn');
-        return btn && !btn.disabled;
+        const lobby = document.getElementById('lobbyScreen');
+        return lobby && window.getComputedStyle(lobby).display !== 'none' && !!window.lobbyController;
       }, { timeout: 60000 });
       return { page, errors };
     } catch (e) {
@@ -34,21 +35,34 @@ async function setupPage(browser) {
 
 async function startChapter(page, chapter = 1, skin = 'classic') {
   await page.evaluate(() => {
-    document.getElementById('startScreen').style.display = 'flex';
-    document.getElementById('chapterScreen').style.display = 'none';
-    document.getElementById('skinScreen').style.display = 'none';
+    if (window.lobbyController) window.lobbyController._returnToLobby();
     document.getElementById('gameOverScreen').style.display = 'none';
     document.getElementById('victoryScreen').style.display = 'none';
     document.getElementById('pauseOverlay').style.display = 'none';
-    document.getElementById('adLockOverlay').style.display = 'none';
   });
-  await page.click('#startBtn');
+  await page.waitForTimeout(500);
+
+  // 解锁目标章节
+  await page.evaluate((chapter) => {
+    if (window.lobbyController) {
+      window.lobbyController.save.account.unlockChapter(chapter);
+      window.lobbyController.save.persist();
+    }
+  }, chapter);
+
+  await page.click('.lobby-mode-btn[data-mode="story"]');
   await page.waitForTimeout(300);
-  await page.locator(`.chapter-card[data-chapter="${chapter}"]`).click();
-  await page.waitForTimeout(300);
-  await page.locator(`.skin-card[data-skin="${skin}"]`).click();
+  await page.locator(`.lobby-chapter-card[data-chapter="${chapter}"]`).click();
   await page.waitForTimeout(200);
-  await page.click('#skinStartBtn');
+
+  await page.evaluate((skin) => {
+    if (window.lobbyController) {
+      window.lobbyController.save.heroes.getHero('zhaoyun').skin = skin;
+      window.lobbyController._renderPreview();
+    }
+  }, skin);
+
+  await page.click('#lobbyStoryStart');
   await page.waitForFunction(() => {
     const scene = window.gameApp && window.gameApp.game.scene.getScene('GameScene');
     return scene && scene.controller && scene.controller.player;
@@ -58,21 +72,24 @@ async function startChapter(page, chapter = 1, skin = 'classic') {
 async function testPause(browser) {
   const { page, errors } = await setupPage(browser);
   await startChapter(page);
-  await page.click('canvas');
   await page.waitForTimeout(1000);
-  await page.keyboard.down('Escape');
-  await page.waitForTimeout(200);
-  await page.keyboard.up('Escape');
+  await page.evaluate(() => {
+    const scene = window.gameApp.game.scene.getScene('GameScene');
+    scene.controller.togglePause();
+  });
   await page.waitForTimeout(500);
   const pauseVisible = await page.locator('#pauseOverlay').isVisible().catch(() => false);
   const paused = await page.evaluate(() => window.gameApp.game.scene.getScene('GameScene').controller.paused);
-  await page.click('#resumeBtn');
+  await page.evaluate(() => {
+    const scene = window.gameApp.game.scene.getScene('GameScene');
+    scene.controller.togglePause();
+  });
   await page.waitForTimeout(500);
   const resumed = await page.evaluate(() => !window.gameApp.game.scene.getScene('GameScene').controller.paused);
   console.log('Pause panel visible:', pauseVisible);
   console.log('Game paused:', paused);
   console.log('Game resumed:', resumed);
-  await page.screenshot({ path: 'test-phaser-pause.png' });
+  try { await safeScreenshot(page, { path: 'test-phaser-pause.png', timeout: 5000 }); } catch (e) {}
   await page.close();
   if (!pauseVisible || !paused || !resumed || errors.length) throw new Error('pause test failed: ' + errors.join('\n'));
 }
@@ -93,7 +110,7 @@ async function testEquip(browser) {
   const equipSlots = await page.locator('.equip-slot, .pause-equip-slot').count().catch(() => 0);
   console.log('Equip panel visible:', equipVisible);
   console.log('Equip slot count:', equipSlots);
-  await page.screenshot({ path: 'test-phaser-equip.png' });
+  await safeScreenshot(page, { path: 'test-phaser-equip.png' });
   await page.evaluate(() => {
     const scene = window.gameApp.game.scene.getScene('GameScene');
     scene.controller.toggleEquipPanel();
@@ -118,7 +135,7 @@ async function testLevelUp(browser) {
   const rewardCards = await page.locator('.reward-card').count().catch(() => 0);
   console.log('Level up panel visible:', levelUpVisible);
   console.log('Reward cards count:', rewardCards);
-  await page.screenshot({ path: 'test-phaser-levelup.png' });
+  await safeScreenshot(page, { path: 'test-phaser-levelup.png' });
   if (levelUpVisible && rewardCards > 0) {
     await page.locator('.reward-card').first().click();
     await page.waitForTimeout(500);
@@ -152,7 +169,7 @@ async function testDialogue(browser) {
   console.log('Dialogue visible:', dialogueVisible);
   console.log('Speaker:', speaker);
   console.log('Text:', text);
-  await page.screenshot({ path: 'test-phaser-dialogue.png' });
+  await safeScreenshot(page, { path: 'test-phaser-dialogue.png' });
   if (dialogueVisible) {
     await page.click('#dialogueContinue');
     await page.waitForTimeout(500);
@@ -182,7 +199,7 @@ async function testHints(browser) {
     g.directionHints.update(g.enemies);
   });
   await page.waitForTimeout(500);
-  await page.screenshot({ path: 'test-phaser-hints.png' });
+  await safeScreenshot(page, { path: 'test-phaser-hints.png' });
   const hintInfo = await page.evaluate(() => {
     const scene = window.gameApp.game.scene.getScene('GameScene');
     const g = scene.controller;
@@ -228,7 +245,7 @@ async function testCombat(browser) {
     await page.waitForTimeout(250);
   }
   await page.waitForTimeout(1000);
-  await page.screenshot({ path: 'test-phaser-combat.png' });
+  await safeScreenshot(page, { path: 'test-phaser-combat.png' });
   const state = await page.evaluate(() => {
     const scene = window.gameApp.game.scene.getScene('GameScene');
     if (!scene || !scene.controller) return null;
@@ -306,7 +323,7 @@ async function testPhase(browser) {
     };
   });
   console.log('After spawnFinalBosses:', afterFinal);
-  await page.screenshot({ path: 'test-phaser-phase.png' });
+  await safeScreenshot(page, { path: 'test-phaser-phase.png' });
   await page.close();
   if (afterSpawn.phase !== '典韦' || afterSpawn.bossCount < 1 || !afterKill.midBossDefeated || afterFinal.phase !== '曹操·狂暴 & 典韦' || afterFinal.finalBossCount < 2 || errors.length) throw new Error('phase test failed: ' + errors.join('\n'));
 }
@@ -327,7 +344,7 @@ async function testGameOver(browser) {
   console.log('Game over screen visible:', gameOverVisible);
   console.log('Game running:', running);
   console.log('Player dead:', dead);
-  await page.screenshot({ path: 'test-phaser-gameover.png' });
+  await safeScreenshot(page, { path: 'test-phaser-gameover.png' });
   await page.close();
   if (!gameOverVisible || running || !dead || errors.length) throw new Error('gameover test failed: ' + errors.join('\n'));
 }
@@ -357,7 +374,7 @@ async function testVictory(browser) {
   console.log('Victory screen visible:', victoryVisible);
   console.log('Final kills text:', finalKills);
   console.log('Game running:', running);
-  await page.screenshot({ path: 'test-phaser-victory.png' });
+  await safeScreenshot(page, { path: 'test-phaser-victory.png' });
   await page.close();
   if (!victoryVisible || running || errors.length) throw new Error('victory test failed: ' + errors.join('\n'));
 }

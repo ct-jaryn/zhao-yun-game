@@ -4,3 +4,6 @@ export * from './skills.config.js';
 export * from './enemies.config.js';
 export * from './rewards.config.js';
 export * from './assets.config.js';
+export * from './heroes.config.js';
+export * from './difficulty.config.js';
+export * from './account.config.js';

@@ -2,6 +2,7 @@ import { MAP_W, MAP_H } from './utils/index.js';
 import { ENEMY_TYPES, SKILLS } from '../config/index.js';
 import { rand, pick } from './utils/index.js';
 import { Player } from './entities/Player.js';
+import { RunConfig } from '../game/RunConfig.js';
 import { Projectile } from './entities/Projectile.js';
 import { EffectManager } from './managers/EffectManager.js';
 import { CollisionManager } from './managers/CollisionManager.js';
@@ -47,6 +48,8 @@ export class GameController {
     this.chapter = 1;
     this.chapterConfig = CHAPTER_CONFIG[1];
     this.skin = 'classic';
+    this.runConfig = null;
+    this.onRunCompleteCallback = null;
 
     this.player = null;
     this.enemies = [];
@@ -67,12 +70,15 @@ export class GameController {
     this.equipToggleCd = 0;
   }
 
-  start(chapter, skin) {
+  start(runConfig) {
     this.shutdown();
 
-    this.chapter = chapter;
-    this.chapterConfig = CHAPTER_CONFIG[chapter] || CHAPTER_CONFIG[1];
-    this.skin = skin;
+    this.runConfig = runConfig instanceof RunConfig ? runConfig : new RunConfig({ heroId: 'zhaoyun', skin: 'classic', chapter: 1, difficulty: 'normal', mode: 'story' });
+    const cfg = this.runConfig;
+
+    this.chapter = cfg.chapter;
+    this.chapterConfig = CHAPTER_CONFIG[cfg.chapter] || CHAPTER_CONFIG[1];
+    this.skin = cfg.skin;
 
     this.totalKills = 0;
     this.score = 0;
@@ -83,7 +89,8 @@ export class GameController {
     this.pendingRewards = [];
     this.equipPanelOpen = false;
 
-    this.player = new Player(this.scene, MAP_W / 2, MAP_H / 2, skin);
+    const combatStats = cfg.toCombatStats();
+    this.player = new Player(this.scene, MAP_W / 2, MAP_H / 2, combatStats);
 
     this.effectManager = new EffectManager(this);
     this.collisionManager = new CollisionManager(this);
@@ -143,9 +150,6 @@ export class GameController {
       this.gameTime += dt;
       this.player.update(dt, input, this);
 
-      if (input.justDown('KeyE')) {
-        this.dropManager.pickupDrop();
-      }
       if (input.isDown('Tab') && this.equipToggleCd <= 0) {
         this.equipToggleCd = 0.15;
         this.toggleEquipPanel();
@@ -188,6 +192,11 @@ export class GameController {
   onEnemyKilled(e) {
     const cfg = this.chapterConfig;
     const BOSS_TYPES = ['boss', 'lubu', 'dianwei', 'xuzhu'];
+
+    // 触发英雄击杀被动（典韦回血等）
+    if (this.player && this.player.onKill) {
+      this.player.onKill(e, this);
+    }
 
     if (BOSS_TYPES.includes(e.type)) {
       this.totalKills++;
@@ -285,7 +294,8 @@ export class GameController {
 
   hitEnemyWithSkill(e, skillIdx) {
     const sk = SKILLS[skillIdx];
-    let dmg = Math.floor(this.player.atk * sk.dmgMult);
+    const passiveMult = this.player.getDamageMult(e);
+    let dmg = Math.floor(this.player.atk * sk.dmgMult * passiveMult);
     const isCrit = Math.random() * 100 < this.player.crit;
     if (isCrit) dmg = Math.floor(dmg * 1.8);
     e.takeDamage(dmg, isCrit, this.player.dir, this);
@@ -318,6 +328,7 @@ export class GameController {
       document.getElementById('finalWave').textContent = this.getPhaseName();
       document.getElementById('finalLevel').textContent = this.player.level;
     }
+    this.completeRun(false);
   }
 
   gameWin() {
@@ -342,13 +353,72 @@ export class GameController {
     this.effectManager.addText(this.player.x, this.player.y - 80, cfg.victoryText, '#ffd700', 32, '#000');
     this.effectManager.shakeScreen(12);
     this.effectManager.flashScreen('#ffd700', 0.8);
+    this.completeRun(true);
+  }
+
+  completeRun(cleared) {
+    if (!this.runConfig) return;
+
+    const diffCfg = this.runConfig.getDifficultyConfig();
+    const result = {
+      heroId: this.runConfig.heroId,
+      skin: this.runConfig.skin,
+      mode: this.runConfig.mode,
+      chapter: this.runConfig.chapter,
+      difficulty: this.runConfig.difficulty,
+      cleared,
+      kills: this.totalKills,
+      score: Math.floor(this.score * diffCfg.scoreMult),
+      time: this.gameTime,
+      maxCombo: this.player ? this.player.maxCombo : 0,
+      runLevel: this.player ? this.player.level : 1,
+      expGained: Math.floor((this.totalKills * 2 + this.score * 0.05) * diffCfg.expMult),
+      coinsGained: Math.floor((this.totalKills * 1 + this.score * 0.02) * diffCfg.coinMult),
+      soulsGained: Math.floor(cleared ? 10 * diffCfg.coinMult : 2),
+      drops: this._collectRunDrops(),
+      milestones: []
+    };
+
+    if (typeof this.onRunCompleteCallback === 'function') {
+      this.onRunCompleteCallback(result);
+    }
+  }
+
+  _collectRunDrops() {
+    // 从玩家当前装备中收集非初始装备作为掉落奖励
+    // 实际运行中掉落应记录在 DropManager；这里简化为玩家当前装备
+    const drops = [];
+    if (!this.player) return drops;
+    const initialNames = ['木枪', '布衣', '布巾', '草鞋', '木佩'];
+    for (const eq of Object.values(this.player.equip)) {
+      if (eq && !initialNames.includes(eq.name)) {
+        drops.push(eq);
+      }
+    }
+    return drops;
+  }
+
+  setOnRunCompleteCallback(cb) {
+    this.onRunCompleteCallback = cb;
   }
 
   getPhaseName() {
     return this.phaseManager ? this.phaseManager.getPhaseName() : '清兵阶段';
   }
 
+  get paused() {
+    return this.pauseManager ? this.pauseManager.isPaused() : false;
+  }
+
   // ===== 暂停与面板 =====
+
+  addPause(reason) {
+    this.pauseManager.addPause(reason);
+  }
+
+  removePause(reason) {
+    this.pauseManager.removePause(reason);
+  }
 
   togglePause() {
     if (this.levelUpOpen || !this.running) return;

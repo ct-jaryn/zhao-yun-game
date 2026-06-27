@@ -3,6 +3,7 @@ import { InputManager } from '../InputManager.js';
 import { GameController } from '../GameController.js';
 import { AnimationFactory } from '../plugins/AnimationFactory.js';
 import { AssetLoader } from '../plugins/AssetLoader.js';
+import { RunConfig } from '../../game/RunConfig.js';
 import { W, H, MAP_W, MAP_H } from '../utils/index.js';
 
 export class GameScene extends Phaser.Scene {
@@ -11,8 +12,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   init(data) {
-    this.chapter = data.chapter || 1;
-    this.skin = data.skin || 'classic';
+    this.runConfig = data.runConfig || null;
+    this.chapter = data.chapter || (this.runConfig ? this.runConfig.chapter : 1);
+    this.skin = data.skin || (this.runConfig ? this.runConfig.skin : 'classic');
   }
 
   preload() {
@@ -39,7 +41,13 @@ export class GameScene extends Phaser.Scene {
 
     this.inputManager = new InputManager(this);
     this.controller = new GameController(this);
-    this.controller.start(this.chapter, this.skin);
+
+    const onComplete = window.gameApp ? window.gameApp.consumeRunCompleteCallback() : null;
+    if (onComplete) {
+      this.controller.setOnRunCompleteCallback(onComplete);
+    }
+
+    this.controller.start(this.runConfig);
 
     this.setupBackground();
 
@@ -92,7 +100,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   startChapter(chapter, skin) {
-    this.scene.restart({ chapter, skin });
+    const runConfig = new RunConfig({ heroId: 'zhaoyun', skin, chapter, difficulty: 'normal', mode: 'story' });
+    this.scene.restart({ runConfig });
   }
 
   shutdown() {

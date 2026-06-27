@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { safeScreenshot } from './screenshot-helper.mjs';
 
 const TESTS = [
   { chapter: 1, skin: 'classic' },
@@ -22,20 +23,20 @@ const TESTS = [
     if (type === 'error') errors.push(`CONSOLE ERROR: ${text}`);
   });
 
-  await page.goto('http://localhost:5173/', { waitUntil: 'domcontentloaded' });
+  await page.goto('http://localhost:5177/', { waitUntil: 'domcontentloaded' });
 
   const overlay = await page.locator('vite-error-overlay').first();
   if (await overlay.isVisible().catch(() => false)) {
     const text = await overlay.textContent();
     console.error('Vite error overlay:', text);
-    await page.screenshot({ path: 'test-phaser-error.png' });
+    await safeScreenshot(page, { path: 'test-phaser-error.png' });
     await browser.close();
     process.exit(1);
   }
 
   await page.waitForFunction(() => {
-    const btn = document.getElementById('startBtn');
-    return btn && !btn.disabled;
+    const lobby = document.getElementById('lobbyScreen');
+    return lobby && window.getComputedStyle(lobby).display !== 'none' && !!window.lobbyController;
   }, { timeout: 60000 });
 
   let allPassed = true;
@@ -43,38 +44,53 @@ const TESTS = [
   for (const test of TESTS) {
     console.log(`\nTesting chapter=${test.chapter} skin=${test.skin}`);
 
-    // 返回开始界面
+    // 返回大厅
     await page.evaluate(() => {
-      document.getElementById('startScreen').style.display = 'flex';
-      document.getElementById('chapterScreen').style.display = 'none';
-      document.getElementById('skinScreen').style.display = 'none';
+      if (window.lobbyController) window.lobbyController._returnToLobby();
       document.getElementById('gameOverScreen').style.display = 'none';
       document.getElementById('victoryScreen').style.display = 'none';
       document.getElementById('pauseOverlay').style.display = 'none';
-      document.getElementById('adLockOverlay').style.display = 'none';
     });
+    await page.waitForTimeout(500);
 
-    await page.click('#startBtn');
-    await page.waitForTimeout(300);
-
+    // 如果测试第四章，先解锁
     if (test.chapter === 4) {
-      await page.evaluate(() => localStorage.setItem('zhaoyun_chapter4_unlocked', 'true'));
-      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.evaluate(() => {
+        localStorage.setItem('zhaoyun_chapter4_unlocked', 'true');
+        location.reload();
+      });
       await page.waitForFunction(() => {
-        const btn = document.getElementById('startBtn');
-        return btn && !btn.disabled;
+        const lobby = document.getElementById('lobbyScreen');
+        return lobby && window.getComputedStyle(lobby).display !== 'none' && !!window.lobbyController;
       }, { timeout: 60000 });
-      await page.click('#startBtn');
-      await page.waitForTimeout(300);
     }
 
-    await page.locator(`.chapter-card[data-chapter="${test.chapter}"]`).click();
+    // 解锁目标章节
+    await page.evaluate((chapter) => {
+      if (window.lobbyController) {
+        window.lobbyController.save.account.unlockChapter(chapter);
+        window.lobbyController.save.persist();
+      }
+    }, test.chapter);
+
+    // 打开剧情模式对话框
+    await page.click('.lobby-mode-btn[data-mode="story"]');
     await page.waitForTimeout(300);
 
-    await page.locator(`.skin-card[data-skin="${test.skin}"]`).click();
+    // 选择章节
+    await page.locator(`.lobby-chapter-card[data-chapter="${test.chapter}"]`).click();
     await page.waitForTimeout(200);
 
-    await page.click('#skinStartBtn');
+    // 选择皮肤：通过页面状态切换
+    await page.evaluate((skin) => {
+      if (window.lobbyController) {
+        window.lobbyController.save.heroes.getHero('zhaoyun').skin = skin;
+        window.lobbyController._renderPreview();
+      }
+    }, test.skin);
+
+    // 开始战斗
+    await page.click('#lobbyStoryStart');
     await page.waitForTimeout(3000);
 
     // 模拟移动和技能
@@ -100,12 +116,18 @@ const TESTS = [
     });
 
     console.log('State:', state);
-    await page.screenshot({ path: `test-phaser-ch${test.chapter}-${test.skin}.png` });
+    try {
+      await safeScreenshot(page, { path: `test-phaser-ch${test.chapter}-${test.skin}.png`, timeout: 5000 });
+    } catch (e) {
+      console.log(`Screenshot skipped for chapter=${test.chapter} skin=${test.skin}: ${e.message}`);
+    }
 
     if (!state.hasGame || !state.hasScene || !state.playerAlive) {
       console.error(`FAILED chapter=${test.chapter} skin=${test.skin}`);
       allPassed = false;
-      await page.screenshot({ path: `test-fail-${test.chapter}-${test.skin}.png` });
+      try {
+        await safeScreenshot(page, { path: `test-fail-${test.chapter}-${test.skin}.png`, timeout: 5000 });
+      } catch (e) {}
     }
   }
 

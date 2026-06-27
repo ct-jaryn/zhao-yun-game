@@ -1,4 +1,6 @@
 import { chromium } from 'playwright';
+import { startStoryChapter } from './game-helper.mjs';
+import { safeScreenshot } from './screenshot-helper.mjs';
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
@@ -14,25 +16,7 @@ import { chromium } from 'playwright';
     if (type === 'error') errors.push(`CONSOLE ERROR: ${text}`);
   });
 
-  await page.goto('http://localhost:5173/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => {
-    const btn = document.getElementById('startBtn');
-    return btn && !btn.disabled;
-  }, { timeout: 60000 });
-
-  await page.click('#startBtn');
-  await page.waitForTimeout(300);
-  await page.locator('.chapter-card[data-chapter="2"]').click();
-  await page.waitForTimeout(300);
-  await page.locator('.skin-card[data-skin="classic"]').click();
-  await page.waitForTimeout(200);
-  await page.click('#skinStartBtn');
-
-  await page.waitForFunction(() => {
-    const scene = window.gameApp && window.gameApp.game.scene.getScene('GameScene');
-    return scene && scene.controller && scene.controller.player;
-  }, { timeout: 30000 });
-
+await startStoryChapter(page, 2);
   await page.waitForTimeout(2000);
 
   // 直接触发曹操阶段
@@ -83,7 +67,7 @@ import { chromium } from 'playwright';
 
   console.log('After boss kill:', state2);
 
-  await page.screenshot({ path: 'test-phaser-phase.png' });
+  await safeScreenshot(page, { path: 'test-phaser-phase.png' });
 
   // 触发最终阶段
   await page.evaluate(() => {

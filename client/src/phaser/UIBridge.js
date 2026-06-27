@@ -110,10 +110,10 @@ export class UIBridge {
     if (chapterBackBtn) chapterBackBtn.addEventListener('click', () => this.showStartScreen());
     if (skinBackBtn) skinBackBtn.addEventListener('click', () => this.showChapterSelect());
     if (skinStartBtn) skinStartBtn.addEventListener('click', () => this.startGame());
-    if (backToChapterBtn) backToChapterBtn.addEventListener('click', () => this.returnToChapterSelect());
+    if (backToChapterBtn) backToChapterBtn.addEventListener('click', () => this.returnToLobby());
 
     restartBtns.forEach(btn => {
-      if (btn) btn.addEventListener('click', () => this.startGame());
+      if (btn) btn.addEventListener('click', () => this.returnToLobby());
     });
 
     document.querySelectorAll('.chapter-card').forEach(card => {
@@ -203,7 +203,7 @@ export class UIBridge {
     if (pauseAvatar) pauseAvatar.src = avatarSrc;
   }
 
-  returnToChapterSelect() {
+  returnToLobby() {
     const scene = this.getGameScene();
     if (scene && scene.controller) {
       scene.controller.shutdown();
@@ -213,7 +213,12 @@ export class UIBridge {
     document.getElementById('victoryScreen').style.display = 'none';
     document.getElementById('equipPanel').style.display = 'none';
     document.getElementById('levelUpPanel').style.display = 'none';
-    this.showChapterSelect();
+
+    if (window.lobbyController) {
+      window.lobbyController._returnToLobby();
+    } else {
+      this.showStartScreen();
+    }
   }
 
   togglePause() {

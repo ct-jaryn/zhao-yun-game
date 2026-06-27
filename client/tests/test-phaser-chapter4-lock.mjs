@@ -1,4 +1,6 @@
 import { chromium } from 'playwright';
+import { waitForLobby } from './game-helper.mjs';
+import { safeScreenshot } from './screenshot-helper.mjs';
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
@@ -14,69 +16,68 @@ import { chromium } from 'playwright';
     if (type === 'error') errors.push(`CONSOLE ERROR: ${text}`);
   });
 
-  await page.goto('http://localhost:5173/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => {
-    const btn = document.getElementById('startBtn');
-    return btn && !btn.disabled;
-  }, { timeout: 60000 });
+  await waitForLobby(page);
 
-  // 清除解锁状态
+  // 重置存档，确保第四章未解锁
   await page.evaluate(() => {
     try {
+      localStorage.removeItem('zhaoyun_save');
       localStorage.removeItem('zhaoyun_chapter4_unlocked');
     } catch (e) {}
-  });
-
-  await page.click('#startBtn');
-  await page.waitForTimeout(500);
-
-  const locked = await page.evaluate(() => {
-    const card = document.querySelector('.chapter-card[data-chapter="4"]');
-    return card && card.classList.contains('locked');
-  });
-
-  console.log('Chapter 4 locked initially:', locked);
-
-  // 点击第四章，应弹出广告锁
-  await page.locator('.chapter-card[data-chapter="4"]').click();
-  await page.waitForTimeout(500);
-
-  const adVisible = await page.locator('#adLockOverlay').isVisible().catch(() => false);
-  console.log('Ad lock visible:', adVisible);
-
-  await page.screenshot({ path: 'test-phaser-adlock.png' });
-
-  // 返回
-  await page.click('#adBackBtn');
-  await page.waitForTimeout(500);
-
-  // 直接解锁（模拟看完广告）
-  await page.evaluate(() => {
-    if (window.uiBridge) {
-      window.uiBridge.unlockChapter4();
-      window.uiBridge.updateChapterLockState();
+    if (window.lobbyController) {
+      window.lobbyController.save.resetAll();
+      window.lobbyController.render();
     }
   });
 
-  const unlocked = await page.evaluate(() => {
-    const card = document.querySelector('.chapter-card[data-chapter="4"]');
-    return card && !card.classList.contains('locked');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitForLobby(page);
+
+  await page.click('.lobby-mode-btn[data-mode="story"]');
+  await page.waitForTimeout(300);
+
+  const locked = await page.evaluate(() => {
+    const card = document.querySelector('.lobby-chapter-card[data-chapter="4"]');
+    return card && card.classList.contains('locked');
+  });
+  console.log('Chapter 4 locked initially:', locked);
+
+  await safeScreenshot(page, { path: 'test-phaser-adlock.png' });
+
+  // 锁定状态下点击不应选中
+  await page.locator('.lobby-chapter-card[data-chapter="4"]').click();
+  await page.waitForTimeout(300);
+  const stillLocked = await page.evaluate(() => {
+    const card = document.querySelector('.lobby-chapter-card[data-chapter="4"]');
+    return card && card.classList.contains('locked') && !card.classList.contains('active');
+  });
+  console.log('Chapter 4 still locked after click:', stillLocked);
+
+  // 通过存档解锁第四章
+  await page.evaluate(() => {
+    if (window.lobbyController) {
+      window.lobbyController.save.account.unlockChapter(4);
+      window.lobbyController.save.persist();
+    }
   });
 
+  // 重新打开剧情对话框刷新状态
+  await page.click('#lobbyStoryCancel').catch(() => {});
+  await page.waitForTimeout(200);
+  await page.click('.lobby-mode-btn[data-mode="story"]');
+  await page.waitForTimeout(300);
+
+  const unlocked = await page.evaluate(() => {
+    const card = document.querySelector('.lobby-chapter-card[data-chapter="4"]');
+    return card && !card.classList.contains('locked');
+  });
   console.log('Chapter 4 unlocked after unlock:', unlocked);
-
-  // 点击第四章，应进入皮肤选择
-  await page.locator('.chapter-card[data-chapter="4"]').click();
-  await page.waitForTimeout(500);
-
-  const skinVisible = await page.locator('#skinScreen').isVisible().catch(() => false);
-  console.log('Skin screen visible:', skinVisible);
 
   console.log('Errors:', errors.length ? errors.join('\n') : 'none');
 
   await browser.close();
 
-  if (!locked || !adVisible || !unlocked || !skinVisible || errors.length > 0) {
+  if (!locked || !stillLocked || !unlocked || errors.length > 0) {
     process.exit(1);
   }
 })();

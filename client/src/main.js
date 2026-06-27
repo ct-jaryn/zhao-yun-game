@@ -1,4 +1,5 @@
 import { GameApp } from './phaser/GameApp.js';
+import { LobbyController } from './lobby/LobbyController.js';
 import { UIBridge } from './phaser/UIBridge.js';
 
 function initStartParticles() {
@@ -68,22 +69,18 @@ function initStartParticles() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  const startBtn = document.getElementById('startBtn');
-  if (startBtn) {
-    startBtn.disabled = true;
-    startBtn.textContent = '资源加载中...';
-  }
-
   initStartParticles();
 
   const app = new GameApp();
   window.gameApp = app;
 
   window.addEventListener('phaserAssetsReady', () => {
-    window.uiBridge = new UIBridge(app);
-    if (startBtn) {
-      startBtn.disabled = false;
-      startBtn.textContent = '※ 开始征战';
+    try {
+      window.uiBridge = new UIBridge(app);
+      window.lobbyController = new LobbyController(app);
+      console.log('[main] Lobby initialized');
+    } catch (err) {
+      console.error('[main] 初始化大厅失败:', err);
     }
   }, { once: true });
 });

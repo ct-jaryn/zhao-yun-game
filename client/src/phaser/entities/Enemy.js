@@ -65,6 +65,8 @@ export class Enemy {
     this.reviveTimer = 0;
     this.enraged = false;
     this.enhanced = options.enhanced || false;
+    this.charmed = false;
+    this.charmTimer = 0;
 
     if (this.enhanced && type === 'boss') {
       this.maxHp = Math.floor(this.maxHp * 1.8);
@@ -147,6 +149,21 @@ export class Enemy {
     const ratio = Math.max(0, this.hp / this.maxHp);
     const barW = 60 * this.sizeScale;
     this.hpBarFill.width = barW * ratio;
+  }
+
+  applyCharm(duration) {
+    this.charmed = true;
+    this.charmTimer = duration;
+    if (this.sprite) this.sprite.setTint(0xff69b4);
+  }
+
+  _restoreTint() {
+    if (!this.sprite) return;
+    if (this.isElite) {
+      this.sprite.setTint(0xffaa00);
+    } else {
+      this.sprite.clearTint();
+    }
   }
 
   takeDamage(dmg, isCrit, fromDir, game) {
@@ -274,6 +291,28 @@ export class Enemy {
     const p = game.player;
     const dist = vdist(vec(this.x, this.y), vec(p.x, p.y));
 
+    // 魅惑状态：不追击玩家，随机游荡
+    if (this.charmed) {
+      this.charmTimer -= dt;
+      if (this.charmTimer <= 0) {
+        this.charmed = false;
+        this.charmTimer = 0;
+        this._restoreTint();
+      } else {
+        this.state = 'wander';
+        if (this.stateTimer <= 0) {
+          this.stateTimer = rand(0.5, 1.5);
+          this.dir = Math.random() * Math.PI * 2;
+        }
+        const wanderSpeed = this.speed * ENEMY_WANDER_SPEED_RATIO;
+        this.x += Math.cos(this.dir) * wanderSpeed * dt;
+        this.y += Math.sin(this.dir) * wanderSpeed * dt;
+        this.clampPos();
+        this.syncSprite();
+        return;
+      }
+    }
+
     if (!this.aggro && dist < ENEMY_AGGRO_RANGE) this.aggro = true;
     if (this.aggro && dist > ENEMY_LOSE_AGGRO_RANGE) this.aggro = false;
 
@@ -342,10 +381,14 @@ export class Enemy {
       }
     }
 
-    this.x = Math.max(this.radius, Math.min(MAP_W - this.radius, this.x));
-    this.y = Math.max(this.radius, Math.min(MAP_H - this.radius, this.y));
+    this.clampPos();
 
     this.syncSprite();
+  }
+
+  clampPos() {
+    this.x = Math.max(this.radius, Math.min(MAP_W - this.radius, this.x));
+    this.y = Math.max(this.radius, Math.min(MAP_H - this.radius, this.y));
   }
 
   syncSprite() {
@@ -383,6 +426,10 @@ export class Enemy {
 
     if (this.hitFlash > 0) {
       this.sprite.setTint(0xffffff);
+    } else if (this.charmed) {
+      this.sprite.setTint(0xff69b4);
+    } else if (this.isElite) {
+      this.sprite.setTint(0xffaa00);
     } else {
       this.sprite.clearTint();
     }
