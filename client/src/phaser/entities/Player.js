@@ -41,7 +41,7 @@ export function genEquip(level) {
   for (const [k, v] of Object.entries(tierData.stats)) {
     stats[k] = Math.floor(v * q.mult * (0.85 + Math.random() * 0.3));
   }
-  return { type, name: tierData.name, quality: q, stats, level, tier };
+  return { type, name: tierData.name, quality: q, stats, baseStats: { ...stats }, level, tier };
 }
 
 export function createInitialEquip() {
@@ -52,7 +52,7 @@ export function createInitialEquip() {
     for (const [k, v] of Object.entries(tierData[type].stats)) {
       stats[k] = Math.floor(v * QUALITY[0].mult);
     }
-    equip[type] = { type, name: tierData[type].name, quality: QUALITY[0], stats, level: 1, tier: 0 };
+    equip[type] = { type, name: tierData[type].name, quality: QUALITY[0], stats, baseStats: { ...stats }, level: 1, tier: 0 };
   }
   return equip;
 }
@@ -94,6 +94,8 @@ export class Player {
     this.hpRegen = stats.hpRegen || 1;
     this.passive = stats.passive || null;
     this.skillDamageMult = stats.skillDamageMult || [1, 1, 1, 1, 1];
+    this.skillBranches = stats.skillBranches || [];
+    this.skillBranchSelections = stats.skillBranchSelections || {};
     this.talentEffects = stats.talentEffects || [];
 
     this.equip = stats.equipment || createInitialEquip();
@@ -163,6 +165,15 @@ export class Player {
     return v;
   }
 
+  getSkillBranchEffects(skillIdx) {
+    const branches = this.skillBranches[skillIdx];
+    if (!branches) return {};
+    const selectedId = this.skillBranchSelections[skillIdx];
+    if (!selectedId) return {};
+    const branch = branches.find(b => b.id === selectedId);
+    return branch ? (branch.effects || {}) : {};
+  }
+
   addExp(v, game) {
     this.exp += v;
     while (this.exp >= this.expToLevel) {
@@ -205,8 +216,10 @@ export class Player {
   }
 
   update(dt, input, game) {
-    this.hp = Math.min(this.maxHpTotal, this.hp + this.hpRegen * (1 + this.bonusHpRegen) * dt);
-    this.mp = Math.min(this.maxMpTotal, this.mp + this.mpRegen * (1 + this.bonusMpRegen) * dt);
+    const maxHp = this.maxHpTotal;
+    const maxMp = this.maxMpTotal;
+    this.hp = Math.min(maxHp, this.hp + this.hpRegen * (1 + this.bonusHpRegen) * dt);
+    this.mp = Math.min(maxMp, this.mp + this.mpRegen * (1 + this.bonusMpRegen) * dt);
     for (let i = 0; i < 5; i++) {
       if (this.skillCd[i] > 0) this.skillCd[i] -= dt;
     }
@@ -386,10 +399,12 @@ export class Player {
     this.sprite.play(key, true);
   }
 
-  useSkill(idx, game) {
+useSkill(idx, game) {
     if (this.attacking || this.dodging || this.dead) return;
     const sk = SKILLS[idx];
-    const cd = sk.cd * (1 - this.bonusCdr);
+    const branchEffects = this.getSkillBranchEffects(idx);
+    const cd = sk.cd * (branchEffects.cooldownMult || 1) * (1 - this.bonusCdr);
+    const skillRange = sk.range * (branchEffects.rangeMult || 1);
     if (this.skillCd[idx] > 0) return;
     if (this.mp < sk.mp) {
       game.addText(this.x, this.y - 30, '法力不足!', '#4488ff', 14, '#000');
@@ -402,13 +417,41 @@ export class Player {
     this.attackTimer = 0.25 + idx * 0.08;
     this.currentSkill = idx;
 
+    // 锁定本次技能释放方向：鼠标按住瞄准时取鼠标方向，否则取当前面向
+    const input = this.scene.inputManager;
+    let skillDir = this.dir;
+    if (input && input.mouseAim && input.mouse.down) {
+      skillDir = Math.atan2(input.mouse.worldY - this.y, input.mouse.worldX - this.x);
+    }
+
     if (idx === 2) {
-      this.x += Math.cos(this.dir) * 90;
-      this.y += Math.sin(this.dir) * 90;
+      this.x += Math.cos(skillDir) * 90;
+      this.y += Math.sin(skillDir) * 90;
       this.clampPos();
       for (let i = 0; i < 8; i++) {
         const t = i / 8;
-        game.addParticles(this.x - Math.cos(this.dir) * 90 * t, this.y - Math.sin(this.dir) * 90 * t, '#ff8844', 1, 40, 4);
+        game.addParticles(this.x - Math.cos(skillDir) * 90 * t, this.y - Math.sin(skillDir) * 90 * t, '#ff8844', 1, 40, 4);
+      }
+    }
+
+    // 普通攻击自动朝向最近敌人，且与玩家重叠的敌人必定命中
+    if (idx === 0) {
+      const input = this.scene.inputManager;
+      if (!input || !input.mouseAim || !input.mouse.down) {
+        let nearest = null;
+        let nearestDist = Infinity;
+        for (const e of game.enemies) {
+          if (e.dead) continue;
+          const dist = vdist(vec(this.x, this.y), vec(e.x, e.y));
+          if (dist > skillRange + e.radius + this.radius) continue;
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearest = e;
+          }
+        }
+        if (nearest) {
+          skillDir = Math.atan2(nearest.y - this.y, nearest.x - this.x);
+        }
       }
     }
 
@@ -416,9 +459,11 @@ export class Player {
     for (const e of game.enemies) {
       if (e.dead) continue;
       const dist = vdist(vec(this.x, this.y), vec(e.x, e.y));
-      if (dist > sk.range + e.radius + this.radius) continue;
+      if (dist > skillRange + e.radius + this.radius) continue;
       const angleTo = Math.atan2(e.y - this.y, e.x - this.x);
-      if (Math.abs(angleDiff(angleTo, this.dir)) <= sk.arc / 2) hits.push(e);
+      const inArc = Math.abs(angleDiff(angleTo, skillDir)) <= sk.arc / 2;
+      const overlapping = dist <= this.radius + e.radius + 5;
+      if (inArc || overlapping) hits.push(e);
     }
 
     for (const e of hits) {
@@ -426,7 +471,7 @@ export class Player {
     }
 
     if (idx === 0) {
-      this.showAttackArc(sk.range + this.radius, sk.arc);
+      this.showAttackArc(skillRange + this.radius, sk.arc);
     }
 
     if (idx === 4) {

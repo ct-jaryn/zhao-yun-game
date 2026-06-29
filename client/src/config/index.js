@@ -7,3 +7,7 @@ export * from './assets.config.js';
 export * from './heroes.config.js';
 export * from './difficulty.config.js';
 export * from './account.config.js';
+export * from './achievements.config.js';
+export * from './daily.config.js';
+export * from './shop.config.js';
+export * from './gems.config.js';

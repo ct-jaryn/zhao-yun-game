@@ -7,6 +7,7 @@ import { Projectile } from './entities/Projectile.js';
 import { EffectManager } from './managers/EffectManager.js';
 import { CollisionManager } from './managers/CollisionManager.js';
 import { PhaseManager } from './managers/PhaseManager.js';
+import { EndlessPhaseManager } from './managers/EndlessPhaseManager.js';
 import { SpawnManager } from './managers/SpawnManager.js';
 import { DropManager } from './managers/DropManager.js';
 import { UISync } from './UISync.js';
@@ -79,6 +80,7 @@ export class GameController {
     this.chapter = cfg.chapter;
     this.chapterConfig = CHAPTER_CONFIG[cfg.chapter] || CHAPTER_CONFIG[1];
     this.skin = cfg.skin;
+    this.endlessWave = 1;
 
     this.totalKills = 0;
     this.score = 0;
@@ -94,7 +96,9 @@ export class GameController {
 
     this.effectManager = new EffectManager(this);
     this.collisionManager = new CollisionManager(this);
-    this.phaseManager = new PhaseManager(this);
+    this.phaseManager = cfg.mode === 'endless'
+      ? new EndlessPhaseManager(this)
+      : new PhaseManager(this);
     this.spawnManager = new SpawnManager(this);
     this.dropManager = new DropManager(this);
     this.uiSync = new UISync(this);
@@ -167,7 +171,9 @@ export class GameController {
       this.projectiles = this.projectiles.filter(p => p.update(dt));
       this.effectManager.update(dt);
       this.collisionManager.update(dt);
-      this.spawnManager.update(dt);
+      if (this.runConfig.mode !== 'endless') {
+        this.spawnManager.update(dt);
+      }
       this.dropManager.update(dt);
 
       this.enemies = this.enemies.filter(e => {
@@ -192,6 +198,7 @@ export class GameController {
   onEnemyKilled(e) {
     const cfg = this.chapterConfig;
     const BOSS_TYPES = ['boss', 'lubu', 'dianwei', 'xuzhu'];
+    const isEndless = this.runConfig && this.runConfig.mode === 'endless';
 
     // 触发英雄击杀被动（典韦回血等）
     if (this.player && this.player.onKill) {
@@ -202,6 +209,14 @@ export class GameController {
       this.totalKills++;
       this.effectManager.checkKillMilestone();
       this.score += e.score;
+
+      // 无尽模式：Boss 只提供奖励，不影响关卡流程
+      if (isEndless) {
+        this.rewardBossKill(e, false);
+        this.effectManager.addKillLog(`${e.name}被击败！`);
+        this.effectManager.addText(e.x, e.y - e.radius - 50, `${e.name}被击败！`, '#ff0000', 28, '#000');
+        return;
+      }
 
       if (this.phaseManager.phase === 'caocao' && e.type === cfg.bossType) {
         this.phaseManager.midBossDefeated = true;
@@ -257,11 +272,14 @@ export class GameController {
       this.dropManager.spawnDrop(e.x, e.y, Math.max(1, this.player.level));
     }
 
-    const MINION_TYPES = ['soldier', 'archer', 'cavalry'];
-    if (MINION_TYPES.includes(e.type)) {
-      this.phaseManager.soldierKills++;
-      if (this.phaseManager.phase === 'soldiers' && this.phaseManager.soldierKills >= this.phaseManager.soldiersRequired) {
-        this.phaseManager.spawnBoss();
+    // 无尽模式不需要故事阶段的清兵计数
+    if (!isEndless) {
+      const MINION_TYPES = ['soldier', 'archer', 'cavalry'];
+      if (MINION_TYPES.includes(e.type)) {
+        this.phaseManager.soldierKills++;
+        if (this.phaseManager.phase === 'soldiers' && this.phaseManager.soldierKills >= this.phaseManager.soldiersRequired) {
+          this.phaseManager.spawnBoss();
+        }
       }
     }
   }
@@ -294,11 +312,26 @@ export class GameController {
 
   hitEnemyWithSkill(e, skillIdx) {
     const sk = SKILLS[skillIdx];
+    const branchEffects = this.player.getSkillBranchEffects(skillIdx);
     const passiveMult = this.player.getDamageMult(e);
-    let dmg = Math.floor(this.player.atk * sk.dmgMult * passiveMult);
-    const isCrit = Math.random() * 100 < this.player.crit;
+    const skillLevelMult = this.player.skillDamageMult[skillIdx] || 1;
+    const branchDamageMult = branchEffects.damageMult || 1;
+    const critBonus = branchEffects.critBonus || 0;
+    let dmg = Math.floor(this.player.atk * sk.dmgMult * branchDamageMult * skillLevelMult * passiveMult);
+    const isCrit = Math.random() * 100 < (this.player.crit + critBonus);
     if (isCrit) dmg = Math.floor(dmg * 1.8);
     e.takeDamage(dmg, isCrit, this.player.dir, this);
+
+    // 吸血
+    const lifesteal = branchEffects.lifesteal || 0;
+    if (lifesteal > 0 && dmg > 0) {
+      const heal = Math.floor(dmg * lifesteal / 100);
+      if (heal > 0) {
+        this.player.hp = Math.min(this.player.maxHpTotal, this.player.hp + heal);
+        this.effectManager.addText(this.player.x, this.player.y - 60, `+${heal}`, '#44ff44', 14, '#000');
+      }
+    }
+
     this.player.combo++;
     this.player.comboTimer = 3;
     if (this.player.combo > this.player.maxCombo) this.player.maxCombo = this.player.combo;
@@ -360,6 +393,9 @@ export class GameController {
     if (!this.runConfig) return;
 
     const diffCfg = this.runConfig.getDifficultyConfig();
+    const wave = this.runConfig.mode === 'endless' && this.phaseManager
+      ? (this.phaseManager.wave || 1)
+      : 0;
     const result = {
       heroId: this.runConfig.heroId,
       skin: this.runConfig.skin,
@@ -372,6 +408,7 @@ export class GameController {
       time: this.gameTime,
       maxCombo: this.player ? this.player.maxCombo : 0,
       runLevel: this.player ? this.player.level : 1,
+      wave,
       expGained: Math.floor((this.totalKills * 2 + this.score * 0.05) * diffCfg.expMult),
       coinsGained: Math.floor((this.totalKills * 1 + this.score * 0.02) * diffCfg.coinMult),
       soulsGained: Math.floor(cleared ? 10 * diffCfg.coinMult : 2),

@@ -45,9 +45,58 @@ export const HEROES = {
       mecha: { name: '机甲赵云', unlock: '账号军阶达到 10 级' }
     },
     talentBranches: [
-      { id: 'dragon', name: '龙胆', desc: '生存与反杀' },
-      { id: 'spear', name: '枪神', desc: '普攻与技能伤害' },
-      { id: 'charge', name: '无双', desc: '突进与连击' }
+      {
+        id: 'dragon',
+        name: '龙胆',
+        desc: '生存与反杀',
+        effects: [
+          { maxHp: 20, hpRegen: 0.5 },
+          { maxHp: 50, hpRegen: 1, def: 2 },
+          { maxHp: 100, hpRegen: 2, def: 5 }
+        ]
+      },
+      {
+        id: 'spear',
+        name: '枪神',
+        desc: '普攻与技能伤害',
+        effects: [
+          { atk: 3, crit: 0.5 },
+          { atk: 8, crit: 1.5 },
+          { atk: 15, crit: 3 }
+        ]
+      },
+      {
+        id: 'charge',
+        name: '无双',
+        desc: '突进与连击',
+        effects: [
+          { spd: 1, maxMp: 10 },
+          { spd: 2, maxMp: 25 },
+          { spd: 4, maxMp: 50 }
+        ]
+      }
+    ],
+    skillBranches: [
+      [
+        { id: 'zhaoyun_j_1', name: '长枪', desc: '普攻距离 +25%', effects: { rangeMult: 1.25 } },
+        { id: 'zhaoyun_j_2', name: '破军', desc: '普攻伤害 +20%', effects: { damageMult: 1.2 } }
+      ],
+      [
+        { id: 'zhaoyun_k_1', name: '烈焰旋风', desc: '旋风范围 +20%', effects: { rangeMult: 1.2 } },
+        { id: 'zhaoyun_k_2', name: '血刃旋风', desc: '旋风吸血 8%', effects: { lifesteal: 8 } }
+      ],
+      [
+        { id: 'zhaoyun_l_1', name: '疾风突刺', desc: '突刺冷却 -25%', effects: { cooldownMult: 0.75 } },
+        { id: 'zhaoyun_l_2', name: '裂空突刺', desc: '突刺伤害 +25%', effects: { damageMult: 1.25 } }
+      ],
+      [
+        { id: 'zhaoyun_u_1', name: '燎原', desc: '烽火范围 +25%', effects: { rangeMult: 1.25 } },
+        { id: 'zhaoyun_u_2', name: '爆燃', desc: '烽火暴击 +10%', effects: { critBonus: 10 } }
+      ],
+      [
+        { id: 'zhaoyun_i_1', name: '龙威', desc: '枪绝伤害 +25%', effects: { damageMult: 1.25 } },
+        { id: 'zhaoyun_i_2', name: '无双', desc: '枪绝范围 +20%', effects: { rangeMult: 1.2 } }
+      ]
     ]
   },
 
@@ -87,9 +136,58 @@ export const HEROES = {
       classic: { name: '经典', unlock: '通关第一章' }
     },
     talentBranches: [
-      { id: 'charm', name: '魅惑', desc: '控制与削弱' },
-      { id: 'dance', name: '惊鸿', desc: '范围伤害' },
-      { id: 'grace', name: '倾城', desc: '生存与辅助' }
+      {
+        id: 'charm',
+        name: '魅惑',
+        desc: '控制与削弱',
+        effects: [
+          { mpRegen: 1, crit: 0.5 },
+          { mpRegen: 3, crit: 1 },
+          { mpRegen: 6, crit: 2 }
+        ]
+      },
+      {
+        id: 'dance',
+        name: '惊鸿',
+        desc: '范围伤害',
+        effects: [
+          { atk: 2, spd: 1 },
+          { atk: 6, spd: 2 },
+          { atk: 12, spd: 4 }
+        ]
+      },
+      {
+        id: 'grace',
+        name: '倾城',
+        desc: '生存与辅助',
+        effects: [
+          { maxHp: 15, def: 1 },
+          { maxHp: 35, def: 3 },
+          { maxHp: 70, def: 6 }
+        ]
+      }
+    ],
+    skillBranches: [
+      [
+        { id: 'diaochan_j_1', name: '魅影', desc: '普攻距离 +25%', effects: { rangeMult: 1.25 } },
+        { id: 'diaochan_j_2', name: '毒刃', desc: '普攻伤害 +20%', effects: { damageMult: 1.2 } }
+      ],
+      [
+        { id: 'diaochan_k_1', name: '舞袖', desc: '旋风范围 +20%', effects: { rangeMult: 1.2 } },
+        { id: 'diaochan_k_2', name: '吸血', desc: '旋风吸血 8%', effects: { lifesteal: 8 } }
+      ],
+      [
+        { id: 'diaochan_l_1', name: '惊鸿', desc: '突刺冷却 -25%', effects: { cooldownMult: 0.75 } },
+        { id: 'diaochan_l_2', name: '穿心', desc: '突刺伤害 +25%', effects: { damageMult: 1.25 } }
+      ],
+      [
+        { id: 'diaochan_u_1', name: '倾城', desc: '烽火范围 +25%', effects: { rangeMult: 1.25 } },
+        { id: 'diaochan_u_2', name: '魅惑', desc: '烽火暴击 +10%', effects: { critBonus: 10 } }
+      ],
+      [
+        { id: 'diaochan_i_1', name: '闭月', desc: '枪绝伤害 +25%', effects: { damageMult: 1.25 } },
+        { id: 'diaochan_i_2', name: '羞花', desc: '枪绝范围 +20%', effects: { rangeMult: 1.2 } }
+      ]
     ]
   },
 
@@ -129,9 +227,58 @@ export const HEROES = {
       classic: { name: '经典', unlock: '将魂 ×500' }
     },
     talentBranches: [
-      { id: 'rage', name: '狂暴', desc: '伤害与吸血' },
-      { id: 'fury', name: '怒战', desc: '连击与暴击' },
-      { id: 'maul', name: '恶来', desc: '爆发与不屈' }
+      {
+        id: 'rage',
+        name: '狂暴',
+        desc: '伤害与吸血',
+        effects: [
+          { atk: 4, hpRegen: 0.5 },
+          { atk: 10, hpRegen: 1 },
+          { atk: 20, hpRegen: 2 }
+        ]
+      },
+      {
+        id: 'fury',
+        name: '怒战',
+        desc: '连击与暴击',
+        effects: [
+          { crit: 0.8, spd: 1 },
+          { crit: 2, spd: 2 },
+          { crit: 4, spd: 4 }
+        ]
+      },
+      {
+        id: 'maul',
+        name: '恶来',
+        desc: '爆发与不屈',
+        effects: [
+          { maxHp: 25, def: 1 },
+          { maxHp: 60, def: 3 },
+          { maxHp: 120, def: 6 }
+        ]
+      }
+    ],
+    skillBranches: [
+      [
+        { id: 'dianwei_j_1', name: '狂斧', desc: '普攻距离 +25%', effects: { rangeMult: 1.25 } },
+        { id: 'dianwei_j_2', name: '碎骨', desc: '普攻伤害 +20%', effects: { damageMult: 1.2 } }
+      ],
+      [
+        { id: 'dianwei_k_1', name: '旋风', desc: '旋风范围 +20%', effects: { rangeMult: 1.2 } },
+        { id: 'dianwei_k_2', name: '嗜血', desc: '旋风吸血 8%', effects: { lifesteal: 8 } }
+      ],
+      [
+        { id: 'dianwei_l_1', name: '冲锋', desc: '突刺冷却 -25%', effects: { cooldownMult: 0.75 } },
+        { id: 'dianwei_l_2', name: '重击', desc: '突刺伤害 +25%', effects: { damageMult: 1.25 } }
+      ],
+      [
+        { id: 'dianwei_u_1', name: '怒火', desc: '烽火范围 +25%', effects: { rangeMult: 1.25 } },
+        { id: 'dianwei_u_2', name: '暴烈', desc: '烽火暴击 +10%', effects: { critBonus: 10 } }
+      ],
+      [
+        { id: 'dianwei_i_1', name: '恶来', desc: '枪绝伤害 +25%', effects: { damageMult: 1.25 } },
+        { id: 'dianwei_i_2', name: '魔神', desc: '枪绝范围 +20%', effects: { rangeMult: 1.2 } }
+      ]
     ]
   },
 
@@ -171,9 +318,58 @@ export const HEROES = {
       classic: { name: '经典', unlock: '将魂 ×1500 或击败指定 Boss' }
     },
     talentBranches: [
-      { id: 'sky', name: '天威', desc: '真实伤害' },
-      { id: 'war', name: '战神', desc: '范围爆发' },
-      { id: 'tyrant', name: '霸主', desc: '压制与吸血' }
+      {
+        id: 'sky',
+        name: '天威',
+        desc: '真实伤害',
+        effects: [
+          { atk: 5 },
+          { atk: 12 },
+          { atk: 25 }
+        ]
+      },
+      {
+        id: 'war',
+        name: '战神',
+        desc: '范围爆发',
+        effects: [
+          { maxHp: 20, atk: 2 },
+          { maxHp: 50, atk: 5 },
+          { maxHp: 100, atk: 10 }
+        ]
+      },
+      {
+        id: 'tyrant',
+        name: '霸主',
+        desc: '压制与吸血',
+        effects: [
+          { crit: 1, hpRegen: 0.5 },
+          { crit: 2.5, hpRegen: 1 },
+          { crit: 5, hpRegen: 2 }
+        ]
+      }
+    ],
+    skillBranches: [
+      [
+        { id: 'lubu_j_1', name: '方天', desc: '普攻距离 +25%', effects: { rangeMult: 1.25 } },
+        { id: 'lubu_j_2', name: '无双', desc: '普攻伤害 +20%', effects: { damageMult: 1.2 } }
+      ],
+      [
+        { id: 'lubu_k_1', name: '戟舞', desc: '旋风范围 +20%', effects: { rangeMult: 1.2 } },
+        { id: 'lubu_k_2', name: '血戟', desc: '旋风吸血 8%', effects: { lifesteal: 8 } }
+      ],
+      [
+        { id: 'lubu_l_1', name: '赤兔', desc: '突刺冷却 -25%', effects: { cooldownMult: 0.75 } },
+        { id: 'lubu_l_2', name: '破军', desc: '突刺伤害 +25%', effects: { damageMult: 1.25 } }
+      ],
+      [
+        { id: 'lubu_u_1', name: '天威', desc: '烽火范围 +25%', effects: { rangeMult: 1.25 } },
+        { id: 'lubu_u_2', name: '战神', desc: '烽火暴击 +10%', effects: { critBonus: 10 } }
+      ],
+      [
+        { id: 'lubu_i_1', name: '飞将', desc: '枪绝伤害 +25%', effects: { damageMult: 1.25 } },
+        { id: 'lubu_i_2', name: '霸道', desc: '枪绝范围 +20%', effects: { rangeMult: 1.2 } }
+      ]
     ]
   },
 
@@ -213,9 +409,58 @@ export const HEROES = {
       classic: { name: '经典', unlock: '将魂 ×1200' }
     },
     talentBranches: [
-      { id: 'shield', name: '虎卫', desc: '防御与嘲讽' },
-      { id: 'hammer', name: '巨锤', desc: '范围控制' },
-      { id: 'fortress', name: '铁壁', desc: '生存与反伤' }
+      {
+        id: 'shield',
+        name: '虎卫',
+        desc: '防御与嘲讽',
+        effects: [
+          { def: 3, maxHp: 30 },
+          { def: 8, maxHp: 70 },
+          { def: 15, maxHp: 150 }
+        ]
+      },
+      {
+        id: 'hammer',
+        name: '巨锤',
+        desc: '范围控制',
+        effects: [
+          { atk: 2 },
+          { atk: 6 },
+          { atk: 12 }
+        ]
+      },
+      {
+        id: 'fortress',
+        name: '铁壁',
+        desc: '生存与反伤',
+        effects: [
+          { maxHp: 20, def: 2 },
+          { maxHp: 45, def: 5 },
+          { maxHp: 90, def: 10 }
+        ]
+      }
+    ],
+    skillBranches: [
+      [
+        { id: 'xuzhu_j_1', name: '虎爪', desc: '普攻距离 +25%', effects: { rangeMult: 1.25 } },
+        { id: 'xuzhu_j_2', name: '巨力', desc: '普攻伤害 +20%', effects: { damageMult: 1.2 } }
+      ],
+      [
+        { id: 'xuzhu_k_1', name: '虎啸', desc: '旋风范围 +20%', effects: { rangeMult: 1.2 } },
+        { id: 'xuzhu_k_2', name: '铁壁', desc: '旋风吸血 8%', effects: { lifesteal: 8 } }
+      ],
+      [
+        { id: 'xuzhu_l_1', name: '虎扑', desc: '突刺冷却 -25%', effects: { cooldownMult: 0.75 } },
+        { id: 'xuzhu_l_2', name: '震地', desc: '突刺伤害 +25%', effects: { damageMult: 1.25 } }
+      ],
+      [
+        { id: 'xuzhu_u_1', name: '虎卫', desc: '烽火范围 +25%', effects: { rangeMult: 1.25 } },
+        { id: 'xuzhu_u_2', name: '金刚', desc: '烽火暴击 +10%', effects: { critBonus: 10 } }
+      ],
+      [
+        { id: 'xuzhu_i_1', name: '虎痴', desc: '枪绝伤害 +25%', effects: { damageMult: 1.25 } },
+        { id: 'xuzhu_i_2', name: '神卫', desc: '枪绝范围 +20%', effects: { rangeMult: 1.2 } }
+      ]
     ]
   }
 };

@@ -59,6 +59,9 @@ export class Enemy {
     this.baseMaxHp = this.maxHp;
     this.baseAtk = this.atk;
     this.baseDef = this.def;
+    this._originalBaseMaxHp = this.baseMaxHp;
+    this._originalBaseAtk = this.baseAtk;
+    this._originalBaseDef = this.baseDef;
     this.sizeScale = 1;
     this.hpRegen = (type === 'boss' || type === 'lubu') ? 0.05 : 0;
     this.hasRevived = options.skipRevive ? true : false;
@@ -76,8 +79,11 @@ export class Enemy {
       this.def = Math.floor(this.def * 1.4);
       this.baseAtk = this.atk;
       this.baseDef = this.def;
+      this._originalBaseMaxHp = this.baseMaxHp;
+      this._originalBaseAtk = this.baseAtk;
+      this._originalBaseDef = this.baseDef;
       this.sizeScale = 1.4;
-      this.radius = this.baseRadius * this.sizeScale;
+      this.updateHitbox();
       this.hpRegen = 0.08;
     }
 
@@ -98,6 +104,11 @@ export class Enemy {
       }
     }
     return 0.5;
+  }
+
+  // 受击判定半径：随体型缩放同步更新，确保 boss 变大后命中范围也变大
+  updateHitbox() {
+    this.radius = this.baseRadius * this.sizeScale;
   }
 
   getHpBarColor() {
@@ -123,7 +134,7 @@ export class Enemy {
   createHpBar() {
     const barW = 60 * this.sizeScale;
     const barH = 6 * this.sizeScale;
-    const yOffset = -this.radius * this.sizeScale - 15;
+    const yOffset = -this.radius - 15;
 
     this.hpBarBg = this.scene.add.rectangle(this.x, this.y + yOffset, barW, barH, 0x000000);
     this.hpBarBg.setDepth(15);
@@ -134,7 +145,7 @@ export class Enemy {
   }
 
   createNameLabel() {
-    const yOffset = -this.radius * this.sizeScale - 28;
+    const yOffset = -this.radius - 28;
     this.nameLabel = this.scene.add.text(this.x, this.y + yOffset, `Lv.${this.level} ${this.name}`, {
       fontFamily: 'Noto Serif SC',
       fontSize: `${12 * this.sizeScale}px`,
@@ -214,14 +225,15 @@ export class Enemy {
   reviveBoss() {
     this.dead = false;
     this.reviveTimer = 0;
-    this.maxHp = Math.floor(this.baseMaxHp * 2);
+    // 始终基于原始基础数值翻倍，避免二次复活时链式放大
+    this.maxHp = Math.floor(this._originalBaseMaxHp * 2);
     this.hp = this.maxHp;
-    this.atk = Math.floor(this.baseAtk * 2);
-    this.def = Math.floor(this.baseDef * 2);
+    this.atk = Math.floor(this._originalBaseAtk * 2);
+    this.def = Math.floor(this._originalBaseDef * 2);
     this.baseMaxHp = this.maxHp;
     this.baseAtk = this.atk;
     this.baseDef = this.def;
-    this.radius = this.baseRadius * this.sizeScale;
+    this.updateHitbox();
 
     // 重置死亡动画留下的视觉状态
     if (this.sprite) {
@@ -284,7 +296,7 @@ export class Enemy {
     if ((this.type === 'boss' || this.type === 'lubu') && !this.enraged && this.hp <= this.maxHp * 0.5) {
       this.enraged = true;
       this.sizeScale = 1.5;
-      this.radius = this.baseRadius * this.sizeScale;
+      this.updateHitbox();
     }
 
     const isMoving = this.state === 'chase' || this.state === 'wander';
@@ -393,6 +405,7 @@ export class Enemy {
 
   syncSprite() {
     if (!this.sprite) return;
+    this.updateHitbox();
     this.sprite.setPosition(this.x, this.y);
 
     if (this.dead) {
@@ -408,7 +421,7 @@ export class Enemy {
       return;
     }
 
-    const barY = this.y - this.radius * this.sizeScale - 15;
+    const barY = this.y - this.radius - 15;
     if (this.hpBarBg) this.hpBarBg.setPosition(this.x, barY);
     if (this.hpBarFill) {
       const barW = 60 * this.sizeScale;
@@ -416,7 +429,7 @@ export class Enemy {
       this.updateHpBar();
     }
     if (this.nameLabel) {
-      this.nameLabel.setPosition(this.x, this.y - this.radius * this.sizeScale - 28);
+      this.nameLabel.setPosition(this.x, this.y - this.radius - 28);
       const text = `Lv.${this.level} ${this.name}`;
       if (this._lastNameText !== text) {
         this.nameLabel.text = text;

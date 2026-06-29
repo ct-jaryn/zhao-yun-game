@@ -1,18 +1,39 @@
+import { DailyChallenge } from '../save/DailyChallenge.js';
+import { Shop } from '../save/Shop.js';
+import { CURRENCY_ICONS, SHOP_ITEMS } from '../config/index.js';
+import { Toast } from './Toast.js';
+
 export class ModeFooter {
-  constructor(containerId, saveManager, onStartRun) {
+  constructor(containerId, saveManager, onStartRun, onRefresh) {
     this.container = document.getElementById(containerId);
     this.save = saveManager;
     this.onStartRun = onStartRun;
+    this.onRefresh = onRefresh;
     this.selectedChapter = 1;
     this.selectedDifficulty = 'normal';
     this.storyDialog = null;
     this.endlessDialog = null;
+    this.dailyDialog = null;
+    this.shopDialog = null;
+    this.dailyChallenge = new DailyChallenge(saveManager);
+    this.shop = new Shop(saveManager);
+    this._boundOnContainerClick = (e) => {
+      const btn = e.target.closest('.lobby-mode-btn');
+      if (!btn) return;
+      this._onModeClick(btn.dataset.mode);
+    };
+    if (this.container) {
+      this.container.addEventListener('click', this._boundOnContainerClick);
+    }
   }
 
   render() {
     if (!this.container) return;
     this.container.querySelectorAll('.lobby-mode-btn').forEach(btn => {
-      btn.addEventListener('click', () => this._onModeClick(btn.dataset.mode));
+      const mode = btn.dataset.mode;
+      const implemented = mode === 'story' || mode === 'endless' || mode === 'daily' || mode === 'shop';
+      btn.classList.toggle('disabled', !implemented);
+      btn.title = implemented ? '' : '即将开放';
     });
   }
 
@@ -22,9 +43,9 @@ export class ModeFooter {
     } else if (mode === 'endless') {
       this._openEndlessDialog();
     } else if (mode === 'daily') {
-      alert('每日挑战即将开放');
+      this._openDailyDialog();
     } else if (mode === 'shop') {
-      alert('商店即将开放');
+      this._openShopDialog();
     }
   }
 
@@ -125,9 +146,217 @@ export class ModeFooter {
     }
   }
 
+  _openDailyDialog() {
+    this._closeDailyDialog();
+    const canComplete = this.dailyChallenge.canComplete();
+    const challenge = this.dailyChallenge.getTodayChallenge();
+    const heroCfg = this.save.heroes.getHero(challenge.heroId);
+    const skin = heroCfg.skin || 'classic';
+    const heroData = this.save.heroes.getHero(challenge.heroId);
+    const progress = this.save.account._data.daily.challengeCompletions || 0;
+
+    const dialog = document.createElement('div');
+    dialog.className = 'lobby-dialog';
+    dialog.id = 'lobbyDailyDialog';
+    dialog.innerHTML = `
+      <div class="lobby-dialog-card daily-card">
+        <h3>每日挑战</h3>
+        <div class="daily-info">
+          <div class="daily-row"><span class="daily-label">今日挑战</span><span class="daily-value">${challenge.dateStr}</span></div>
+          <div class="daily-row"><span class="daily-label">英雄</span><span class="daily-value">${this._heroName(challenge.heroId)}</span></div>
+          <div class="daily-row"><span class="daily-label">章节</span><span class="daily-value">第 ${challenge.chapter} 章</span></div>
+          <div class="daily-row"><span class="daily-label">难度</span><span class="daily-value">${this._difficultyName(challenge.difficulty)}</span></div>
+          <div class="daily-row"><span class="daily-label">词缀</span><span class="daily-value modifier">${challenge.modifier.name} · ${challenge.modifier.desc}</span></div>
+          <div class="daily-row"><span class="daily-label">今日进度</span><span class="daily-value">${progress} / 3 次</span></div>
+        </div>
+        <div class="daily-rewards">
+          <span>首通奖励：铜币 ${this.dailyChallenge.getRewards(challenge.difficulty, true).coins} · 将魂 ${this.dailyChallenge.getRewards(challenge.difficulty, true).souls} · 元宝 ${this.dailyChallenge.getRewards(challenge.difficulty, true).gems}</span>
+        </div>
+        <div class="lobby-dialog-actions">
+          <button class="btn" id="lobbyDailyCancel">取消</button>
+          <button class="btn btn-primary" id="lobbyDailyStart" ${canComplete ? '' : 'disabled'}>${canComplete ? '开始挑战' : '今日次数已用完'}</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('lobbyScreen').appendChild(dialog);
+    this.dailyDialog = dialog;
+
+    dialog.querySelector('#lobbyDailyCancel').addEventListener('click', () => this._closeDailyDialog());
+    dialog.querySelector('#lobbyDailyStart').addEventListener('click', () => {
+      this._closeDailyDialog();
+      if (this.onStartRun) {
+        this.onStartRun('daily', {
+          heroId: challenge.heroId,
+          skin,
+          chapter: challenge.chapter,
+          difficulty: challenge.difficulty,
+          modifier: challenge.modifier
+        });
+      }
+    });
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) this._closeDailyDialog();
+    });
+  }
+
+  _closeDailyDialog() {
+    const existing = document.getElementById('lobbyDailyDialog');
+    if (existing) existing.remove();
+    if (this.dailyDialog) {
+      this.dailyDialog.remove();
+      this.dailyDialog = null;
+    }
+  }
+
   closeAllDialogs() {
     this._closeStoryDialog();
     this._closeEndlessDialog();
+    this._closeDailyDialog();
+    this._closeShopDialog();
+  }
+
+  _openShopDialog() {
+    this._closeShopDialog();
+    const dialog = document.createElement('div');
+    dialog.className = 'lobby-dialog';
+    dialog.id = 'lobbyShopDialog';
+    dialog.innerHTML = `
+      <div class="lobby-dialog-card shop-card">
+        <h3>商店</h3>
+        <div class="shop-header">
+          <span class="shop-refresh-count">今日刷新：${this.save.account._data.daily.shopRefreshCount || 0} 次</span>
+          <button class="btn" id="lobbyShopRefresh">刷新商品（${this.shop.canRefresh() ? '' : '🔒 '}${CURRENCY_ICONS.gems} 50）</button>
+        </div>
+        <div class="shop-grid" id="lobbyShopGrid"></div>
+        <div class="lobby-dialog-actions">
+          <button class="btn" id="lobbyShopClose">关闭</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('lobbyScreen').appendChild(dialog);
+    this.shopDialog = dialog;
+
+    dialog.querySelector('#lobbyShopClose').addEventListener('click', () => this._closeShopDialog());
+    dialog.querySelector('#lobbyShopRefresh').addEventListener('click', () => {
+      const result = this.shop.refreshStock();
+      if (!result.ok) {
+        Toast.show(result.reason, 'error');
+        return;
+      }
+      this._renderShopGrid(dialog);
+      this._updateShopHeader(dialog);
+      if (this.onRefresh) this.onRefresh();
+    });
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) this._closeShopDialog();
+    });
+
+    this._renderShopGrid(dialog);
+  }
+
+  _updateShopHeader(dialog) {
+    const countEl = dialog.querySelector('.shop-refresh-count');
+    if (countEl) countEl.textContent = `今日刷新：${this.save.account._data.daily.shopRefreshCount || 0} 次`;
+    const refreshBtn = dialog.querySelector('#lobbyShopRefresh');
+    if (refreshBtn) {
+      const can = this.shop.canRefresh();
+      refreshBtn.innerHTML = `刷新商品（${can ? '' : '🔒 '}${CURRENCY_ICONS.gems} 50）`;
+      refreshBtn.disabled = !can;
+    }
+  }
+
+  _renderShopGrid(dialog) {
+    const grid = dialog.querySelector('#lobbyShopGrid');
+    if (!grid) return;
+    const stock = this.shop.getStock();
+
+    if (stock.length === 0) {
+      grid.innerHTML = '<div class="shop-empty">暂无商品</div>';
+      return;
+    }
+
+    grid.innerHTML = stock.map(slot => {
+      const item = this._getShopItem(slot.itemId);
+      if (!item) return '';
+      const disabled = slot.sold || this.save.account.getCurrency(item.cost.type) < item.cost.amount;
+      return `
+        <div class="shop-item ${slot.sold ? 'sold' : ''}" data-instance="${slot.instanceId}">
+          <div class="shop-item-icon">${item.icon}</div>
+          <div class="shop-item-name">${item.name}</div>
+          <div class="shop-item-desc">${item.desc}</div>
+          <div class="shop-item-cost">
+            <span class="shop-cost-type">${CURRENCY_ICONS[item.cost.type] || ''}</span>
+            <span class="shop-cost-amount ${this.save.account.getCurrency(item.cost.type) >= item.cost.amount ? '' : 'insufficient'}">${item.cost.amount}</span>
+          </div>
+          <button class="btn btn-primary shop-buy-btn" data-instance="${slot.instanceId}" ${disabled ? 'disabled' : ''}>
+            ${slot.sold ? '已售完' : '购买'}
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    grid.querySelectorAll('.shop-buy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const instanceId = btn.dataset.instance;
+        const result = this.shop.buy(instanceId);
+        if (!result.ok) {
+          Toast.show(result.reason, 'error');
+          return;
+        }
+        this._renderShopGrid(dialog);
+        this._updateShopHeader(dialog);
+        if (this.onRefresh) this.onRefresh();
+        this._showShopPurchaseToast(result);
+      });
+    });
+  }
+
+  _showShopPurchaseToast(result) {
+    const container = document.getElementById('lobbyScreen');
+    if (!container) return;
+    const { effectResult, item } = result;
+    let msg = '';
+    if (effectResult.type === 'currency') {
+      msg = `获得 ${effectResult.amount} ${this._currencyName(effectResult.currency)}`;
+    } else if (effectResult.type === 'inventoryExpand') {
+      msg = `背包容量 +${effectResult.amount}`;
+    } else if (effectResult.type === 'equip') {
+      msg = `获得 ${effectResult.equip.name}`;
+    }
+    const toast = document.createElement('div');
+    toast.className = 'achievement-toast';
+    toast.innerHTML = `
+      <span class="achievement-toast-icon">${item.icon}</span>
+      <div class="achievement-toast-body">
+        <div class="achievement-toast-name">购买成功：${item.name}</div>
+        <div class="achievement-toast-desc">${msg}</div>
+      </div>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add('fade-out');
+      setTimeout(() => toast.remove(), 500);
+    }, 2500);
+  }
+
+  _getShopItem(id) {
+    return SHOP_ITEMS.find(i => i.id === id) || null;
+  }
+
+  _currencyName(type) {
+    const names = { coins: '铜币', souls: '将魂', gems: '元宝', merit: '战功', strengtheningStone: '强化石', refineStone: '精炼石' };
+    return names[type] || type;
+  }
+
+  _closeShopDialog() {
+    const existing = document.getElementById('lobbyShopDialog');
+    if (existing) existing.remove();
+    if (this.shopDialog) {
+      this.shopDialog.remove();
+      this.shopDialog = null;
+    }
   }
 
   _renderChapterGrid(dialog) {
@@ -171,5 +400,15 @@ export class ModeFooter {
         callback(btn.dataset.difficulty);
       });
     });
+  }
+
+  _heroName(heroId) {
+    const names = { zhaoyun: '赵云', diaochan: '貂蝉', dianwei: '典韦', lubu: '吕布', xuzhu: '许褚' };
+    return names[heroId] || heroId;
+  }
+
+  _difficultyName(diff) {
+    const names = { normal: '普通', hard: '困难', hell: '修罗' };
+    return names[diff] || diff;
   }
 }

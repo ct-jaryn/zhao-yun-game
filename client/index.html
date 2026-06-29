@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="css/ui.css?v=17">
 <link rel="stylesheet" href="css/screens.css?v=4">
 <link rel="stylesheet" href="css/lobby.css?v=1">
+<link rel="stylesheet" href="css/cover.css?v=1">
 </head>
 <body>
 <div id="gameWrapper">
@@ -191,8 +192,51 @@
       </div>
     </div>
 
+    <!-- Cover / Login Screen -->
+    <div id="coverScreen" class="screen active">
+      <div class="cover-bg"></div>
+      <div class="cover-content">
+        <h1 class="cover-title">三国赵云传</h1>
+        <p class="cover-subtitle">长坂坡 · 龙胆再临</p>
+        <div class="cover-card">
+          <div class="cover-tabs">
+            <button class="cover-tab active" data-tab="login">登录</button>
+            <button class="cover-tab" data-tab="register">注册</button>
+          </div>
+          <form class="cover-form active" id="coverLoginForm" novalidate>
+            <label>
+              <span>用户名</span>
+              <input type="text" id="coverLoginUsername" placeholder="请输入用户名" autocomplete="username" required minlength="3" maxlength="20">
+            </label>
+            <label>
+              <span>密码</span>
+              <input type="password" id="coverLoginPassword" placeholder="请输入密码" autocomplete="current-password" required minlength="6" maxlength="32">
+            </label>
+            <button type="submit" class="cover-submit">进入游戏</button>
+            <div class="cover-error" id="coverLoginError"></div>
+          </form>
+          <form class="cover-form" id="coverRegisterForm" novalidate>
+            <label>
+              <span>用户名</span>
+              <input type="text" id="coverRegisterUsername" placeholder="3-20 位字符" autocomplete="username" required minlength="3" maxlength="20">
+            </label>
+            <label>
+              <span>密码</span>
+              <input type="password" id="coverRegisterPassword" placeholder="6-32 位密码" autocomplete="new-password" required minlength="6" maxlength="32">
+            </label>
+            <label>
+              <span>确认密码</span>
+              <input type="password" id="coverRegisterPassword2" placeholder="再次输入密码" autocomplete="new-password" required minlength="6" maxlength="32">
+            </label>
+            <button type="submit" class="cover-submit">创建账号</button>
+            <div class="cover-error" id="coverRegisterError"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <!-- Lobby / Character Management Panel -->
-    <div id="lobbyScreen" class="screen active">
+    <div id="lobbyScreen" class="screen">
       <div class="lobby-bg"></div>
       <div class="lobby-topbar">
         <div class="lobby-account">
@@ -201,9 +245,12 @@
           <span class="lobby-currency" id="lobbySouls">🔥 0</span>
           <span class="lobby-currency" id="lobbyStones">🔷 0</span>
           <span class="lobby-currency" id="lobbyMerit">🎖️ 0</span>
+          <span class="lobby-currency" id="lobbyGems">💎 0</span>
         </div>
         <div class="lobby-actions">
+          <span class="lobby-username" id="lobbyUsername"></span>
           <button class="lobby-icon-btn" id="lobbySettingsBtn" title="设置">⚙️</button>
+          <button class="lobby-icon-btn" id="lobbyLogoutBtn" title="注销">🚪</button>
         </div>
       </div>
 
@@ -225,11 +272,14 @@
           </div>
 
           <div class="lobby-tabs" id="lobbyTabs">
-            <button class="lobby-tab active" data-tab="stats">属性</button>
-            <button class="lobby-tab" data-tab="equip">装备</button>
-            <button class="lobby-tab" data-tab="skills">技能</button>
-            <button class="lobby-tab" data-tab="talents">天赋</button>
-            <button class="lobby-tab" data-tab="records">战绩</button>
+            <button class="lobby-tab active" data-tab="stats"><span class="tab-icon">📊</span>属性</button>
+            <button class="lobby-tab" data-tab="equip"><span class="tab-icon">🛡️</span>装备</button>
+            <button class="lobby-tab" data-tab="skills"><span class="tab-icon">⚔️</span>技能</button>
+            <button class="lobby-tab" data-tab="talents"><span class="tab-icon">🔥</span>天赋</button>
+            <button class="lobby-tab" data-tab="records"><span class="tab-icon">📜</span>战绩</button>
+            <button class="lobby-tab" data-tab="achievements"><span class="tab-icon">🏆</span>成就</button>
+            <button class="lobby-tab" data-tab="codex"><span class="tab-icon">📖</span>图鉴</button>
+            <button class="lobby-tab" data-tab="leaderboard"><span class="tab-icon">🏅</span>排行</button>
           </div>
 
           <div class="lobby-tab-content active" id="tab-stats"></div>
@@ -237,6 +287,9 @@
           <div class="lobby-tab-content" id="tab-skills"></div>
           <div class="lobby-tab-content" id="tab-talents"></div>
           <div class="lobby-tab-content" id="tab-records"></div>
+          <div class="lobby-tab-content" id="tab-achievements"></div>
+          <div class="lobby-tab-content" id="tab-codex"></div>
+          <div class="lobby-tab-content" id="tab-leaderboard"></div>
         </main>
       </div>
 
@@ -257,209 +310,6 @@
           <span class="mode-icon">🏪</span>
           <span class="mode-name">商店</span>
         </button>
-      </div>
-    </div>
-
-    <!-- Start Screen -->
-    <div id="startScreen" style="display:none;">
-      <canvas id="bgParticles"></canvas>
-      <div class="start-vignette"></div>
-      <div class="start-light-rays"></div>
-
-      <div class="start-top-bar">
-        <span class="version">Web 版 v1.0</span>
-        <span class="motto">常山赵子龙 · 四战封神</span>
-      </div>
-
-      <div class="start-layout">
-        <div class="start-left">
-          <div class="start-hero">
-            <div class="start-avatar-wrap">
-              <div class="start-avatar-ring ring-outer"></div>
-              <div class="start-avatar-ring ring-inner"></div>
-              <div class="start-avatar-glow"></div>
-              <div class="start-avatar-particles"></div>
-              <img class="start-avatar" src="/generated/avatar.png" alt="赵云">
-            </div>
-            <div class="start-title-block">
-              <div class="start-subtitle">三国 · 龙胆无双</div>
-              <img class="start-logo" src="/generated/title_logo.png" alt="赵云传">
-              <div class="start-scene">— 虎牢 · 宛城 · 渭水 · 下邳 —</div>
-              <p class="start-tagline">
-                四场史诗决战，四位当世强敌。<br>
-                从虎牢救美到下邳焚天，以龙胆亮银枪书写战神传说。
-              </p>
-            </div>
-          </div>
-
-          <div class="start-actions">
-            <button class="btn start-btn-main" id="startBtn">
-              <span class="btn-shimmer"></span>
-              <span class="btn-text"><img class="btn-icon" src="/generated/icon_equip.png" alt=""> 开始征战</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="start-right">
-          <div class="start-content">
-            <div class="start-tabs">
-              <button class="start-tab active" data-tab="features"><img class="tab-icon" src="/generated/tab_features.png" alt=""> 四章传奇</button>
-              <button class="start-tab" data-tab="story"><img class="tab-icon" src="/generated/tab_story.png" alt=""> 长坂往事</button>
-              <button class="start-tab" data-tab="controls"><img class="tab-icon" src="/generated/tab_controls.png" alt=""> 操作说明</button>
-            </div>
-            <div class="start-panel">
-              <div class="start-panel-body active" id="tab-features">
-                <div class="feature-grid">
-                  <div class="feature-card">
-                    <img class="feature-icon" src="/generated/feature_ch1.png" alt="虎牢救美">
-                    <h4>虎牢救美</h4>
-                    <p>单骑闯虎牢，枪挑吕布，救回貂蝉。</p>
-                  </div>
-                  <div class="feature-card">
-                    <img class="feature-icon" src="/generated/feature_ch2.png" alt="血战宛城">
-                    <h4>血战宛城</h4>
-                    <p>曹军夜袭，子龙断后，直面典韦双戟。</p>
-                  </div>
-                  <div class="feature-card">
-                    <img class="feature-icon" src="/generated/feature_ch3.png" alt="渭水怒涛">
-                    <h4>渭水怒涛</h4>
-                    <p>渭水河畔，龙胆枪撼虎痴许褚。</p>
-                  </div>
-                  <div class="feature-card">
-                    <img class="feature-icon" src="/generated/feature_ch4.png" alt="下邳焚天">
-                    <h4>下邳焚天</h4>
-                    <p>下邳城下，决战无双飞将吕布。</p>
-                  </div>
-                </div>
-              </div>
-              <div class="start-panel-body" id="tab-story">
-                <div class="story-block">
-                  <p>乱世三国，名将辈出，而常山赵子龙以一身是胆名震天下。</p>
-                  <p>虎牢关前，单骑救美，枪挑吕布；宛城夜色，断后护主，血战典韦。</p>
-                  <p>渭水河畔，龙胆枪撼虎痴巨锤；下邳城下，决一死战再退无双飞将。</p>
-                  <p class="story-highlight">"吾乃常山赵子龙也！"</p>
-                  <p>四场决战，四位强敌，皆是子龙封神之路。</p>
-                  <p>今执龙胆亮银枪，再战这乱世风云。</p>
-                </div>
-              </div>
-              <div class="start-panel-body" id="tab-controls">
-                <div class="controls-grid">
-                  <div class="ctrl-row"><span class="ctrl-key">W A S D</span><span class="ctrl-desc">移动 / 方向</span></div>
-                  <div class="ctrl-row"><span class="ctrl-key">J</span><span class="ctrl-desc">普通攻击</span></div>
-                  <div class="ctrl-row"><span class="ctrl-key">K</span><span class="ctrl-desc">枪刃旋风</span></div>
-                  <div class="ctrl-row"><span class="ctrl-key">L</span><span class="ctrl-desc">突刺</span></div>
-                  <div class="ctrl-row"><span class="ctrl-key">U</span><span class="ctrl-desc">烽火燎原</span></div>
-                  <div class="ctrl-row"><span class="ctrl-key">I</span><span class="ctrl-desc">龙胆枪绝</span></div>
-                  <div class="ctrl-row"><span class="ctrl-key">Space</span><span class="ctrl-desc">闪避翻滚</span></div>
-                  <div class="ctrl-row"><span class="ctrl-key">Tab</span><span class="ctrl-desc">装备面板</span></div>
-                  <div class="ctrl-row"><span class="ctrl-key">Esc</span><span class="ctrl-desc">暂停</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="start-footer">赵云传 · 龙胆再临</div>
-    </div>
-
-    <!-- Chapter Select -->
-    <div id="chapterScreen">
-      <div class="chapter-header">
-        <h2>选择章节</h2>
-        <p>重温赵云一生经典战役</p>
-      </div>
-      <div class="chapter-grid">
-        <div class="chapter-card" data-chapter="1">
-          <div class="chapter-cover-wrap">
-            <img class="chapter-cover" src="/chapters/chapter1.png" alt="虎牢救美">
-          </div>
-          <div class="chapter-info">
-            <h3>第一章 · 虎牢救美</h3>
-            <p>单骑闯虎牢，击败吕布，救回貂蝉。</p>
-          </div>
-        </div>
-        <div class="chapter-card" data-chapter="2">
-          <div class="chapter-cover-wrap">
-            <img class="chapter-cover" src="/chapters/chapter2.png" alt="血战宛城">
-          </div>
-          <div class="chapter-info">
-            <h3>第二章 · 血战宛城</h3>
-            <p>曹军夜袭宛城，赵云单骑断后，枪挑典韦双铁戟。</p>
-          </div>
-        </div>
-        <div class="chapter-card" data-chapter="3">
-          <div class="chapter-cover-wrap">
-            <img class="chapter-cover" src="/chapters/chapter3.png" alt="渭水怒涛">
-          </div>
-          <div class="chapter-info">
-            <h3>第三章 · 渭水怒涛</h3>
-            <p>渭水河畔，虎痴许褚赤膊来战，龙胆枪对撼双巨锤。</p>
-          </div>
-        </div>
-        <div class="chapter-card" data-chapter="4">
-          <div class="chapter-cover-wrap">
-            <img class="chapter-cover" src="/chapters/chapter4.png" alt="下邳焚天">
-          </div>
-          <div class="chapter-info">
-            <h3>第四章 · 下邳焚天</h3>
-            <p>下邳城下，吕布横戟立马，龙胆亮银枪决战无双飞将。</p>
-          </div>
-        </div>
-      </div>
-      <button class="btn chapter-back" id="chapterBackBtn">← 返回</button>
-    </div>
-
-    <!-- Skin Select -->
-    <div id="skinScreen">
-      <div class="skin-bg-fx"></div>
-      <div class="skin-header">
-        <div class="skin-title-line"></div>
-        <h2>选择赵云形象</h2>
-        <p>不同皮肤拥有独立的战斗动画与特效</p>
-      </div>
-      <div class="skin-grid">
-        <div class="skin-card selected" data-skin="classic">
-          <div class="skin-glow"></div>
-          <div class="skin-preview-wrap">
-            <img class="skin-preview" src="/slices_png/front.png" alt="经典赵云">
-            <span class="skin-rarity epic">史诗</span>
-          </div>
-          <div class="skin-info">
-            <h3>经典赵云</h3>
-            <p>银甲白袍，龙胆亮银枪</p>
-          </div>
-        </div>
-        <div class="skin-card" data-skin="mecha">
-          <div class="skin-glow"></div>
-          <div class="skin-preview-wrap">
-            <img class="skin-preview" src="/player_mecha/slices/front.webp" alt="机甲赵云">
-            <span class="skin-rarity legendary">传说</span>
-          </div>
-          <div class="skin-info">
-            <h3>机甲赵云</h3>
-            <p>黑金战甲，未来科技风</p>
-          </div>
-        </div>
-      </div>
-      <div class="skin-actions">
-        <button class="btn skin-start" id="skinStartBtn"><img class="btn-icon" src="/generated/icon_equip.png" alt=""> 出战</button>
-        <button class="btn skin-back" id="skinBackBtn">← 返回</button>
-      </div>
-    </div>
-
-    <!-- Chapter 4 Ad Lock -->
-    <div id="adLockOverlay">
-      <div class="ad-lock-card">
-        <h2><img class="lock-title-icon" src="/generated/icon_lock.png" alt=""> 第四章锁定</h2>
-        <p>请观看下方广告 5 秒以解锁最终章「下邳焚天」</p>
-        <div class="ad-frame-wrap">
-          <iframe id="adFrame" src="https://monkeycode-ai.com/" frameborder="0" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer"></iframe>
-        </div>
-        <div class="ad-fallback">若页面无法显示，请访问 <a href="https://monkeycode-ai.com/" target="_blank">monkeycode-ai.com</a></div>
-        <div class="ad-timer" id="adTimer">5</div>
-        <button class="btn" id="adUnlockBtn" disabled>观看广告 5 秒</button>
-        <button class="btn secondary ad-back-btn" id="adBackBtn">返回章节选择</button>
       </div>
     </div>
 

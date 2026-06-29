@@ -31,12 +31,13 @@ export class SpawnManager {
     const runConfig = this.game.runConfig;
     if (!runConfig) return;
     const diff = runConfig.getDifficultyConfig();
+    const challenge = runConfig.challenge || {};
 
-    enemy.maxHp = Math.floor(enemy.maxHp * diff.enemyHp);
+    enemy.maxHp = Math.floor(enemy.maxHp * diff.enemyHp * (challenge.enemyHpMult || 1));
     enemy.hp = enemy.maxHp;
-    enemy.atk = Math.floor(enemy.atk * diff.enemyAtk);
-    enemy.def = Math.floor(enemy.def * diff.enemyDef);
-    enemy.speed = Math.floor(enemy.speed * diff.enemySpeed);
+    enemy.atk = Math.floor(enemy.atk * diff.enemyAtk * (challenge.enemyAtkMult || 1));
+    enemy.def = Math.floor(enemy.def * diff.enemyDef * (challenge.enemyDefMult || 1));
+    enemy.speed = Math.floor(enemy.speed * diff.enemySpeed * (challenge.enemySpeedMult || 1));
 
     // 精英怪词缀（仅非 Boss）
     const isBoss = ['boss', 'lubu', 'dianwei', 'xuzhu'].includes(enemy.type);
@@ -102,9 +103,11 @@ export class SpawnManager {
   }
 
   update(dt) {
+    const challenge = this.game.runConfig && this.game.runConfig.challenge;
+    const spawnRateMult = challenge && challenge.spawnRateMult ? challenge.spawnRateMult : 1;
     this.autoSpawnTimer -= dt;
     if (this.autoSpawnTimer <= 0) {
-      this.autoSpawnTimer = this.autoSpawnInterval;
+      this.autoSpawnTimer = this.autoSpawnInterval * spawnRateMult;
       this.spawnPhaseMinions();
     }
   }

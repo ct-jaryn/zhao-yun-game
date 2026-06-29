@@ -1,6 +1,7 @@
 import {
   SAVE_VERSION,
-  createDefaultSave
+  createDefaultSave,
+  createDefaultSettings
 } from './schemas.js';
 import { Account } from './Account.js';
 import { HeroCollection } from './HeroCollection.js';
@@ -23,6 +24,8 @@ export class SaveManager {
     this.heroes = new HeroCollection(this._raw.heroes);
     this.inventory = new Inventory(this._raw.inventory);
     this.progression = new Progression(this._raw.progression);
+    this.settings = this._raw.settings || createDefaultSettings();
+    this._raw.settings = this.settings;
 
     this._autoSaveInterval = setInterval(() => this.persist(), 30000);
   }
@@ -63,6 +66,7 @@ export class SaveManager {
     if (!this._raw.heroes) this._raw.heroes = fresh.heroes;
     if (!this._raw.inventory) this._raw.inventory = fresh.inventory;
     if (!this._raw.progression) this._raw.progression = fresh.progression;
+    if (!this._raw.settings) this._raw.settings = fresh.settings;
 
     // 确保账号关键字段存在
     const acc = this._raw.account;
@@ -70,6 +74,11 @@ export class SaveManager {
     if (!Array.isArray(acc.unlockedChapters)) acc.unlockedChapters = fresh.account.unlockedChapters;
     if (!acc.unlockedSkins) acc.unlockedSkins = fresh.account.unlockedSkins;
     if (!acc.currencies) acc.currencies = fresh.account.currencies;
+    if (!acc.daily) acc.daily = fresh.account.daily;
+    if (!acc.daily.shopStock) acc.daily.shopStock = [];
+    if (typeof acc.daily.shopRefreshCount !== 'number') acc.daily.shopRefreshCount = 0;
+    if (!acc.daily.shopDate) acc.daily.shopDate = '';
+    if (!Array.isArray(acc.gems)) acc.gems = [];
   }
 
   _applyLegacyMigration(data) {
@@ -108,6 +117,7 @@ export class SaveManager {
       this._raw.heroes = this.heroes.toJSON();
       this._raw.inventory = this.inventory.toJSON();
       this._raw.progression = this.progression.toJSON();
+      this._raw.settings = this.settings;
       this._raw.version = SAVE_VERSION;
       this._raw.updatedAt = Date.now();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this._raw));
@@ -120,18 +130,20 @@ export class SaveManager {
 
   exportToString() {
     this.persist();
-    return btoa(JSON.stringify(this._raw));
+    return btoa(encodeURIComponent(JSON.stringify(this._raw)));
   }
 
   importFromString(str) {
     try {
-      const decoded = JSON.parse(atob(str));
+      const decoded = JSON.parse(decodeURIComponent(atob(str)));
       const migrated = this._migrate(decoded);
       this._raw = migrated;
       this.account = new Account(this._raw.account);
       this.heroes = new HeroCollection(this._raw.heroes);
       this.inventory = new Inventory(this._raw.inventory);
       this.progression = new Progression(this._raw.progression);
+      this.settings = this._raw.settings || createDefaultSettings();
+      this._raw.settings = this.settings;
       this.persist();
       return true;
     } catch (err) {
@@ -146,6 +158,7 @@ export class SaveManager {
     this.heroes = new HeroCollection(this._raw.heroes);
     this.inventory = new Inventory(this._raw.inventory);
     this.progression = new Progression(this._raw.progression);
+    this.settings = this._raw.settings;
     this.persist();
   }
 
@@ -156,7 +169,8 @@ export class SaveManager {
       account: this.account.toJSON(),
       heroes: this.heroes.toJSON(),
       inventory: this.inventory.toJSON(),
-      progression: this.progression.toJSON()
+      progression: this.progression.toJSON(),
+      settings: this.settings
     };
   }
 }

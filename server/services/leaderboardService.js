@@ -34,7 +34,9 @@ function getList(limit = 10) {
 
 function addRecord(record) {
   const entry = {
-    name: String(record.name || '无名英雄').slice(0, 20),
+    name: String(record.name || record.username || '无名英雄').slice(0, 20),
+    userId: record.userId || null,
+    username: record.username || null,
     score: Number(record.score) || 0,
     kills: Number(record.kills) || 0,
     wave: Number(record.wave) || 1,

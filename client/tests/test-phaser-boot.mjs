@@ -23,10 +23,25 @@ import { safeScreenshot } from './screenshot-helper.mjs';
 
   await page.goto('http://localhost:5177/', { waitUntil: 'domcontentloaded' });
 
+  // 若出现登录封面（测试环境无后端），直接绕过进入大厅
+  await page.waitForFunction(() => {
+    return document.getElementById('coverScreen') || document.getElementById('lobbyScreen');
+  }, { timeout: 60000 });
+  const coverActive = await page.evaluate(() => {
+    const cover = document.getElementById('coverScreen');
+    return cover && cover.classList.contains('active');
+  });
+  const hasCoverController = await page.evaluate(() => !!window.coverController);
+  console.log('Cover state:', { coverActive, hasCoverController });
+  if (coverActive && hasCoverController) {
+    console.log('Bypassing cover for test environment');
+    await page.evaluate(() => window.coverController._enterLobby({ username: '测试玩家' }));
+  }
+
   // 等待大厅加载完成
   await page.waitForFunction(() => {
     const lobby = document.getElementById('lobbyScreen');
-    return lobby && window.getComputedStyle(lobby).display !== 'none';
+    return lobby && window.getComputedStyle(lobby).display !== 'none' && !!window.lobbyController;
   }, { timeout: 60000 });
 
   // 检查 Vite 错误覆盖层

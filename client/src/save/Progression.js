@@ -10,7 +10,7 @@ export class Progression {
   }
 
   hasAchievement(id) {
-    return this._data.achievements.includes(id);
+    return (this._data.achievements || []).includes(id);
   }
 
   grantAchievement(id) {

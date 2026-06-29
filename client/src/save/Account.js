@@ -13,6 +13,7 @@ export class Account {
   get rankExp() { return this._data.rankExp || 0; }
 
   get currencies() { return this._data.currencies || {}; }
+  get gems() { return this._data.gems || []; }
 
   getCurrency(type) {
     return (this._data.currencies && this._data.currencies[type]) || 0;
@@ -54,9 +55,23 @@ export class Account {
     if (!reward) return;
     if (reward.coins) this.addCurrency('coins', reward.coins);
     if (reward.souls) this.addCurrency('souls', reward.souls);
-    if (reward.capacity) {
-      // 背包容量提升由 Inventory 处理，这里只做标记
+    if (reward.gems) this.addCurrency('gems', reward.gems);
+    if (reward.merit) this.addCurrency('merit', reward.merit);
+    if (reward.inventoryCapacity) {
+      this._pendingInventoryCapacity = (this._pendingInventoryCapacity || 0) + reward.inventoryCapacity;
     }
+    if (reward.unlockSkin) {
+      this.unlockSkin(reward.unlockSkin.heroId, reward.unlockSkin.skin);
+    }
+    if (reward.unlockHero) {
+      this.unlockHero(reward.unlockHero);
+    }
+  }
+
+  consumePendingInventoryCapacity() {
+    const amount = this._pendingInventoryCapacity || 0;
+    this._pendingInventoryCapacity = 0;
+    return amount;
   }
 
   isHeroUnlocked(id) {
@@ -100,6 +115,17 @@ export class Account {
       return true;
     }
     return false;
+  }
+
+  addGem(gem) {
+    if (!this._data.gems) this._data.gems = [];
+    this._data.gems.push(gem);
+    return this._data.gems.length;
+  }
+
+  removeGem(index) {
+    if (!this._data.gems || index < 0 || index >= this._data.gems.length) return null;
+    return this._data.gems.splice(index, 1)[0];
   }
 
   resetDailyIfNeeded() {

@@ -12,6 +12,7 @@ export function createDefaultHero(id) {
     equipment: createEmptyEquipment(),
     talentNodes: [],
     skillLevels: [1, 1, 1, 1, 1],
+    skillBranchSelections: {},
     records: {
       highestChapter: 0,
       highestDifficulty: 'normal',
@@ -51,8 +52,12 @@ export function createDefaultAccount() {
     daily: {
       lastResetDate: '',
       challengeCompletions: 0,
-      claimedRewards: []
-    }
+      claimedRewards: [],
+      shopDate: '',
+      shopStock: [],
+      shopRefreshCount: 0
+    },
+    gems: []
   };
 }
 
@@ -89,7 +94,8 @@ export function createDefaultSettings() {
     sfxVolume: 0.8,
     language: 'zh-CN',
     screenShake: true,
-    showDamageNumbers: true
+    showDamageNumbers: true,
+    cloudToken: ''
   };
 }
 

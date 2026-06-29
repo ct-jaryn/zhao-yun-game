@@ -1,0 +1,177 @@
+/* 游戏封面 / 登录页 */
+
+#coverScreen {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #050510;
+  z-index: 40;
+}
+
+#coverScreen.active {
+  display: flex;
+}
+
+.cover-bg {
+  position: absolute;
+  inset: 0;
+  background: url('/assets/cover/cover.png') center/cover no-repeat;
+}
+
+.cover-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(5, 5, 16, 0.25) 0%, rgba(5, 5, 16, 0.8) 100%);
+}
+
+.cover-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeIn 0.8s ease;
+}
+
+.cover-title {
+  font-family: "Ma Shan Zheng", "Noto Serif SC", serif;
+  font-size: 72px;
+  color: var(--gold);
+  text-shadow:
+    0 0 20px rgba(255, 215, 0, 0.5),
+    0 0 60px rgba(255, 215, 0, 0.2),
+    3px 3px 8px rgba(0, 0, 0, 0.9);
+  letter-spacing: 12px;
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.cover-subtitle {
+  font-family: "Noto Serif SC", serif;
+  font-size: 22px;
+  color: var(--gold-dim);
+  letter-spacing: 8px;
+  margin-top: 8px;
+  margin-bottom: 40px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.cover-card {
+  width: 360px;
+  background: rgba(10, 10, 20, 0.92);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 215, 0, 0.08);
+  padding: 24px;
+  backdrop-filter: blur(4px);
+}
+
+.cover-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--panel-border);
+  padding-bottom: 12px;
+}
+
+.cover-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.cover-tab:hover {
+  color: var(--text);
+  background: rgba(255, 215, 0, 0.08);
+}
+
+.cover-tab.active {
+  color: var(--gold);
+  background: rgba(255, 215, 0, 0.15);
+  box-shadow: inset 0 -2px 0 var(--gold);
+}
+
+.cover-form {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cover-form.active {
+  display: flex;
+}
+
+.cover-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.cover-form input {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--panel-border);
+  border-radius: 5px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.cover-form input:focus {
+  border-color: var(--gold-dim);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.15);
+}
+
+.cover-form input::placeholder {
+  color: rgba(170, 170, 170, 0.5);
+}
+
+.cover-submit {
+  margin-top: 8px;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold-dim));
+  border: none;
+  border-radius: 5px;
+  color: #1a1200;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.2s;
+}
+
+.cover-submit:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.cover-submit:active {
+  transform: translateY(0);
+}
+
+.cover-error {
+  min-height: 20px;
+  color: var(--red);
+  font-size: 13px;
+  text-align: center;
+}
+
+.lobby-username {
+  color: var(--lobby-gold, var(--gold));
+  font-size: 14px;
+  font-weight: 600;
+  margin-right: 6px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}

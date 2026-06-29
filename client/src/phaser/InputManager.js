@@ -16,7 +16,6 @@ const CODE_MAP = {
   'KeyU': 'U',
   'KeyI': 'I',
   'Space': 'SPACE',
-  'KeyE': 'E',
   'Tab': 'TAB',
   'Escape': 'ESC'
 };
@@ -36,7 +35,7 @@ export class InputManager {
       'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
       'KeyW', 'KeyA', 'KeyS', 'KeyD',
       'KeyJ', 'KeyK', 'KeyL', 'KeyU', 'KeyI',
-      'Space', 'KeyE', 'Tab', 'Escape'
+      'Space', 'Tab', 'Escape'
     ];
     keyCodes.forEach(code => {
       const phaserCode = CODE_MAP[code] || code;

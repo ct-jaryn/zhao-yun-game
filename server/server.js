@@ -3,6 +3,8 @@ const path = require('path');
 const fs = require('fs');
 
 const leaderboardRouter = require('./routes/leaderboard');
+const saveRouter = require('./routes/save');
+const authRouter = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +17,8 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.static(CLIENT_DIR));
 
 app.use('/api/leaderboard', leaderboardRouter);
+app.use('/api/save', saveRouter);
+app.use('/api/auth', authRouter);
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(CLIENT_DIR, 'index.html'));

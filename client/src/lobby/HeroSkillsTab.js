@@ -1,4 +1,5 @@
 import { HEROES, SKILLS, SKILL_ICON_IMAGES, MECHA_SKILL_ICON_IMAGES } from '../config/index.js';
+import { Toast } from './Toast.js';
 
 export class HeroSkillsTab {
   constructor(containerId, saveManager, onChange) {
@@ -10,30 +11,50 @@ export class HeroSkillsTab {
   render(heroId) {
     if (!this.container) return;
     const heroData = this.save.heroes.getHero(heroId);
+    const heroCfg = HEROES[heroId];
     const isMecha = heroData.skin === 'mecha';
     const iconMap = isMecha ? MECHA_SKILL_ICON_IMAGES : SKILL_ICON_IMAGES;
+    const skillBranches = heroCfg.skillBranches || [];
 
     this.container.innerHTML = `
       <div class="skills-list">
-        ${SKILLS.map((sk, idx) => `
-          <div class="skill-card">
-            <img src="${iconMap[idx]}" alt="${sk.name}" onerror="this.style.display='none'">
-            <div class="skill-info">
-              <div class="skill-name">${sk.name} <span class="skill-level">Lv.${heroData.skillLevels[idx]}</span></div>
-              <div class="skill-desc">${sk.desc}</div>
-              <div class="skill-meta">快捷键 ${sk.key} · CD ${sk.cd}s · 消耗 ${sk.mp} MP</div>
+        ${SKILLS.map((sk, idx) => {
+          const branches = skillBranches[idx] || [];
+          const selectedId = heroData.skillBranchSelections[idx];
+          return `
+            <div class="skill-card">
+              <img src="${iconMap[idx]}" alt="${sk.name}" onerror="this.style.display='none'">
+              <div class="skill-info">
+                <div class="skill-name">${sk.name} <span class="skill-level">Lv.${heroData.skillLevels[idx]}</span></div>
+                <div class="skill-desc">${sk.desc}</div>
+                <div class="skill-meta">快捷键 ${sk.key} · CD ${sk.cd}s · 消耗 ${sk.mp} MP</div>
+                ${branches.length ? `
+                  <div class="skill-branches">
+                    ${branches.map(b => `
+                      <button class="skill-branch-btn ${selectedId === b.id ? 'active' : ''}" data-index="${idx}" data-branch="${b.id}">
+                        <span class="branch-name">${b.name}</span>
+                        <span class="branch-desc">${b.desc}</span>
+                      </button>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+              <button class="btn btn-small skill-upgrade-btn" data-index="${idx}">
+                升级 (${this._upgradeCost(heroData.skillLevels[idx])} 铜币)
+              </button>
             </div>
-            <button class="btn btn-small skill-upgrade-btn" data-index="${idx}">
-              升级 (${this._upgradeCost(heroData.skillLevels[idx])} 铜币)
-            </button>
-          </div>
-        `).join('')}
+          `;
+        }).join('')}
       </div>
-      <p class="lobby-hint">技能升级提升伤害与效果，后续版本将开放技能分支。</p>
+      <p class="lobby-hint">技能升级提升伤害与效果，技能分支改变战斗风格。</p>
     `;
 
     this.container.querySelectorAll('.skill-upgrade-btn').forEach(btn => {
       btn.addEventListener('click', () => this._upgradeSkill(heroId, parseInt(btn.dataset.index, 10)));
+    });
+
+    this.container.querySelectorAll('.skill-branch-btn').forEach(btn => {
+      btn.addEventListener('click', () => this._selectBranch(heroId, parseInt(btn.dataset.index, 10), btn.dataset.branch));
     });
   }
 
@@ -41,10 +62,18 @@ export class HeroSkillsTab {
     const heroData = this.save.heroes.getHero(heroId);
     const cost = this._upgradeCost(heroData.skillLevels[index]);
     if (!this.save.account.consumeCurrency('coins', cost)) {
-      alert('铜币不足');
+      Toast.show('铜币不足', 'error');
       return;
     }
     this.save.heroes.updateSkillLevel(heroId, index, 1);
+    this.save.persist();
+    this.render(heroId);
+    if (this.onChange) this.onChange();
+  }
+
+  _selectBranch(heroId, index, branchId) {
+    const heroData = this.save.heroes.getHero(heroId);
+    heroData.skillBranchSelections[index] = branchId;
     this.save.persist();
     this.render(heroId);
     if (this.onChange) this.onChange();

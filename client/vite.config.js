@@ -7,12 +7,23 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
-      input: 'index.html'
+      input: 'index.html',
+      output: {
+        manualChunks: {
+          phaser: ['phaser']
+        }
+      }
     }
   },
   server: {
     port: 5173,
     open: true,
-    allowedHosts: ['.monkeycode-ai.online']
+    allowedHosts: ['.monkeycode-ai.online'],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      }
+    }
   }
 });

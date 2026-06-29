@@ -22,7 +22,7 @@ export class RewardSystem {
     for (const [k, v] of Object.entries(tierData.stats)) {
       stats[k] = Math.floor(v * q.mult * (0.9 + Math.random() * 0.2));
     }
-    return { type, name: tierData.name, quality: q, stats, level, tier };
+    return { type, name: tierData.name, quality: q, stats, baseStats: { ...stats }, level, tier };
   }
 
   grantGodEquip() {

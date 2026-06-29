@@ -1,6 +1,7 @@
 import { rand, randInt, pick } from '../utils/index.js';
 import { Particle } from '../entities/Particle.js';
 import { ObjectPool } from '../utils/ObjectPool.js';
+import { SaveManager } from '../../save/SaveManager.js';
 
 export class EffectManager {
   constructor(game) {
@@ -19,6 +20,10 @@ export class EffectManager {
   }
 
   shakeScreen(intensity) {
+    try {
+      const save = SaveManager.getInstance();
+      if (save && save.settings && save.settings.screenShake === false) return;
+    } catch (e) {}
     this.scene.cameras.main.shake(200 + intensity * 30, intensity / 100);
   }
 

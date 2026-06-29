@@ -1,5 +1,5 @@
-import { HEROES, HERO_UNLOCK_CONDITIONS } from '../config/index.js';
-import { PLAYER_AVATAR } from '../config/index.js';
+import { HEROES, HERO_UNLOCK_CONDITIONS, PLAYER_AVATAR } from '../config/index.js';
+import { Toast } from './Toast.js';
 
 export class HeroSidebar {
   constructor(containerId, saveManager, onSelect, onUnlock) {
@@ -30,21 +30,26 @@ export class HeroSidebar {
       }
 
       const avatarSrc = this._getAvatarSrc(hero.id, heroData.skin);
+      const lockInfo = this._lockInfo(hero.id);
 
       item.innerHTML = `
         <img class="hero-list-avatar" src="${avatarSrc}" alt="${hero.name}" onerror="this.src='${PLAYER_AVATAR}'">
         <div class="hero-list-info">
           <div class="hero-list-name">${hero.name}</div>
-          <div class="hero-list-meta">${unlocked ? `Lv.${heroData.level}` : this._lockText(hero.id)}</div>
+          <div class="hero-list-meta">${unlocked ? `Lv.${heroData.level}` : lockInfo.text}</div>
         </div>
-        ${unlocked ? '' : `<div class="hero-list-lock">🔒</div>`}
+        ${unlocked ? '<div class="hero-list-check">●</div>' : `<button class="btn btn-small hero-unlock-btn" data-hero="${hero.id}" ${lockInfo.canUnlock ? '' : 'disabled'}>${lockInfo.btnText}</button>`}
       `;
 
-      item.addEventListener('click', () => {
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.hero-unlock-btn')) {
+          this._tryUnlock(hero.id);
+          return;
+        }
         if (this.save.account.isHeroUnlocked(hero.id)) {
           this._select(hero.id);
         } else {
-          this._tryUnlock(hero.id);
+          Toast.show(lockInfo.hint, 'info');
         }
       });
 
@@ -71,6 +76,7 @@ export class HeroSidebar {
 
     if (cond.type === 'free') {
       if (this.onUnlock) this.onUnlock(heroId);
+      Toast.show(`${HEROES[heroId].name} 已解锁`, 'success');
       return;
     }
 
@@ -78,8 +84,9 @@ export class HeroSidebar {
       const cleared = this.save.progression.getHighestClearChapter() >= cond.chapter;
       if (cleared) {
         if (this.onUnlock) this.onUnlock(heroId);
+        Toast.show(`${HEROES[heroId].name} 已解锁`, 'success');
       } else {
-        alert(`需通关第${cond.chapter}章解锁`);
+        Toast.show(`需通关第 ${cond.chapter} 章解锁 ${HEROES[heroId].name}`, 'error');
       }
       return;
     }
@@ -87,8 +94,10 @@ export class HeroSidebar {
     if (cond.type === 'souls') {
       if (this.save.account.consumeCurrency('souls', cond.amount)) {
         if (this.onUnlock) this.onUnlock(heroId);
+        this.save.persist();
+        Toast.show(`消耗 ${cond.amount} 将魂解锁 ${HEROES[heroId].name}`, 'success');
       } else {
-        alert(`将魂不足，需要 ${cond.amount} 将魂`);
+        Toast.show(`将魂不足，解锁 ${HEROES[heroId].name} 需要 ${cond.amount} 将魂`, 'error');
       }
     }
   }
@@ -98,12 +107,28 @@ export class HeroSidebar {
     return PLAYER_AVATAR;
   }
 
-  _lockText(heroId) {
+  _lockInfo(heroId) {
     const cond = HERO_UNLOCK_CONDITIONS[heroId];
-    if (!cond) return '未解锁';
-    if (cond.type === 'free') return '点击解锁';
-    if (cond.type === 'clear') return `通关第${cond.chapter}章`;
-    if (cond.type === 'souls') return `将魂 ×${cond.amount}`;
-    return '未解锁';
+    if (!cond) return { text: '未解锁', btnText: '解锁', hint: '未解锁', canUnlock: false };
+    if (cond.type === 'free') return { text: '点击解锁', btnText: '解锁', hint: `${HEROES[heroId].name} 可免费解锁`, canUnlock: true };
+    if (cond.type === 'clear') {
+      const cleared = this.save.progression.getHighestClearChapter() >= cond.chapter;
+      return {
+        text: `通关第${cond.chapter}章`,
+        btnText: cleared ? '解锁' : '未达成',
+        hint: `通关第 ${cond.chapter} 章解锁 ${HEROES[heroId].name}`,
+        canUnlock: cleared
+      };
+    }
+    if (cond.type === 'souls') {
+      const enough = this.save.account.getCurrency('souls') >= cond.amount;
+      return {
+        text: `将魂 ×${cond.amount}`,
+        btnText: enough ? `解锁` : '将魂不足',
+        hint: `消耗 ${cond.amount} 将魂解锁 ${HEROES[heroId].name}`,
+        canUnlock: enough
+      };
+    }
+    return { text: '未解锁', btnText: '解锁', hint: '未解锁', canUnlock: false };
   }
 }
