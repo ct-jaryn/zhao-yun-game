@@ -129,4 +129,11 @@ export class PhaseManager {
     if (this.updateRescueWinTimer(dt)) return;
     this.updateDiaoChanApproach();
   }
+
+  shutdown() {
+    if (this.diaochan) {
+      this.diaochan.destroy();
+      this.diaochan = null;
+    }
+  }
 }

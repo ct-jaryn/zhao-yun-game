@@ -1,6 +1,6 @@
 import { EQUIP_TYPES } from '../config/index.js';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export function createDefaultHero(id) {
   return {
@@ -57,7 +57,7 @@ export function createDefaultAccount() {
       shopStock: [],
       shopRefreshCount: 0
     },
-    gems: []
+    gemItems: []
   };
 }
 

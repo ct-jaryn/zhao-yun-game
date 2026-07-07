@@ -1,4 +1,5 @@
 import { HEROES, HERO_UNLOCK_CONDITIONS, PLAYER_AVATAR } from '../config/index.js';
+import { escapeHtml } from '../utils/html.js';
 import { Toast } from './Toast.js';
 
 export class HeroSidebar {
@@ -33,12 +34,12 @@ export class HeroSidebar {
       const lockInfo = this._lockInfo(hero.id);
 
       item.innerHTML = `
-        <img class="hero-list-avatar" src="${avatarSrc}" alt="${hero.name}" onerror="this.src='${PLAYER_AVATAR}'">
+        <img class="hero-list-avatar" src="${avatarSrc}" alt="${escapeHtml(hero.name)}" onerror="this.src='${PLAYER_AVATAR}'">
         <div class="hero-list-info">
-          <div class="hero-list-name">${hero.name}</div>
-          <div class="hero-list-meta">${unlocked ? `Lv.${heroData.level}` : lockInfo.text}</div>
+          <div class="hero-list-name">${escapeHtml(hero.name)}</div>
+          <div class="hero-list-meta">${unlocked ? `Lv.${heroData.level}` : escapeHtml(lockInfo.text)}</div>
         </div>
-        ${unlocked ? '<div class="hero-list-check">●</div>' : `<button class="btn btn-small hero-unlock-btn" data-hero="${hero.id}" ${lockInfo.canUnlock ? '' : 'disabled'}>${lockInfo.btnText}</button>`}
+        ${unlocked ? '<div class="hero-list-check">●</div>' : `<button class="btn btn-small hero-unlock-btn" data-hero="${hero.id}" ${lockInfo.canUnlock ? '' : 'disabled'}>${escapeHtml(lockInfo.btnText)}</button>`}
       `;
 
       item.addEventListener('click', (e) => {

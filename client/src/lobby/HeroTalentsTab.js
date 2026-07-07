@@ -1,4 +1,5 @@
 import { HEROES } from '../config/index.js';
+import { escapeHtml } from '../utils/html.js';
 import { Toast } from './Toast.js';
 
 export class HeroTalentsTab {
@@ -46,8 +47,8 @@ export class HeroTalentsTab {
       <div class="talent-branch ${completed ? 'completed' : ''}">
         <div class="talent-branch-header">
           <div>
-            <h4>${branch.name}</h4>
-            <p>${branch.desc}</p>
+            <h4>${escapeHtml(branch.name)}</h4>
+            <p>${escapeHtml(branch.desc)}</p>
           </div>
           ${completed ? '<span class="talent-completion">✓ 分支完成（效果 +50%）</span>' : ''}
         </div>
@@ -63,7 +64,7 @@ export class HeroTalentsTab {
               <div class="talent-node ${unlocked ? 'active' : ''} ${disabled ? 'disabled' : ''}" data-node="${nodeId}">
                 <span class="node-icon">${unlocked ? '✓' : i}</span>
                 <span class="node-cost">${i * 50} 将魂</span>
-                <span class="node-effect">${this._formatEffect(branch.effects?.[i - 1])}</span>
+                <span class="node-effect">${escapeHtml(this._formatEffect(branch.effects?.[i - 1]))}</span>
                 ${!unlocked && !prereqMet ? '<span class="node-lock">需前置</span>' : ''}
               </div>
             `;

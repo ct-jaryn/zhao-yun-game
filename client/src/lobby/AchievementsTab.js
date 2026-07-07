@@ -1,4 +1,5 @@
 import { ACHIEVEMENTS } from '../config/index.js';
+import { escapeHtml } from '../utils/html.js';
 
 export class AchievementsTab {
   constructor(containerId, saveManager) {
@@ -34,8 +35,8 @@ export class AchievementsTab {
       <div class="achievement-card ${isUnlocked ? 'unlocked' : 'locked'}">
         <span class="achievement-card-icon">${ach.icon}</span>
         <div class="achievement-card-info">
-          <div class="achievement-card-name">${ach.name}</div>
-          <div class="achievement-card-desc">${ach.desc}</div>
+          <div class="achievement-card-name">${escapeHtml(ach.name)}</div>
+          <div class="achievement-card-desc">${escapeHtml(ach.desc)}</div>
           <div class="achievement-card-reward">奖励：${this._formatReward(ach.reward)}</div>
         </div>
         <span class="achievement-card-status">${isUnlocked ? '✓' : '🔒'}</span>

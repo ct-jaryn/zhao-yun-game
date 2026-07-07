@@ -1,8 +1,7 @@
 import { MAP_W, MAP_H } from '../utils/index.js';
 import { rand, randInt } from '../utils/index.js';
 import { Enemy } from '../entities/Enemy.js';
-
-const BOSS_TYPES = ['boss', 'lubu', 'dianwei', 'xuzhu'];
+import { BOSS_TYPES, isBossType } from '../../config/index.js';
 
 export class SpawnManager {
   constructor(game) {
@@ -40,8 +39,7 @@ export class SpawnManager {
     enemy.speed = Math.floor(enemy.speed * diff.enemySpeed * (challenge.enemySpeedMult || 1));
 
     // 精英怪词缀（仅非 Boss）
-    const isBoss = ['boss', 'lubu', 'dianwei', 'xuzhu'].includes(enemy.type);
-    if (!isBoss && !options.elite && !enemy.enhanced && Math.random() < diff.eliteChance) {
+    if (!isBossType(enemy.type) && !options.elite && !enemy.enhanced && Math.random() < diff.eliteChance) {
       enemy.isElite = true;
       enemy.name = `精英·${enemy.name}`;
       enemy.maxHp = Math.floor(enemy.maxHp * 1.5);

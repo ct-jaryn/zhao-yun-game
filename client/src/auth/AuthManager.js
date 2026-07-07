@@ -37,25 +37,38 @@ export class AuthManager {
   }
 
   async _authRequest(url, body) {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const data = await res.json().catch(() => ({ success: false, message: '网络错误' }));
-    if (data.success && data.token) {
-      this._setToken(data.token);
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({ success: false, message: '网络错误' }));
+      if (!res.ok) {
+        return { success: false, message: data.message || `请求失败 (${res.status})` };
+      }
+      if (data.success && data.token) {
+        this._setToken(data.token);
+      }
+      return data;
+    } catch (err) {
+      return { success: false, message: '网络错误' };
     }
-    return data;
   }
 
   async validate() {
     if (!this.token) return { success: false };
-    const res = await this.fetchWithAuth('/api/auth/me');
-    if (!res.success) {
+    try {
+      const res = await this.fetchWithAuth('/api/auth/me');
+      const data = await res.json().catch(() => ({ success: false }));
+      if (!data.success) {
+        this.logout();
+      }
+      return data;
+    } catch (err) {
       this.logout();
+      return { success: false, message: '验证失败' };
     }
-    return res;
   }
 
   fetchWithAuth(url, options = {}) {

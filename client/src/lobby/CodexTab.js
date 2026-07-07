@@ -1,4 +1,5 @@
 import { EQUIP_TYPES, EQUIP_ICONS, ZHAO_YUN_EQUIP_TIERS, EQUIP_STAT_LABELS } from '../config/index.js';
+import { escapeHtml } from '../utils/html.js';
 
 const CODEX_KEYS = {
   weapons: { label: '武器', icon: '⚔️' },
@@ -72,9 +73,9 @@ export class CodexTab {
     return `
       <div class="codex-item">
         <div class="codex-item-icon">${EQUIP_ICONS[equip.type]}</div>
-        <div class="codex-item-name">${equip.name}</div>
+        <div class="codex-item-name">${escapeHtml(equip.name)}</div>
         <div class="codex-item-tier">T${equip.tier + 1}</div>
-        <div class="codex-item-stats">${stats}</div>
+        <div class="codex-item-stats">${escapeHtml(stats)}</div>
       </div>
     `;
   }

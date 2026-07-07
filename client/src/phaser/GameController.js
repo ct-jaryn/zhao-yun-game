@@ -1,5 +1,5 @@
-import { MAP_W, MAP_H } from './utils/index.js';
-import { ENEMY_TYPES, SKILLS } from '../config/index.js';
+import { MAP_W, MAP_H, CHAPTER_CONFIG, HERO_COMBAT_CONFIG, RUN_REWARD_CONFIG } from '../config/index.js';
+import { ENEMY_TYPES, BOSS_TYPES, MINION_TYPES, isBossType } from '../config/index.js';
 import { rand, pick } from './utils/index.js';
 import { Player } from './entities/Player.js';
 import { RunConfig } from '../game/RunConfig.js';
@@ -15,33 +15,7 @@ import { MinimapRenderer } from './MinimapRenderer.js';
 import { DirectionHints } from './DirectionHints.js';
 import { PauseManager } from './systems/PauseManager.js';
 import { RewardSystem } from './systems/RewardSystem.js';
-
-const CHAPTER_CONFIG = {
-  1: {
-    name: '虎牢救美', subtitle: '单骑救貂蝉', enemyLevelBonus: 0, maxMinions: 25,
-    tint: null, bossType: 'lubu', bossName: '吕布',
-    finalBosses: [{ type: 'lubu', enhanced: true, name: '吕布·狂暴' }],
-    victoryText: '通关！吕布败退，貂蝉得救！', victorySubtitle: '貂蝉已被安全救出'
-  },
-  2: {
-    name: '血战宛城', subtitle: '古之恶来', enemyLevelBonus: 1, maxMinions: 30,
-    tint: null, bossType: 'dianwei', bossName: '典韦',
-    finalBosses: [{ type: 'boss', enhanced: true, name: '曹操·狂暴' }, { type: 'dianwei', name: '典韦' }],
-    victoryText: '通关！典韦与曹操皆已被击败！', victorySubtitle: '古之恶来陨落，铁戟染血，宛城之路已开！'
-  },
-  3: {
-    name: '渭水怒涛', subtitle: '虎痴之锤', enemyLevelBonus: 2, maxMinions: 32,
-    tint: 'rgba(20,20,40,0.25)', bossType: 'xuzhu', bossName: '许褚',
-    finalBosses: [{ type: 'boss', enhanced: true, name: '曹操·狂暴' }, { type: 'xuzhu', name: '许褚' }],
-    victoryText: '通关！许褚与曹操皆已被击败！', victorySubtitle: '虎痴倒下，巨锤沉江，渭水为之呜咽！'
-  },
-  4: {
-    name: '下邳焚天', subtitle: '无双吕布', enemyLevelBonus: 3, maxMinions: 35,
-    tint: 'rgba(60,15,10,0.28)', bossType: 'lubu', bossName: '吕布',
-    finalBosses: [{ type: 'boss', enhanced: true, name: '曹操·狂暴' }, { type: 'lubu', name: '吕布' }],
-    victoryText: '通关！吕布与曹操皆已被击败！', victorySubtitle: '无双吕布败退，方天画戟折锋，天下谁还敢挡！'
-  }
-};
+import { CombatSystem } from './systems/CombatSystem.js';
 
 export class GameController {
   constructor(scene) {
@@ -62,6 +36,7 @@ export class GameController {
     this.running = true;
     this.pauseManager = new PauseManager(this);
     this.rewardSystem = new RewardSystem(this);
+    this.combatSystem = new CombatSystem();
     this.levelUpOpen = false;
     this.pendingRewards = [];
     this.equipPanelOpen = false;
@@ -72,9 +47,20 @@ export class GameController {
   }
 
   start(runConfig) {
+    const scene = this.scene;
     this.shutdown();
+    this.scene = scene;
 
-    this.runConfig = runConfig instanceof RunConfig ? runConfig : new RunConfig({ heroId: 'zhaoyun', skin: 'classic', chapter: 1, difficulty: 'normal', mode: 'story' });
+    this.runConfig = runConfig instanceof RunConfig
+      ? runConfig
+      : new RunConfig({
+          heroId: 'zhaoyun',
+          skin: 'classic',
+          chapter: 1,
+          difficulty: 'normal',
+          mode: 'story',
+          heroData: RunConfig.createDefaultHeroData('zhaoyun')
+        });
     const cfg = this.runConfig;
 
     this.chapter = cfg.chapter;
@@ -86,6 +72,8 @@ export class GameController {
     this.score = 0;
     this.gameTime = 0;
     this.running = true;
+    if (!this.pauseManager) this.pauseManager = new PauseManager(this);
+    if (!this.rewardSystem) this.rewardSystem = new RewardSystem(this);
     this.pauseManager.reset();
     this.levelUpOpen = false;
     this.pendingRewards = [];
@@ -197,7 +185,6 @@ export class GameController {
 
   onEnemyKilled(e) {
     const cfg = this.chapterConfig;
-    const BOSS_TYPES = ['boss', 'lubu', 'dianwei', 'xuzhu'];
     const isEndless = this.runConfig && this.runConfig.mode === 'endless';
 
     // 触发英雄击杀被动（典韦回血等）
@@ -205,7 +192,7 @@ export class GameController {
       this.player.onKill(e, this);
     }
 
-    if (BOSS_TYPES.includes(e.type)) {
+    if (isBossType(e.type)) {
       this.totalKills++;
       this.effectManager.checkKillMilestone();
       this.score += e.score;
@@ -257,7 +244,8 @@ export class GameController {
 
     this.totalKills++;
     this.effectManager.checkKillMilestone();
-    const comboBonus = 1 + Math.floor(this.player.combo / 5) * 0.2;
+    const comboCfg = HERO_COMBAT_CONFIG.combo;
+    const comboBonus = 1 + Math.floor(this.player.combo / comboCfg.milestoneEvery) * comboCfg.milestoneBonus;
     this.score += Math.floor(e.score * comboBonus);
     this.player.addExp(e.exp, this);
     this.effectManager.addKillLog(`击杀 Lv.${e.level} ${e.name} +${e.score}分`);
@@ -274,7 +262,6 @@ export class GameController {
 
     // 无尽模式不需要故事阶段的清兵计数
     if (!isEndless) {
-      const MINION_TYPES = ['soldier', 'archer', 'cavalry'];
       if (MINION_TYPES.includes(e.type)) {
         this.phaseManager.soldierKills++;
         if (this.phaseManager.phase === 'soldiers' && this.phaseManager.soldierKills >= this.phaseManager.soldiersRequired) {
@@ -287,8 +274,9 @@ export class GameController {
   rewardBossKill(boss, isFinal = false) {
     this.player.addExp(this.player.expToLevel, this);
     this.effectManager.addText(this.player.x, this.player.y - 90, isFinal ? '通关奖励：等级提升！' : '击败Boss：等级提升！', '#ffd700', 22, '#000');
-    this.dropManager.spawnBossDrops(boss, 1, isFinal ? 2 : 0);
-    this.effectManager.addText(boss.x, boss.y - boss.radius - 55, `掉落 1 件装备！`, '#ffaa44', 18, '#000');
+    const cfg = RUN_REWARD_CONFIG;
+    this.dropManager.spawnBossDrops(boss, cfg.bossDropCount, isFinal ? cfg.bossDropQualityBonus : 0);
+    this.effectManager.addText(boss.x, boss.y - boss.radius - 55, `掉落 ${cfg.bossDropCount} 件装备！`, '#ffaa44', 18, '#000');
   }
 
   onBossFirstDeath(boss) {
@@ -311,29 +299,16 @@ export class GameController {
   // ===== 玩家技能命中 =====
 
   hitEnemyWithSkill(e, skillIdx) {
-    const sk = SKILLS[skillIdx];
-    const branchEffects = this.player.getSkillBranchEffects(skillIdx);
-    const passiveMult = this.player.getDamageMult(e);
-    const skillLevelMult = this.player.skillDamageMult[skillIdx] || 1;
-    const branchDamageMult = branchEffects.damageMult || 1;
-    const critBonus = branchEffects.critBonus || 0;
-    let dmg = Math.floor(this.player.atk * sk.dmgMult * branchDamageMult * skillLevelMult * passiveMult);
-    const isCrit = Math.random() * 100 < (this.player.crit + critBonus);
-    if (isCrit) dmg = Math.floor(dmg * 1.8);
-    e.takeDamage(dmg, isCrit, this.player.dir, this);
+    const result = this.combatSystem.calculateSkillHit(this.player, e, skillIdx);
+    e.takeDamage(result.damage, result.isCrit, this.player.dir, this);
 
-    // 吸血
-    const lifesteal = branchEffects.lifesteal || 0;
-    if (lifesteal > 0 && dmg > 0) {
-      const heal = Math.floor(dmg * lifesteal / 100);
-      if (heal > 0) {
-        this.player.hp = Math.min(this.player.maxHpTotal, this.player.hp + heal);
-        this.effectManager.addText(this.player.x, this.player.y - 60, `+${heal}`, '#44ff44', 14, '#000');
-      }
+    if (result.lifestealHeal > 0) {
+      this.player.hp = Math.min(this.player.maxHpTotal, this.player.hp + result.lifestealHeal);
+      this.effectManager.addText(this.player.x, this.player.y - 60, `+${result.lifestealHeal}`, '#44ff44', 14, '#000');
     }
 
     this.player.combo++;
-    this.player.comboTimer = 3;
+    this.player.comboTimer = HERO_COMBAT_CONFIG.combo.resetTime;
     if (this.player.combo > this.player.maxCombo) this.player.maxCombo = this.player.combo;
   }
 
@@ -409,9 +384,9 @@ export class GameController {
       maxCombo: this.player ? this.player.maxCombo : 0,
       runLevel: this.player ? this.player.level : 1,
       wave,
-      expGained: Math.floor((this.totalKills * 2 + this.score * 0.05) * diffCfg.expMult),
-      coinsGained: Math.floor((this.totalKills * 1 + this.score * 0.02) * diffCfg.coinMult),
-      soulsGained: Math.floor(cleared ? 10 * diffCfg.coinMult : 2),
+      expGained: Math.floor((this.totalKills * RUN_REWARD_CONFIG.scoreMultPerKill + this.score * RUN_REWARD_CONFIG.scoreMultPerScore) * diffCfg.expMult),
+      coinsGained: Math.floor((this.totalKills * RUN_REWARD_CONFIG.coinMultPerKill + this.score * RUN_REWARD_CONFIG.coinMultPerScore) * diffCfg.coinMult),
+      soulsGained: Math.floor(cleared ? RUN_REWARD_CONFIG.soulsOnClear * diffCfg.coinMult : RUN_REWARD_CONFIG.soulsOnFail),
       drops: this._collectRunDrops(),
       milestones: []
     };
@@ -426,7 +401,7 @@ export class GameController {
     // 实际运行中掉落应记录在 DropManager；这里简化为玩家当前装备
     const drops = [];
     if (!this.player) return drops;
-    const initialNames = ['木枪', '布衣', '布巾', '草鞋', '木佩'];
+    const initialNames = RUN_REWARD_CONFIG.initialEquipNames;
     for (const eq of Object.values(this.player.equip)) {
       if (eq && !initialNames.includes(eq.name)) {
         drops.push(eq);
@@ -502,16 +477,46 @@ export class GameController {
   showWaveAnnounce(num, sub) { this.effectManager.showWaveAnnounce(num, sub); }
 
   shutdown() {
+    if (!this.scene) return;
+
+    this.running = false;
     this.cleanupEntities();
-    if (this.effectManager) {
-      this.effectManager.shutdown();
+
+    const managers = [
+      this.effectManager,
+      this.collisionManager,
+      this.phaseManager,
+      this.spawnManager,
+      this.dropManager,
+      this.uiSync,
+      this.minimap,
+      this.rewardSystem,
+      this.pauseManager,
+      this.directionHints
+    ];
+
+    for (const mgr of managers) {
+      if (mgr && typeof mgr.shutdown === 'function') {
+        try {
+          mgr.shutdown();
+        } catch (err) {
+          console.warn('[GameController] 子系统清理失败:', err);
+        }
+      }
     }
-    if (this.phaseManager && this.phaseManager.diaochan) {
-      this.phaseManager.diaochan.destroy();
-    }
-    if (this.directionHints) {
-      if (this.directionHints.graphics) this.directionHints.graphics.destroy();
-      if (this.directionHints.arrows) this.directionHints.arrows.forEach(a => a.destroy());
-    }
+
+    this.effectManager = null;
+    this.collisionManager = null;
+    this.phaseManager = null;
+    this.spawnManager = null;
+    this.dropManager = null;
+    this.uiSync = null;
+    this.minimap = null;
+    this.rewardSystem = null;
+    this.pauseManager = null;
+    this.directionHints = null;
+    this.onRunCompleteCallback = null;
+    this.runConfig = null;
+    this.scene = null;
   }
 }

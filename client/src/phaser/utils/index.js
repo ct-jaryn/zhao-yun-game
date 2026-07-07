@@ -1,7 +1,6 @@
-export const W = 1200;
-export const H = 675;
-export const MAP_W = 3000;
-export const MAP_H = 2000;
+export {
+  MAP_W, MAP_H
+} from '../../config/game.config.js';
 
 export function vec(x, y) { return { x, y }; }
 export function vsub(a, b) { return { x: a.x - b.x, y: a.y - b.y }; }

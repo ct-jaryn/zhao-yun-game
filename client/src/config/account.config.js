@@ -12,6 +12,10 @@ export const RANK_REWARDS = {
   60: { coins: 60000, souls: 800 }
 };
 
+// 军阶经验公式
+export const RANK_EXP_BASE = 1000;
+export const RANK_EXP_GROWTH = 1.15;
+
 // 货币显示名称
 export const CURRENCY_LABELS = {
   coins: '铜币',

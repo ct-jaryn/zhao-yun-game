@@ -1,72 +1,7 @@
-import { MAP_W, MAP_H, SKILLS, EQUIP_TYPES, QUALITY, ZHAO_YUN_EQUIP_TIERS } from '../../config/index.js';
+import { MAP_W, MAP_H, SKILLS, EQUIP_TYPES, QUALITY, BOSS_TYPES, HERO_COMBAT_CONFIG } from '../../config/index.js';
 import { vnorm, vec, vdist, angleDiff, pick } from '../utils/index.js';
 import { AssetLoader } from '../plugins/AssetLoader.js';
-
-export function getEquipTier(level) {
-  const weights = [
-    Math.max(0.10, 0.60 - level * 0.03),
-    Math.min(0.45, 0.25 + level * 0.01),
-    Math.min(0.35, 0.08 + level * 0.015),
-    Math.min(0.30, 0.04 + level * 0.015),
-    Math.min(0.45, 0.01 + level * 0.02)
-  ];
-  const total = weights.reduce((a, b) => a + b, 0);
-  const roll = Math.random() * total;
-  let cumulative = 0;
-  for (let i = 0; i < weights.length; i++) {
-    cumulative += weights[i];
-    if (roll < cumulative) return i;
-  }
-  return 0;
-}
-
-export function genEquip(level) {
-  const type = pick(EQUIP_TYPES);
-  const tier = getEquipTier(level);
-  const tierData = ZHAO_YUN_EQUIP_TIERS[tier][type];
-
-  const qRoll = Math.random();
-  let qi = 0;
-  const goldRate = Math.min(0.25, 0.02 + level * 0.008);
-  const purpleRate = Math.min(0.45, 0.08 + level * 0.015);
-  const blueRate = Math.min(0.7, 0.25 + level * 0.02);
-  const greenRate = Math.min(0.9, 0.55 + level * 0.015);
-  if (qRoll < goldRate) qi = 4;
-  else if (qRoll < purpleRate) qi = 3;
-  else if (qRoll < blueRate) qi = 2;
-  else if (qRoll < greenRate) qi = 1;
-  const q = QUALITY[qi];
-
-  const stats = {};
-  for (const [k, v] of Object.entries(tierData.stats)) {
-    stats[k] = Math.floor(v * q.mult * (0.85 + Math.random() * 0.3));
-  }
-  return { type, name: tierData.name, quality: q, stats, baseStats: { ...stats }, level, tier };
-}
-
-export function createInitialEquip() {
-  const equip = {};
-  const tierData = ZHAO_YUN_EQUIP_TIERS[0];
-  for (const type of EQUIP_TYPES) {
-    const stats = {};
-    for (const [k, v] of Object.entries(tierData[type].stats)) {
-      stats[k] = Math.floor(v * QUALITY[0].mult);
-    }
-    equip[type] = { type, name: tierData[type].name, quality: QUALITY[0], stats, baseStats: { ...stats }, level: 1, tier: 0 };
-  }
-  return equip;
-}
-
-export function equipStatText(eq) {
-  const labels = { atk:'攻击', def:'防御', hp:'生命', mp:'法力', crit:'暴击', spd:'速度' };
-  return Object.entries(eq.stats).map(([k, v]) => `${labels[k] || k}+${v}`).join(' ');
-}
-
-export function equipPower(eq) {
-  let v = 0;
-  for (const k in eq.stats) v += eq.stats[k];
-  return v * eq.quality.mult;
-}
+import { createInitialEquip } from '../systems/EquipmentFactory.js';
 
 export class Player {
   constructor(scene, x, y, combatStats = null) {
@@ -82,7 +17,7 @@ export class Player {
 
     this.level = 1;
     this.exp = 0;
-    this.expToLevel = 100;
+    this.expToLevel = HERO_COMBAT_CONFIG.levelExp.base;
     this.maxHp = stats.maxHp || 150;
     this.hp = this.maxHp;
     this.maxMp = stats.maxMp || 80;
@@ -176,14 +111,15 @@ export class Player {
 
   addExp(v, game) {
     this.exp += v;
+    const cfg = HERO_COMBAT_CONFIG;
     while (this.exp >= this.expToLevel) {
       this.exp -= this.expToLevel;
       this.level++;
-      this.expToLevel = Math.floor(this.expToLevel * 1.25);
-      this.hp = this.maxHpTotal;
-      this.mp = this.maxMpTotal;
-      this.baseAtk += 3;
-      this.baseDef += 2;
+      this.expToLevel = Math.floor(this.expToLevel * cfg.levelExp.growth);
+      if (cfg.levelUp.restoreHp) this.hp = this.maxHpTotal;
+      if (cfg.levelUp.restoreMp) this.mp = this.maxMpTotal;
+      this.baseAtk += cfg.levelUp.atkBonus;
+      this.baseDef += cfg.levelUp.defBonus;
       game.addText(this.x, this.y - 50, `升级! Lv.${this.level}`, '#ffd700', 26, '#000');
       game.addParticles(this.x, this.y, '#ffd700', 25, 120);
       game.shakeScreen(4);
@@ -210,7 +146,7 @@ export class Player {
     if (!this.sprite || !this.sprite.texture) return;
     const source = this.sprite.texture.getSourceImage();
     if (!source || source.height <= 0) return;
-    const targetH = this.skin === 'mecha' ? 270 : 210;
+    const targetH = this.skin === 'mecha' ? HERO_COMBAT_CONFIG.sprite.targetHeightMecha : HERO_COMBAT_CONFIG.sprite.targetHeightClassic;
     const scale = targetH / source.height;
     this.sprite.setScale(scale);
   }
@@ -238,7 +174,7 @@ export class Player {
     if (this.comboTimer > 0) {
       this.comboTimer -= dt;
       if (this.comboTimer <= 0) {
-        if (this.combo >= 5) game.addText(this.x, this.y - 70, '连击中断!', '#888', 16, '#000');
+        if (this.combo >= HERO_COMBAT_CONFIG.combo.interruptionTextThreshold) game.addText(this.x, this.y - 70, '连击中断!', '#888', 16, '#000');
         this.combo = 0;
       }
     }
@@ -414,7 +350,7 @@ useSkill(idx, game) {
     this.mp -= sk.mp;
     this.skillCd[idx] = cd;
     this.attacking = true;
-    this.attackTimer = 0.25 + idx * 0.08;
+    this.attackTimer = HERO_COMBAT_CONFIG.skillCast.attackTimerBase + idx * HERO_COMBAT_CONFIG.skillCast.attackTimerStep;
     this.currentSkill = idx;
 
     // 锁定本次技能释放方向：鼠标按住瞄准时取鼠标方向，否则取当前面向
@@ -425,12 +361,13 @@ useSkill(idx, game) {
     }
 
     if (idx === 2) {
-      this.x += Math.cos(skillDir) * 90;
-      this.y += Math.sin(skillDir) * 90;
+      const dashCfg = HERO_COMBAT_CONFIG.skillCast.dash;
+      this.x += Math.cos(skillDir) * dashCfg.distance;
+      this.y += Math.sin(skillDir) * dashCfg.distance;
       this.clampPos();
-      for (let i = 0; i < 8; i++) {
-        const t = i / 8;
-        game.addParticles(this.x - Math.cos(skillDir) * 90 * t, this.y - Math.sin(skillDir) * 90 * t, '#ff8844', 1, 40, 4);
+      for (let i = 0; i < dashCfg.particleCount; i++) {
+        const t = i / dashCfg.particleCount;
+        game.addParticles(this.x - Math.cos(skillDir) * dashCfg.distance * t, this.y - Math.sin(skillDir) * dashCfg.distance * t, '#ff8844', 1, 40, 4);
       }
     }
 
@@ -462,7 +399,7 @@ useSkill(idx, game) {
       if (dist > skillRange + e.radius + this.radius) continue;
       const angleTo = Math.atan2(e.y - this.y, e.x - this.x);
       const inArc = Math.abs(angleDiff(angleTo, skillDir)) <= sk.arc / 2;
-      const overlapping = dist <= this.radius + e.radius + 5;
+      const overlapping = dist <= this.radius + e.radius + HERO_COMBAT_CONFIG.damage.overlappingExtraDistance;
       if (inArc || overlapping) hits.push(e);
     }
 
@@ -475,47 +412,54 @@ useSkill(idx, game) {
     }
 
     if (idx === 4) {
+      const ult = HERO_COMBAT_CONFIG.skillCast.ultimate;
       for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) {
-        game.addProjectile(this.x, this.y, a, 350, this.atk * 0.5, 'player', '#ffd700', 5, 1.5, null, true);
+        game.addProjectile(this.x, this.y, a, ult.projectileSpeed, this.atk * ult.projectileDmgRatio, 'player', '#ffd700', ult.projectileSize, ult.projectileLife, null, true);
       }
-      game.addParticles(this.x, this.y, '#ffd700', 35, 160);
-      game.shakeScreen(8);
-      game.flashScreen('#ffd700', 0.25);
+      game.addParticles(this.x, this.y, '#ffd700', ult.particleCount, ult.particleSpeed);
+      game.shakeScreen(ult.shake);
+      game.flashScreen('#ffd700', ult.flashDuration);
     }
 
     if (idx === 3) {
-      game.addParticles(this.x, this.y, '#ff4400', 50, 80, 5);
-      game.shakeScreen(5);
-      game.flashScreen('#ff6400', 0.2);
+      const sk3 = HERO_COMBAT_CONFIG.skillCast.skill3;
+      game.addParticles(this.x, this.y, '#ff4400', sk3.particleCount, sk3.particleSpeed, sk3.particleSize);
+      game.shakeScreen(sk3.shake);
+      game.flashScreen('#ff6400', sk3.flashDuration);
     }
 
     if (idx === 1) {
-      game.addParticles(this.x, this.y, '#88ccff', 18, 90);
-      game.shakeScreen(3);
+      const sk1 = HERO_COMBAT_CONFIG.skillCast.skill1;
+      game.addParticles(this.x, this.y, '#88ccff', sk1.particleCount, sk1.particleSpeed);
+      game.shakeScreen(sk1.shake);
     }
   }
 
   dodge(game) {
     if (this.dodging || this.dodgeCd > 0 || this.dead) return;
+    const cfg = HERO_COMBAT_CONFIG.dodge;
     const isMecha = this.skin === 'mecha';
     this.dodging = true;
-    this.dodgeTimer = isMecha ? 0.45 : 0.25;
-    this.dodgeCd = isMecha ? 1.0 : 0.8;
+    this.dodgeTimer = isMecha ? cfg.durationMecha : cfg.durationClassic;
+    this.dodgeCd = isMecha ? cfg.cooldownMecha : cfg.cooldownClassic;
     this.dodgeDir = this.dir;
-    this.dodgeSpeed = isMecha ? 500 : 400;
-    this.invulnTimer = this.dodgeTimer + 0.15;
-    game.addParticles(this.x, this.y, '#aaccff', 10, 70);
+    this.dodgeSpeed = isMecha ? cfg.speedMecha : cfg.speedClassic;
+    this.invulnTimer = this.dodgeTimer + cfg.invulnExtra;
+    game.addParticles(this.x, this.y, '#aaccff', cfg.particleCount, cfg.particleSpeed);
   }
 
   takeDamage(dmg, game = null) {
     if (this.invulnTimer > 0 || this.dead) return;
     let actual = Math.max(1, dmg - this.def);
 
-    // 许褚被动：20% 概率减免 50% 伤害
-    if (this.heroId === 'xuzhu' && Math.random() < 0.2) {
-      actual = Math.max(1, Math.floor(actual * 0.5));
-      if (game && game.effectManager) {
-        game.effectManager.addText(this.x, this.y - this.radius - 55, '格挡!', '#44ff44', 16, '#000');
+    // 许褚被动：概率减免伤害
+    if (this.heroId === 'xuzhu') {
+      const cfg = HERO_COMBAT_CONFIG.passives.xuzhu;
+      if (Math.random() < cfg.blockChance) {
+        actual = Math.max(1, Math.floor(actual * cfg.blockDamageMult));
+        if (game && game.effectManager) {
+          game.effectManager.addText(this.x, this.y - this.radius - 55, '格挡!', '#44ff44', 16, '#000');
+        }
       }
     }
 
@@ -538,15 +482,17 @@ useSkill(idx, game) {
     let mult = 1;
 
     // 赵云被动：低血量增伤
-    if (this.heroId === 'zhaoyun' && this.hp <= this.maxHpTotal * 0.3) {
-      mult *= 1.25;
+    if (this.heroId === 'zhaoyun') {
+      const cfg = HERO_COMBAT_CONFIG.passives.zhaoyun;
+      if (this.hp <= this.maxHpTotal * cfg.hpThreshold) {
+        mult *= cfg.damageMult;
+      }
     }
 
     // 吕布被动：对 Boss 增伤
     if (this.heroId === 'lubu' && target) {
-      const bossTypes = ['boss', 'lubu', 'dianwei', 'xuzhu'];
-      if (bossTypes.includes(target.type)) {
-        mult *= 1.2;
+      if (BOSS_TYPES.includes(target.type)) {
+        mult *= HERO_COMBAT_CONFIG.passives.lubu.bossDamageMult;
       }
     }
 
@@ -556,7 +502,8 @@ useSkill(idx, game) {
   onKill(enemy, game) {
     // 典韦被动：击杀回血
     if (this.heroId === 'dianwei') {
-      const heal = Math.floor(this.maxHpTotal * 0.03);
+      const cfg = HERO_COMBAT_CONFIG.passives.dianwei;
+      const heal = Math.floor(this.maxHpTotal * cfg.killHealRatio);
       this.hp = Math.min(this.maxHpTotal, this.hp + heal);
       if (game && game.effectManager) {
         game.effectManager.addText(this.x, this.y - this.radius - 50, `+${heal}`, '#44ff44', 16, '#000');
@@ -565,17 +512,18 @@ useSkill(idx, game) {
   }
 
   applyPassives(dt, game) {
-    // 貂蝉被动：每 8 秒魅惑附近敌人
+    // 貂蝉被动：定时魅惑附近敌人
     if (this.heroId === 'diaochan') {
+      const cfg = HERO_COMBAT_CONFIG.passives.diaochan;
       this._charmTimer = (this._charmTimer || 0) - dt;
       if (this._charmTimer <= 0) {
-        this._charmTimer = 8;
+        this._charmTimer = cfg.charmInterval;
         let charmed = 0;
         for (const e of game.enemies) {
           if (e.dead || e.charmed) continue;
           const dist = Math.hypot(e.x - this.x, e.y - this.y);
-          if (dist < 200) {
-            e.applyCharm(2.5);
+          if (dist < cfg.charmRange) {
+            e.applyCharm(cfg.charmDuration);
             charmed++;
           }
         }

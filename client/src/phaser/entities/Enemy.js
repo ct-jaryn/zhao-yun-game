@@ -1,4 +1,4 @@
-import { MAP_W, MAP_H, ENEMY_TYPES, ENEMY_AGGRO_RANGE, ENEMY_LOSE_AGGRO_RANGE, ENEMY_CHASE_SPEED_RATIO, ENEMY_WANDER_SPEED_RATIO } from '../../config/index.js';
+import { MAP_W, MAP_H, ENEMY_TYPES, ENEMY_AGGRO_RANGE, ENEMY_LOSE_AGGRO_RANGE, ENEMY_CHASE_SPEED_RATIO, ENEMY_WANDER_SPEED_RATIO, isBossType, ENEMY_COMBAT_CONFIG } from '../../config/index.js';
 import { rand, randInt, vdist, vsub, vnorm, vec } from '../utils/index.js';
 import { AssetLoader } from '../plugins/AssetLoader.js';
 import { Projectile } from './Projectile.js';
@@ -26,18 +26,18 @@ export class Enemy {
     this.radius = t.radius;
     this.level = level;
 
-    const scale = 1 + (level - 1) * 0.25;
+    const scale = 1 + (level - 1) * ENEMY_COMBAT_CONFIG.levelScaling.hp;
     this.maxHp = Math.floor(t.hp * scale);
     this.hp = this.maxHp;
-    this.atk = Math.floor(t.atk * scale);
-    this.def = Math.floor(t.def * scale);
+    this.atk = Math.floor(t.atk * (1 + (level - 1) * ENEMY_COMBAT_CONFIG.levelScaling.atk));
+    this.def = Math.floor(t.def * (1 + (level - 1) * ENEMY_COMBAT_CONFIG.levelScaling.def));
     this.speed = t.speed;
-    this.exp = Math.floor(t.exp * scale);
+    this.exp = Math.floor(t.exp * (1 + (level - 1) * ENEMY_COMBAT_CONFIG.levelScaling.exp));
     this.score = t.score;
     this.dropRate = t.dropRate;
     this.ranged = t.ranged || false;
     this.shootCd = t.shootCd || 0;
-    this.shootTimer = rand(0.5, 2);
+    this.shootTimer = rand(ENEMY_COMBAT_CONFIG.attack.shootTimerMin, ENEMY_COMBAT_CONFIG.attack.shootTimerMax);
 
     this.dir = Math.random() * Math.PI * 2;
     this.state = 'idle';
@@ -63,7 +63,7 @@ export class Enemy {
     this._originalBaseAtk = this.baseAtk;
     this._originalBaseDef = this.baseDef;
     this.sizeScale = 1;
-    this.hpRegen = (type === 'boss' || type === 'lubu') ? 0.05 : 0;
+    this.hpRegen = (type === 'boss' || type === 'lubu') ? ENEMY_COMBAT_CONFIG.boss.hpRegen : 0;
     this.hasRevived = options.skipRevive ? true : false;
     this.reviveTimer = 0;
     this.enraged = false;
@@ -72,19 +72,20 @@ export class Enemy {
     this.charmTimer = 0;
 
     if (this.enhanced && type === 'boss') {
-      this.maxHp = Math.floor(this.maxHp * 1.8);
+      const cfg = ENEMY_COMBAT_CONFIG.enhanced;
+      this.maxHp = Math.floor(this.maxHp * cfg.hpMult);
       this.hp = this.maxHp;
       this.baseMaxHp = this.maxHp;
-      this.atk = Math.floor(this.atk * 1.4);
-      this.def = Math.floor(this.def * 1.4);
+      this.atk = Math.floor(this.atk * cfg.atkMult);
+      this.def = Math.floor(this.def * cfg.defMult);
       this.baseAtk = this.atk;
       this.baseDef = this.def;
       this._originalBaseMaxHp = this.baseMaxHp;
       this._originalBaseAtk = this.baseAtk;
       this._originalBaseDef = this.baseDef;
-      this.sizeScale = 1.4;
+      this.sizeScale = cfg.sizeScale;
       this.updateHitbox();
-      this.hpRegen = 0.08;
+      this.hpRegen = cfg.hpRegen;
     }
 
     this.spriteConfig = SPRITE_CONFIG[type] || SPRITE_CONFIG.soldier;
@@ -112,9 +113,10 @@ export class Enemy {
   }
 
   getHpBarColor() {
-    if (this.type === 'boss' || this.type === 'lubu') return 0xff00ff;
-    if (['general', 'dianwei', 'xuzhu'].includes(this.type)) return 0xff4444;
-    return 0x88ff88;
+    const tints = ENEMY_COMBAT_CONFIG.tints;
+    if (this.type === 'boss' || this.type === 'lubu') return tints.boss;
+    if (['general', 'dianwei', 'xuzhu'].includes(this.type)) return tints.general;
+    return tints.default;
   }
 
   createSprite() {
@@ -132,9 +134,10 @@ export class Enemy {
   }
 
   createHpBar() {
-    const barW = 60 * this.sizeScale;
-    const barH = 6 * this.sizeScale;
-    const yOffset = -this.radius - 15;
+    const cfg = ENEMY_COMBAT_CONFIG.hpBar;
+    const barW = cfg.width * this.sizeScale;
+    const barH = cfg.height * this.sizeScale;
+    const yOffset = -this.radius - cfg.yOffset;
 
     this.hpBarBg = this.scene.add.rectangle(this.x, this.y + yOffset, barW, barH, 0x000000);
     this.hpBarBg.setDepth(15);
@@ -145,10 +148,11 @@ export class Enemy {
   }
 
   createNameLabel() {
-    const yOffset = -this.radius - 28;
+    const cfg = ENEMY_COMBAT_CONFIG.hpBar;
+    const yOffset = -this.radius - cfg.nameYOffset;
     this.nameLabel = this.scene.add.text(this.x, this.y + yOffset, `Lv.${this.level} ${this.name}`, {
       fontFamily: 'Noto Serif SC',
-      fontSize: `${12 * this.sizeScale}px`,
+      fontSize: `${cfg.fontSize * this.sizeScale}px`,
       color: '#ffffff',
       stroke: '#000000',
       strokeThickness: 2
@@ -157,21 +161,22 @@ export class Enemy {
 
   updateHpBar() {
     if (!this.hpBarFill || !this.hpBarBg) return;
+    const cfg = ENEMY_COMBAT_CONFIG.hpBar;
     const ratio = Math.max(0, this.hp / this.maxHp);
-    const barW = 60 * this.sizeScale;
+    const barW = cfg.width * this.sizeScale;
     this.hpBarFill.width = barW * ratio;
   }
 
   applyCharm(duration) {
     this.charmed = true;
     this.charmTimer = duration;
-    if (this.sprite) this.sprite.setTint(0xff69b4);
+    if (this.sprite) this.sprite.setTint(ENEMY_COMBAT_CONFIG.tints.charmed);
   }
 
   _restoreTint() {
     if (!this.sprite) return;
     if (this.isElite) {
-      this.sprite.setTint(0xffaa00);
+      this.sprite.setTint(ENEMY_COMBAT_CONFIG.tints.elite);
     } else {
       this.sprite.clearTint();
     }
@@ -181,8 +186,9 @@ export class Enemy {
     if (this.dead) return;
     const actual = Math.max(1, dmg - this.def);
     this.hp -= actual;
-    this.hitFlash = 0.15;
-    this.hitKnockbackTimer = 0.12;
+    const cfg = ENEMY_COMBAT_CONFIG;
+    this.hitFlash = cfg.knockback.duration + 0.03;
+    this.hitKnockbackTimer = cfg.knockback.duration;
     this.hitKnockbackDir = fromDir + Math.PI;
 
     if (game && game.effectManager) {
@@ -199,15 +205,15 @@ export class Enemy {
     if (this.hp <= 0) {
       if (this.type === 'boss' && !this.hasRevived) {
         this.dead = true;
-        this.deathTimer = 0.6;   // 死亡淡出动画时长
-        this.reviveTimer = 60;   // 复活等待（独立计时）
+        this.deathTimer = ENEMY_COMBAT_CONFIG.boss.deathFadeDuration;
+        this.reviveTimer = ENEMY_COMBAT_CONFIG.boss.reviveTimer;
         this.hasRevived = true;
         if (game.onBossFirstDeath) game.onBossFirstDeath(this);
       } else {
         this.dead = true;
-        this.deathTimer = 0.6;
+        this.deathTimer = ENEMY_COMBAT_CONFIG.boss.deathFadeDuration;
         if (game && game.effectManager) {
-          const isBoss = this.type === 'boss' || this.type === 'lubu' || this.type === 'dianwei' || this.type === 'xuzhu';
+          const isBoss = isBossType(this.type);
           // 死亡粒子：血雾 + 烟雾 + 火星
           game.effectManager.addParticles(this.x, this.y, '#ff4444', isBoss ? 35 : 15, isBoss ? 170 : 100, isBoss ? 5 : 3);
           game.effectManager.addParticles(this.x, this.y, '#ff8800', isBoss ? 20 : 8, isBoss ? 130 : 80, 3);
@@ -225,11 +231,11 @@ export class Enemy {
   reviveBoss() {
     this.dead = false;
     this.reviveTimer = 0;
-    // 始终基于原始基础数值翻倍，避免二次复活时链式放大
-    this.maxHp = Math.floor(this._originalBaseMaxHp * 2);
+    const cfg = ENEMY_COMBAT_CONFIG.boss;
+    this.maxHp = Math.floor(this._originalBaseMaxHp * cfg.reviveHpMult);
     this.hp = this.maxHp;
-    this.atk = Math.floor(this._originalBaseAtk * 2);
-    this.def = Math.floor(this._originalBaseDef * 2);
+    this.atk = Math.floor(this._originalBaseAtk * cfg.reviveAtkMult);
+    this.def = Math.floor(this._originalBaseDef * cfg.reviveDefMult);
     this.baseMaxHp = this.maxHp;
     this.baseAtk = this.atk;
     this.baseDef = this.def;
@@ -277,10 +283,9 @@ export class Enemy {
 
     if (this.hitKnockbackTimer > 0) {
       this.hitKnockbackTimer -= dt;
-      // 速度随剩余时间线性衰减（0.12s 为 takeDamage 中设定的击退总时长）
-      const KNOCKBACK_DUR = 0.12;
-      const ratio = Math.max(0, this.hitKnockbackTimer / KNOCKBACK_DUR);
-      const kbSpeed = 120 * ratio;
+      const cfg = ENEMY_COMBAT_CONFIG.knockback;
+      const ratio = Math.max(0, this.hitKnockbackTimer / cfg.duration);
+      const kbSpeed = cfg.speed * ratio;
       this.x += Math.cos(this.hitKnockbackDir) * kbSpeed * dt;
       this.y += Math.sin(this.hitKnockbackDir) * kbSpeed * dt;
     }
@@ -289,13 +294,13 @@ export class Enemy {
     this.attackCd -= dt;
     this.stateTimer -= dt;
 
-    if ((this.type === 'boss' || this.type === 'lubu' || this.type === 'dianwei' || this.type === 'xuzhu') && this.hp > 0) {
+    if (isBossType(this.type) && this.hp > 0) {
       this.hp = Math.min(this.maxHp, this.hp + this.maxHp * this.hpRegen * dt);
     }
 
-    if ((this.type === 'boss' || this.type === 'lubu') && !this.enraged && this.hp <= this.maxHp * 0.5) {
+    if ((this.type === 'boss' || this.type === 'lubu') && !this.enraged && this.hp <= this.maxHp * ENEMY_COMBAT_CONFIG.boss.enrageHpThreshold) {
       this.enraged = true;
-      this.sizeScale = 1.5;
+      this.sizeScale = ENEMY_COMBAT_CONFIG.boss.enrageSizeScale;
       this.updateHitbox();
     }
 
@@ -312,8 +317,9 @@ export class Enemy {
         this._restoreTint();
       } else {
         this.state = 'wander';
+        const st = ENEMY_COMBAT_CONFIG.state;
         if (this.stateTimer <= 0) {
-          this.stateTimer = rand(0.5, 1.5);
+          this.stateTimer = rand(st.wanderTimerMin, st.wanderTimerMax);
           this.dir = Math.random() * Math.PI * 2;
         }
         const wanderSpeed = this.speed * ENEMY_WANDER_SPEED_RATIO;
@@ -336,14 +342,15 @@ export class Enemy {
 
       if (this.ranged) {
         this.dir = Math.atan2(p.y - this.y, p.x - this.x);
+        const cfg = ENEMY_COMBAT_CONFIG.attack;
         if (this.attacking) {
           if (!this.arrowFired && this.attackAnimTimer <= 0.25) {
             this.arrowFired = true;
-            const a = this.dir + rand(-0.15, 0.15);
-            game.projectiles.push(new Projectile(this.scene, this.x, this.y, a, 260, this.atk, 'enemy', '#ffaa00', 6, 2.5));
+            const a = this.dir + rand(-cfg.rangedAimJitter, cfg.rangedAimJitter);
+            game.projectiles.push(new Projectile(this.scene, this.x, this.y, a, cfg.rangedProjectileSpeed, this.atk, 'enemy', '#ffaa00', cfg.rangedProjectileSize, cfg.rangedProjectileLife));
           }
         } else {
-          if (dist < 150) {
+          if (dist < cfg.rangedFleeDistance) {
             this.x -= dir.x * chaseSpeed * dt;
             this.y -= dir.y * chaseSpeed * dt;
           }
@@ -360,32 +367,33 @@ export class Enemy {
           this.x += dir.x * chaseSpeed * dt;
           this.y += dir.y * chaseSpeed * dt;
         } else if (this.attackCd <= 0) {
-          const canUltimate = (this.type === 'boss' || this.type === 'lubu' || this.type === 'dianwei' || this.type === 'xuzhu') && Math.random() < 0.1;
+          const cfg = ENEMY_COMBAT_CONFIG.attack;
+          const canUltimate = isBossType(this.type) && Math.random() < cfg.ultimateChance;
           if (canUltimate) {
             this.isUltimate = true;
-            this.attackCd = 3.0;
-            this.attackAnimTimer = 0.9;
+            this.attackCd = cfg.ultimateCd;
+            this.attackAnimTimer = cfg.ultimateAnimTimer;
             this.attacking = true;
             const ultRange = (this.radius + p.radius + 10) * 2.5;
             if (dist <= ultRange) {
-              p.takeDamage(Math.floor(this.atk * 1.5), game);
+              p.takeDamage(Math.floor(this.atk * cfg.ultimateDamageMult), game);
             }
           } else {
             this.isUltimate = false;
-            // 若存在 skill 动画，20% 概率播放小技能/重击，增加变化
             this.isSkill = this.scene.anims.exists(`${this.spriteConfig.type}_skill`) && Math.random() < 0.2;
-            this.attackCd = this.isSkill ? 1.5 : 1.0;
+            this.attackCd = this.isSkill ? cfg.skillCd : cfg.baseCd;
             this.attacking = true;
-            this.attackAnimTimer = this.isSkill ? 0.7 : 0.5;
-            p.takeDamage(this.isSkill ? Math.floor(this.atk * 1.3) : this.atk, game);
+            this.attackAnimTimer = this.isSkill ? cfg.skillAnimTimer : cfg.baseAnimTimer;
+            p.takeDamage(this.isSkill ? Math.floor(this.atk * cfg.skillDamageMult) : this.atk, game);
           }
         }
       }
     } else {
+      const st = ENEMY_COMBAT_CONFIG.state;
       if (this.stateTimer <= 0) {
-        this.stateTimer = rand(1, 3);
+        this.stateTimer = rand(st.idleTimerMin, st.idleTimerMax);
         this.dir = Math.random() * Math.PI * 2;
-        this.state = Math.random() > 0.3 ? 'wander' : 'idle';
+        this.state = Math.random() > st.idleChance ? 'wander' : 'idle';
       }
       if (this.state === 'wander') {
         this.x += Math.cos(this.dir) * this.speed * ENEMY_WANDER_SPEED_RATIO * dt;
@@ -409,7 +417,8 @@ export class Enemy {
     this.sprite.setPosition(this.x, this.y);
 
     if (this.dead) {
-      const FADE_DUR = 0.6;
+      const cfg = ENEMY_COMBAT_CONFIG;
+      const FADE_DUR = cfg.boss.deathFadeDuration;
       const progress = Math.max(0, Math.min(1, this.deathTimer / FADE_DUR));
       this.sprite.setAlpha(progress);
       const baseScale = this.getBaseSpriteScale() * this.sizeScale;
@@ -421,15 +430,16 @@ export class Enemy {
       return;
     }
 
-    const barY = this.y - this.radius - 15;
+    const cfg = ENEMY_COMBAT_CONFIG;
+    const barY = this.y - this.radius - cfg.hpBar.yOffset;
     if (this.hpBarBg) this.hpBarBg.setPosition(this.x, barY);
     if (this.hpBarFill) {
-      const barW = 60 * this.sizeScale;
+      const barW = cfg.hpBar.width * this.sizeScale;
       this.hpBarFill.setPosition(this.x - barW / 2, barY);
       this.updateHpBar();
     }
     if (this.nameLabel) {
-      this.nameLabel.setPosition(this.x, this.y - this.radius - 28);
+      this.nameLabel.setPosition(this.x, this.y - this.radius - cfg.hpBar.nameYOffset);
       const text = `Lv.${this.level} ${this.name}`;
       if (this._lastNameText !== text) {
         this.nameLabel.text = text;
@@ -438,11 +448,11 @@ export class Enemy {
     }
 
     if (this.hitFlash > 0) {
-      this.sprite.setTint(0xffffff);
+      this.sprite.setTint(cfg.tints.hitFlash);
     } else if (this.charmed) {
-      this.sprite.setTint(0xff69b4);
+      this.sprite.setTint(cfg.tints.charmed);
     } else if (this.isElite) {
-      this.sprite.setTint(0xffaa00);
+      this.sprite.setTint(cfg.tints.elite);
     } else {
       this.sprite.clearTint();
     }

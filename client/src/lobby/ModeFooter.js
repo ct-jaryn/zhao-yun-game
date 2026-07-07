@@ -1,6 +1,7 @@
 import { DailyChallenge } from '../save/DailyChallenge.js';
 import { Shop } from '../save/Shop.js';
 import { CURRENCY_ICONS, SHOP_ITEMS } from '../config/index.js';
+import { escapeHtml } from '../utils/html.js';
 import { Toast } from './Toast.js';
 
 export class ModeFooter {
@@ -166,7 +167,7 @@ export class ModeFooter {
           <div class="daily-row"><span class="daily-label">英雄</span><span class="daily-value">${this._heroName(challenge.heroId)}</span></div>
           <div class="daily-row"><span class="daily-label">章节</span><span class="daily-value">第 ${challenge.chapter} 章</span></div>
           <div class="daily-row"><span class="daily-label">难度</span><span class="daily-value">${this._difficultyName(challenge.difficulty)}</span></div>
-          <div class="daily-row"><span class="daily-label">词缀</span><span class="daily-value modifier">${challenge.modifier.name} · ${challenge.modifier.desc}</span></div>
+          <div class="daily-row"><span class="daily-label">词缀</span><span class="daily-value modifier">${escapeHtml(challenge.modifier.name)} · ${escapeHtml(challenge.modifier.desc)}</span></div>
           <div class="daily-row"><span class="daily-label">今日进度</span><span class="daily-value">${progress} / 3 次</span></div>
         </div>
         <div class="daily-rewards">
@@ -284,8 +285,8 @@ export class ModeFooter {
       return `
         <div class="shop-item ${slot.sold ? 'sold' : ''}" data-instance="${slot.instanceId}">
           <div class="shop-item-icon">${item.icon}</div>
-          <div class="shop-item-name">${item.name}</div>
-          <div class="shop-item-desc">${item.desc}</div>
+          <div class="shop-item-name">${escapeHtml(item.name)}</div>
+          <div class="shop-item-desc">${escapeHtml(item.desc)}</div>
           <div class="shop-item-cost">
             <span class="shop-cost-type">${CURRENCY_ICONS[item.cost.type] || ''}</span>
             <span class="shop-cost-amount ${this.save.account.getCurrency(item.cost.type) >= item.cost.amount ? '' : 'insufficient'}">${item.cost.amount}</span>
@@ -323,15 +324,15 @@ export class ModeFooter {
     } else if (effectResult.type === 'inventoryExpand') {
       msg = `背包容量 +${effectResult.amount}`;
     } else if (effectResult.type === 'equip') {
-      msg = `获得 ${effectResult.equip.name}`;
+      msg = `获得 ${escapeHtml(effectResult.equip.name)}`;
     }
     const toast = document.createElement('div');
     toast.className = 'achievement-toast';
     toast.innerHTML = `
       <span class="achievement-toast-icon">${item.icon}</span>
       <div class="achievement-toast-body">
-        <div class="achievement-toast-name">购买成功：${item.name}</div>
-        <div class="achievement-toast-desc">${msg}</div>
+        <div class="achievement-toast-name">购买成功：${escapeHtml(item.name)}</div>
+        <div class="achievement-toast-desc">${escapeHtml(msg)}</div>
       </div>
     `;
     container.appendChild(toast);

@@ -67,13 +67,20 @@ async function build() {
 }
 
 async function main() {
-  const testScript = process.argv[2];
+  const args = process.argv.slice(2);
+  const testScript = args.find(a => !a.startsWith('--'));
+  const skipBuild = args.includes('--skip-build');
+
   if (!testScript) {
-    console.error('Usage: node test-runner.mjs <test-script.mjs>');
+    console.error('Usage: node test-runner.mjs [--skip-build] <test-script.mjs>');
     process.exit(1);
   }
 
-  await build();
+  if (!skipBuild) {
+    await build();
+  } else {
+    console.log('> Skipping build (--skip-build)');
+  }
 
   console.log('> Starting vite preview server...');
   const server = spawn('npx', ['vite', 'preview', '--port', '5177'], {

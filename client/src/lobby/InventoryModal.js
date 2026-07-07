@@ -1,5 +1,6 @@
 import { EQUIP_TYPES, EQUIP_TYPE_TIER_IMAGES, EQUIP_ICONS, EQUIP_STAT_LABELS } from '../config/index.js';
-import { equipStatText, equipPower } from '../phaser/entities/Player.js';
+import { equipStatText, equipPower } from '../phaser/systems/EquipmentFactory.js';
+import { escapeHtml } from '../utils/html.js';
 import { Toast } from './Toast.js';
 
 const QUALITY_NAMES = ['普通', '精良', '稀有', '史诗', '传说'];
@@ -75,9 +76,9 @@ export class InventoryModal {
       const item = document.createElement('div');
       item.className = 'inventory-item';
       item.innerHTML = `
-        <img src="${iconUrl}" alt="${eq.name}" onerror="this.textContent='${EQUIP_ICONS[this.slotType]}'">
-        <div class="item-name" style="color:${eq.quality.color}">${eq.name}${enhanceText}${refineText}</div>
-        <div class="item-stats">${equipStatText(eq)}</div>
+        <img src="${iconUrl}" alt="${escapeHtml(eq.name)}" onerror="this.textContent='${EQUIP_ICONS[this.slotType]}'">
+        <div class="item-name" style="color:${eq.quality.color}">${escapeHtml(eq.name)}${enhanceText}${refineText}</div>
+        <div class="item-stats">${escapeHtml(equipStatText(eq))}</div>
       `;
       item.addEventListener('click', () => this._openDetail(index));
       list.appendChild(item);
@@ -106,18 +107,18 @@ export class InventoryModal {
     const washCoins = Math.floor((eq.tier + 1) * 200 * (1 + qualityIndex * 0.4));
     const washStones = Math.floor((eq.tier + 1) * 2 * (1 + qualityIndex * 0.2));
     const maxSockets = 1 + Math.floor(qualityIndex / 2);
-    const hasGems = account.gems.length > 0;
+    const hasGems = account.gemItems.length > 0;
     const canInlay = hasGems && (eq.gemSockets || []).length < maxSockets;
 
     const detail = document.createElement('div');
     detail.className = 'lobby-dialog inventory-detail-dialog';
     detail.innerHTML = `
       <div class="lobby-dialog-card">
-        <h3 style="color:${eq.quality.color}">${eq.name}${level ? ` +${level}` : ''}${refineLevel ? ` ⚒${refineLevel}` : ''}</h3>
-        <div class="inventory-detail-stats">${equipStatText(eq)}</div>
+        <h3 style="color:${eq.quality.color}">${escapeHtml(eq.name)}${level ? ` +${level}` : ''}${refineLevel ? ` ⚒${refineLevel}` : ''}</h3>
+        <div class="inventory-detail-stats">${escapeHtml(equipStatText(eq))}</div>
         <div class="inventory-detail-power">战力 ${Math.floor(equipPower(eq))}</div>
         <div class="inventory-detail-meta">
-          <span>品质: ${eq.quality.name}</span>
+          <span>品质: ${escapeHtml(eq.quality.name)}</span>
           <span>强化: ${level}/${maxLevel}</span>
           <span>精炼: ${refineLevel}/${maxRefine}</span>
           <span>镶嵌: ${(eq.gemSockets || []).length}/${maxSockets}</span>
@@ -164,7 +165,7 @@ export class InventoryModal {
       parts.push(eq.gemSockets.map(g => `${g.icon}${g.value}${EQUIP_STAT_LABELS[g.stat]}`).join(' '));
     }
     if (parts.length === 0) return '';
-    return `<div class="inventory-detail-layers">${parts.join(' · ')}</div>`;
+    return `<div class="inventory-detail-layers">${escapeHtml(parts.join(' · '))}</div>`;
   }
 
   _closeDetail() {
@@ -220,7 +221,7 @@ export class InventoryModal {
       Toast.show('镶嵌孔已满', 'error');
       return;
     }
-    if (account.gems.length === 0) {
+    if (account.gemItems.length === 0) {
       Toast.show('没有可镶嵌的宝石', 'error');
       return;
     }
@@ -240,10 +241,10 @@ export class InventoryModal {
     this.parent.appendChild(picker);
 
     const grid = picker.querySelector('#gemGrid');
-    grid.innerHTML = account.gems.map((gem, i) => `
+    grid.innerHTML = account.gemItems.map((gem, i) => `
       <div class="gem-item" data-index="${i}">
         <div class="gem-icon">${gem.icon}</div>
-        <div class="gem-name" style="color:${gem.quality.color}">${gem.name}</div>
+        <div class="gem-name" style="color:${gem.quality.color}">${escapeHtml(gem.name)}</div>
         <div class="gem-stat">${EQUIP_STAT_LABELS[gem.stat]}+${gem.value}</div>
       </div>
     `).join('');
@@ -251,7 +252,7 @@ export class InventoryModal {
     grid.querySelectorAll('.gem-item').forEach(item => {
       item.addEventListener('click', () => {
         const gemIndex = parseInt(item.dataset.index, 10);
-        const gem = account.gems[gemIndex];
+        const gem = account.gemItems[gemIndex];
         const result = this.save.inventory.inlayGem(index, gem, account);
         if (!result.ok) {
           Toast.show(result.reason, 'error');
@@ -279,7 +280,7 @@ export class InventoryModal {
   _salvage(index) {
     const eq = this.save.inventory.getEquip(index);
     if (!eq) return;
-    if (!confirm(`确定分解 ${eq.name} 吗？`)) return;
+    if (!confirm(`确定分解 ${escapeHtml(eq.name)} 吗？`)) return;
 
     const reward = this.save.inventory.salvage(index);
     if (!reward) return;

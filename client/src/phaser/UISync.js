@@ -1,5 +1,6 @@
 import { SKILLS, EQUIP_TYPES, EQUIP_TYPE_TIER_IMAGES, QUALITY, SLOT_ICON_IMAGES, REWARD_ICON_IMAGES, SKILL_ICON_IMAGES, MECHA_SKILL_ICON_IMAGES, QUALITY_STAR_IMAGE, DIAOCHAN_AVATAR, PLAYER_AVATAR } from '../config/index.js';
-import { equipPower } from './entities/Player.js';
+import { equipPower } from './systems/EquipmentFactory.js';
+import { escapeHtml } from '../utils/html.js';
 
 function equipImageUrl(eq) {
   if (!eq) return '';
@@ -38,15 +39,15 @@ export class UISync {
       el.className = 'skill-slot ready';
       el.id = `skill_${idx}`;
       el.innerHTML = `
-        <img class="icon" src="${iconMap[idx]}" alt="${sk.name}" onerror="this.style.display='none'; this.parentElement.querySelector('.skill-fallback').style.display='flex';">
-        <div class="skill-fallback" style="display:none;width:34px;height:34px;align-items:center;justify-content:center;font-size:20px;font-weight:bold;color:var(--gold);background:rgba(0,0,0,0.3);border-radius:3px;">${sk.name[0]}</div>
-        <span class="key">${sk.key}</span>
-        <span class="sname">${sk.name}</span>
+        <img class="icon" src="${iconMap[idx]}" alt="${escapeHtml(sk.name)}" onerror="this.style.display='none'; this.parentElement.querySelector('.skill-fallback').style.display='flex';">
+        <div class="skill-fallback" style="display:none;width:34px;height:34px;align-items:center;justify-content:center;font-size:20px;font-weight:bold;color:var(--gold);background:rgba(0,0,0,0.3);border-radius:3px;">${escapeHtml(sk.name[0])}</div>
+        <span class="key">${escapeHtml(sk.key)}</span>
+        <span class="sname">${escapeHtml(sk.name)}</span>
         <div class="cd-ring" id="skillCd_${idx}"></div>
         <span class="mp-cost">${sk.mp}</span>
         <div class="skill-tooltip">
-          <div class="t-name">${sk.name}</div>
-          <div class="t-desc">${sk.desc}</div>
+          <div class="t-name">${escapeHtml(sk.name)}</div>
+          <div class="t-desc">${escapeHtml(sk.desc)}</div>
           <div class="t-info">CD ${sk.cd}s · 消耗 ${sk.mp} MP</div>
         </div>
       `;
@@ -147,7 +148,7 @@ export class UISync {
     const log = this.game.effectManager.killLog;
     const el = document.getElementById('killLog');
     if (!el || !log) return;
-    const html = log.map(k => `<div class="kill-item">${k.text}</div>`).join('');
+    const html = log.map(k => `<div class="kill-item">${escapeHtml(k.text)}</div>`).join('');
     if (this.cache['killLogHtml'] !== html) {
       el.innerHTML = html;
       el.style.display = html ? 'block' : 'none';
@@ -162,7 +163,7 @@ export class UISync {
       const eq = p.equip[type];
       const slotIcon = SLOT_ICON_IMAGES[type];
       if (!eq) return `<div class="es-item"><img class="es-icon es-empty" src="${slotIcon}" alt="${type}"><div class="es-info"><div class="es-name" style="color:#555">未装备</div><div class="es-type">${type}</div></div></div>`;
-      return `<div class="es-item"><img class="es-icon" src="${equipImageUrl(eq)}" alt="${type}"><div class="es-info"><div class="es-name" style="color:${eq.quality.color}">${qualityStarHtml(eq)} ${eq.name}</div><div class="es-type">${type}</div></div></div>`;
+      return `<div class="es-item"><img class="es-icon" src="${equipImageUrl(eq)}" alt="${type}"><div class="es-info"><div class="es-name" style="color:${escapeHtml(eq.quality.color)}">${qualityStarHtml(eq)} ${escapeHtml(eq.name)}</div><div class="es-type">${type}</div></div></div>`;
     }).join('');
     if (this.cache['equipSidebarHtml'] !== html) {
       el.innerHTML = html;
@@ -204,8 +205,8 @@ export class UISync {
       } else {
         wrap.className = variant === 'pause' ? 'pause-equip-slot' : 'equip-slot';
         wrap.innerHTML = variant === 'pause'
-          ? `<img class="pause-equip-icon" src="${equipImageUrl(eq)}" alt="${type}"><div class="pause-equip-info"><div class="pause-equip-name" style="color:${eq.quality.color}">${qualityStarHtml(eq)} [${eq.quality.name}] ${eq.name}</div><div class="pause-equip-type">${type}</div><div class="pause-equip-stats">${equipStatText(eq)}</div></div>`
-          : `<img class="slot-icon-img" src="${equipImageUrl(eq)}" alt="${type}"><div class="slot-info"><div class="slot-name" style="color:${eq.quality.color}">${qualityStarHtml(eq)} [${eq.quality.name}] ${eq.name}</div><div class="slot-type">${type}</div><div class="slot-stats">${equipStatText(eq)}</div></div>`;
+          ? `<img class="pause-equip-icon" src="${equipImageUrl(eq)}" alt="${type}"><div class="pause-equip-info"><div class="pause-equip-name" style="color:${escapeHtml(eq.quality.color)}">${qualityStarHtml(eq)} [${escapeHtml(eq.quality.name)}] ${escapeHtml(eq.name)}</div><div class="pause-equip-type">${type}</div><div class="pause-equip-stats">${escapeHtml(equipStatText(eq))}</div></div>`
+          : `<img class="slot-icon-img" src="${equipImageUrl(eq)}" alt="${type}"><div class="slot-info"><div class="slot-name" style="color:${escapeHtml(eq.quality.color)}">${qualityStarHtml(eq)} [${escapeHtml(eq.quality.name)}] ${escapeHtml(eq.name)}</div><div class="slot-type">${type}</div><div class="slot-stats">${escapeHtml(equipStatText(eq))}</div></div>`;
       }
       el.appendChild(wrap);
     }
@@ -221,7 +222,7 @@ export class UISync {
       const el = document.createElement('div');
       el.className = 'reward-card';
       const rewardIcon = REWARD_ICON_IMAGES[r.id] || r.icon;
-      el.innerHTML = `<div class="reward-icon"><img class="reward-icon-img" src="${rewardIcon}" alt="${r.name}"></div><div class="reward-name">${r.name}</div><div class="reward-desc">${r.desc}</div>`;
+      el.innerHTML = `<div class="reward-icon"><img class="reward-icon-img" src="${rewardIcon}" alt="${escapeHtml(r.name)}"></div><div class="reward-name">${escapeHtml(r.name)}</div><div class="reward-desc">${escapeHtml(r.desc)}</div>`;
       el.addEventListener('click', () => {
         onSelect(r);
         panel.style.display = 'none';

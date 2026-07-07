@@ -1,3 +1,5 @@
+import { escapeHtml } from '../utils/html.js';
+
 export class LeaderboardTab {
   constructor(containerId, saveManager) {
     this.container = document.getElementById(containerId);
@@ -53,7 +55,7 @@ export class LeaderboardTab {
   }
 
   _renderRows() {
-    if (this.error) return `<div class="leaderboard-empty">${this.error}</div>`;
+    if (this.error) return `<div class="leaderboard-empty">${escapeHtml(this.error)}</div>`;
     if (this.entries.length === 0) return '<div class="leaderboard-empty">暂无排行数据</div>';
 
     return `
@@ -67,7 +69,7 @@ export class LeaderboardTab {
       ${this.entries.map((entry, index) => `
         <div class="leaderboard-row ${index < 3 ? 'top-' + (index + 1) : ''}">
           <span class="lb-rank">${this._rankLabel(index + 1)}</span>
-          <span class="lb-name">${this._escape(entry.name)}</span>
+          <span class="lb-name">${escapeHtml(entry.name)}</span>
           <span class="lb-score">${entry.score}</span>
           <span class="lb-kills">${entry.kills}</span>
           <span class="lb-level">Lv.${entry.level}</span>
@@ -81,9 +83,5 @@ export class LeaderboardTab {
     if (rank === 2) return '🥈';
     if (rank === 3) return '🥉';
     return rank;
-  }
-
-  _escape(str) {
-    return String(str || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   }
 }

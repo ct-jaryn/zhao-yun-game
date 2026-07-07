@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { writeJsonAtomic } = require('../utils/file');
 
 const SAVES_DIR = path.join(__dirname, '..', 'data', 'saves');
 const MAX_SIZE = 2 * 1024 * 1024; // 2MB
@@ -15,14 +16,14 @@ function getFilePath(userId) {
 }
 
 function upload(userId, saveData) {
-  const filePath = getFilePath(userId);
-  if (!filePath) return { success: false, message: '无效用户标识' };
-
-  const payload = JSON.stringify(saveData);
-  if (payload.length > MAX_SIZE) return { success: false, message: '存档数据过大' };
-
   try {
-    fs.writeFileSync(filePath, payload);
+    const filePath = getFilePath(userId);
+    if (!filePath) return { success: false, message: '无效用户标识' };
+
+    const payload = JSON.stringify(saveData);
+    if (payload.length > MAX_SIZE) return { success: false, message: '存档数据过大' };
+
+    writeJsonAtomic(filePath, saveData);
     return { success: true, message: '存档已上传', updatedAt: Date.now() };
   } catch (err) {
     return { success: false, message: '存档写入失败' };
@@ -30,9 +31,9 @@ function upload(userId, saveData) {
 }
 
 function download(userId) {
-  const filePath = getFilePath(userId);
-  if (!filePath) return { success: false, message: '无效用户标识' };
   try {
+    const filePath = getFilePath(userId);
+    if (!filePath) return { success: false, message: '无效用户标识' };
     if (!fs.existsSync(filePath)) return { success: false, message: '未找到云存档' };
     const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
     return { success: true, data };

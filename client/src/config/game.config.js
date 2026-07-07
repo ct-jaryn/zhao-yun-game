@@ -1,8 +1,7 @@
-export const W = 1000;
-export const H = 700;
+export const W = 1200;
+export const H = 675;
 export const MAP_W = 3000;
 export const MAP_H = 2000;
-export const ASPECT = W / H;
 
 export const TERRAIN = [
   { x:300, y:300, r:60 }, { x:800, y:500, r:80 }, { x:1500, y:400, r:100 },

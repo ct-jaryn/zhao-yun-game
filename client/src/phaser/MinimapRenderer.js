@@ -1,4 +1,4 @@
-import { MAP_W, MAP_H, TERRAIN } from '../config/index.js';
+import { MAP_W, MAP_H, TERRAIN, isBossType } from '../config/index.js';
 
 export class MinimapRenderer {
   constructor(game) {
@@ -69,7 +69,7 @@ export class MinimapRenderer {
     // 敌人
     for (const e of this.game.enemies) {
       if (e.dead) continue;
-      const isBoss = e.type === 'boss' || e.type === 'lubu' || e.type === 'dianwei' || e.type === 'xuzhu';
+      const isBoss = isBossType(e.type);
       drawIcon(isBoss ? 'minimap_boss' : null, e.x, e.y, isBoss ? 10 : 6, isBoss ? 10 : 6, isBoss ? '#ff44ff' : '#ff4444', isBoss ? 3 : 2);
     }
 

@@ -1,4 +1,4 @@
-import { RANK_REWARDS } from '../config/index.js';
+import { RANK_REWARDS, RANK_EXP_BASE, RANK_EXP_GROWTH } from '../config/index.js';
 
 export class Account {
   constructor(data) {
@@ -13,7 +13,7 @@ export class Account {
   get rankExp() { return this._data.rankExp || 0; }
 
   get currencies() { return this._data.currencies || {}; }
-  get gems() { return this._data.gems || []; }
+  get gemItems() { return this._data.gemItems || this._data.gems || []; }
 
   getCurrency(type) {
     return (this._data.currencies && this._data.currencies[type]) || 0;
@@ -33,9 +33,7 @@ export class Account {
   }
 
   getRankExpToNext() {
-    const base = 1000;
-    const growth = 1.15;
-    return Math.floor(base * Math.pow(growth, this._data.rank - 1));
+    return Math.floor(RANK_EXP_BASE * Math.pow(RANK_EXP_GROWTH, this._data.rank - 1));
   }
 
   addRankExp(amount) {
@@ -58,7 +56,7 @@ export class Account {
     if (reward.gems) this.addCurrency('gems', reward.gems);
     if (reward.merit) this.addCurrency('merit', reward.merit);
     if (reward.inventoryCapacity) {
-      this._pendingInventoryCapacity = (this._pendingInventoryCapacity || 0) + reward.inventoryCapacity;
+      this._data.pendingInventoryCapacity = (this._data.pendingInventoryCapacity || 0) + reward.inventoryCapacity;
     }
     if (reward.unlockSkin) {
       this.unlockSkin(reward.unlockSkin.heroId, reward.unlockSkin.skin);
@@ -69,8 +67,8 @@ export class Account {
   }
 
   consumePendingInventoryCapacity() {
-    const amount = this._pendingInventoryCapacity || 0;
-    this._pendingInventoryCapacity = 0;
+    const amount = this._data.pendingInventoryCapacity || 0;
+    this._data.pendingInventoryCapacity = 0;
     return amount;
   }
 
@@ -118,14 +116,14 @@ export class Account {
   }
 
   addGem(gem) {
-    if (!this._data.gems) this._data.gems = [];
-    this._data.gems.push(gem);
-    return this._data.gems.length;
+    if (!this._data.gemItems) this._data.gemItems = [];
+    this._data.gemItems.push(gem);
+    return this._data.gemItems.length;
   }
 
   removeGem(index) {
-    if (!this._data.gems || index < 0 || index >= this._data.gems.length) return null;
-    return this._data.gems.splice(index, 1)[0];
+    if (!this._data.gemItems || index < 0 || index >= this._data.gemItems.length) return null;
+    return this._data.gemItems.splice(index, 1)[0];
   }
 
   resetDailyIfNeeded() {

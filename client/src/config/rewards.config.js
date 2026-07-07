@@ -17,3 +17,16 @@ export const REWARD_TYPES = [
   { id:'mpRegenUp', icon:'💧', name:'法力强化', desc:'法力回复 +30%', apply: (p) => p.bonusMpRegen = (p.bonusMpRegen||0)+0.3 },
   { id:'godEquip', icon:'👑', name:'随机神装', desc:'获得一件传说装备（Lv.10 后出现）', apply: (p) => {} }
 ];
+
+// 单局结算奖励公式
+export const RUN_REWARD_CONFIG = {
+  scoreMultPerKill: 0.02,
+  scoreMultPerScore: 0.05,
+  coinMultPerKill: 1,
+  coinMultPerScore: 0.02,
+  soulsOnClear: 10,
+  soulsOnFail: 2,
+  bossDropCount: 1,
+  bossDropQualityBonus: 2,
+  initialEquipNames: ['木枪', '布衣', '布巾', '草鞋', '木佩']
+};

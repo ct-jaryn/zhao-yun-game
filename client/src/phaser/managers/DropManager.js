@@ -1,4 +1,4 @@
-import { genEquip, equipPower } from '../entities/Player.js';
+import { genEquip, equipPower } from '../systems/EquipmentFactory.js';
 import { DropItem } from '../entities/DropItem.js';
 import { vdist, vec } from '../utils/index.js';
 

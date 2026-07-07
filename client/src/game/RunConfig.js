@@ -1,45 +1,63 @@
 import { HEROES, DIFFICULTY, EQUIP_TYPES } from '../config/index.js';
-import { SaveManager } from '../save/SaveManager.js';
 
+/**
+ * 运行配置：描述一次战斗的入口参数。
+ * 不再依赖 SaveManager 单例；调用方需通过 heroData 传入英雄持久化数据。
+ */
 export class RunConfig {
-  constructor({ heroId, skin, chapter, difficulty, mode = 'story', challenge = null }) {
+  constructor({ heroId, skin, chapter, difficulty, mode = 'story', challenge = null, heroData = null }) {
     this.heroId = heroId;
     this.skin = skin;
     this.chapter = chapter;
     this.difficulty = difficulty;
     this.mode = mode;
     this.challenge = challenge;
+    this.heroData = heroData;
   }
 
-  static fromStory(heroId, skin, chapter, difficulty = 'normal') {
-    return new RunConfig({ heroId, skin, chapter, difficulty, mode: 'story' });
+  static fromStory(heroId, skin, chapter, difficulty = 'normal', heroData = null) {
+    return new RunConfig({ heroId, skin, chapter, difficulty, mode: 'story', heroData });
   }
 
-  static fromEndless(heroId, skin, difficulty = 'normal') {
-    return new RunConfig({ heroId, skin, chapter: 1, difficulty, mode: 'endless' });
+  static fromEndless(heroId, skin, difficulty = 'normal', heroData = null) {
+    return new RunConfig({ heroId, skin, chapter: 1, difficulty, mode: 'endless', heroData });
   }
 
-  static fromDaily(heroId, skin, chapter, difficulty, modifier) {
+  static fromDaily(heroId, skin, chapter, difficulty, modifier, heroData = null) {
     return new RunConfig({
       heroId,
       skin,
       chapter,
       difficulty,
       mode: 'daily',
-      challenge: modifier
+      challenge: modifier,
+      heroData
     });
   }
 
+  /**
+   * 在没有持久化数据时构造一个默认英雄数据（用于兜底/测试场景）。
+   */
+  static createDefaultHeroData(heroId) {
+    return {
+      level: 1,
+      stars: 0,
+      equipment: {},
+      talentNodes: [],
+      skillLevels: [1, 1, 1, 1, 1],
+      skillBranchSelections: {}
+    };
+  }
+
   toCombatStats() {
-    const save = SaveManager.getInstance();
-    const hero = save.heroes.getHero(this.heroId);
+    const hero = this.heroData || RunConfig.createDefaultHeroData(this.heroId);
     const heroCfg = HEROES[this.heroId];
     if (!heroCfg) throw new Error(`未知英雄: ${this.heroId}`);
 
     const base = heroCfg.baseStats;
     const growth = heroCfg.growth;
-    const level = hero.level;
-    const stars = hero.stars;
+    const level = hero.level || 1;
+    const stars = hero.stars || 0;
 
     const starMult = 1 + stars * 0.05;
 
@@ -60,7 +78,7 @@ export class RunConfig {
 
     // 应用装备属性
     for (const type of EQUIP_TYPES) {
-      const eq = hero.equipment[type];
+      const eq = hero.equipment ? hero.equipment[type] : null;
       if (!eq) continue;
       for (const [k, v] of Object.entries(eq.stats)) {
         if (k === 'spd') {
@@ -72,7 +90,7 @@ export class RunConfig {
     }
 
     // 应用技能等级加成（先简单处理：每级 +2% 对应技能伤害）
-    stats.skillDamageMult = hero.skillLevels.map(lv => 1 + (lv - 1) * 0.02);
+    stats.skillDamageMult = (hero.skillLevels || [1, 1, 1, 1, 1]).map(lv => 1 + ((lv || 1) - 1) * 0.02);
     stats.skillBranches = heroCfg.skillBranches || [];
     stats.skillBranchSelections = hero.skillBranchSelections || {};
 
@@ -153,7 +171,8 @@ export class RunConfig {
       skin: this.skin,
       chapter: this.chapter,
       difficulty: this.difficulty,
-      mode: this.mode
+      mode: this.mode,
+      challenge: this.challenge
     };
   }
 }

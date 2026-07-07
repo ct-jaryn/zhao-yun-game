@@ -9,7 +9,9 @@ export class PreloadScene extends Phaser.Scene {
   preload() {
     this.failedKeys = [];
     const loader = new AssetLoader(this);
-    loader.loadBootAssets();
+    loader.loadPlayerAssets('classic');
+    loader.loadCommonAssets();
+    loader.loadEffectAssets();
 
     this.load.on('loaderror', file => {
       console.warn('[PreloadScene] 加载失败:', file.key);

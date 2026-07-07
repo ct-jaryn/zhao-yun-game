@@ -1,6 +1,7 @@
 export class UIBridge {
-  constructor(gameApp) {
+  constructor(gameApp, lobbyNavigator = null) {
     this.gameApp = gameApp;
+    this.lobbyNavigator = lobbyNavigator;
     this.bindEvents();
   }
 
@@ -28,8 +29,9 @@ export class UIBridge {
 
   startGame() {
     // 旧开始菜单已被大厅取代，若仍被调用则委托给大厅控制器
-    if (window.lobbyController) {
-      window.lobbyController.startRun('story', { chapter: 1, difficulty: 'normal' });
+    const lobby = this.lobbyNavigator?.controller;
+    if (lobby) {
+      lobby.startRun('story', { chapter: 1, difficulty: 'normal' });
       return;
     }
 
@@ -54,8 +56,9 @@ export class UIBridge {
     document.getElementById('equipPanel').style.display = 'none';
     document.getElementById('levelUpPanel').style.display = 'none';
 
-    if (window.lobbyController) {
-      window.lobbyController._returnToLobby();
+    const lobby = this.lobbyNavigator?.controller;
+    if (lobby) {
+      lobby._returnToLobby();
     }
   }
 

@@ -1,7 +1,11 @@
 import {
   SAVE_VERSION,
   createDefaultSave,
-  createDefaultSettings
+  createDefaultSettings,
+  createDefaultAccount,
+  createDefaultHero,
+  createDefaultInventory,
+  createDefaultProgression
 } from './schemas.js';
 import { Account } from './Account.js';
 import { HeroCollection } from './HeroCollection.js';
@@ -78,7 +82,10 @@ export class SaveManager {
     if (!acc.daily.shopStock) acc.daily.shopStock = [];
     if (typeof acc.daily.shopRefreshCount !== 'number') acc.daily.shopRefreshCount = 0;
     if (!acc.daily.shopDate) acc.daily.shopDate = '';
-    if (!Array.isArray(acc.gems)) acc.gems = [];
+    if (!Array.isArray(acc.gemItems)) {
+      acc.gemItems = Array.isArray(acc.gems) ? acc.gems : [];
+    }
+    if (typeof acc.pendingInventoryCapacity !== 'number') acc.pendingInventoryCapacity = 0;
   }
 
   _applyLegacyMigration(data) {
@@ -101,14 +108,29 @@ export class SaveManager {
       return data;
     }
 
-    const fresh = createDefaultSave();
+    // 始终基于现有数据进行增量迁移，避免清空玩家进度
+    const migrated = JSON.parse(JSON.stringify(data));
+    if (!migrated.account) migrated.account = createDefaultAccount();
+    if (!migrated.heroes) migrated.heroes = { zhaoyun: createDefaultHero('zhaoyun') };
+    if (!migrated.inventory) migrated.inventory = createDefaultInventory();
+    if (!migrated.progression) migrated.progression = createDefaultProgression();
+    if (!migrated.settings) migrated.settings = createDefaultSettings();
 
-    if (version === 0) {
-      // 旧版只有 chapter4_unlocked，已在 _applyLegacyMigration 处理
-      return fresh;
+    if (version < 1) {
+      // v0 -> v1：旧版只有 chapter4_unlocked，已在 _applyLegacyMigration 处理
     }
 
-    return fresh;
+    if (version < 2) {
+      // v1 -> v2：将 account.gems 重命名为 account.gemItems，避免与 currencies.gems 混淆
+      const acc = migrated.account;
+      if (Array.isArray(acc.gems) && !Array.isArray(acc.gemItems)) {
+        acc.gemItems = acc.gems;
+        delete acc.gems;
+      }
+    }
+
+    migrated.version = SAVE_VERSION;
+    return migrated;
   }
 
   persist() {

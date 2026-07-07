@@ -1,5 +1,6 @@
 import { HEROES, EQUIP_TYPES, EQUIP_TYPE_TIER_IMAGES, EQUIP_ICONS, QUALITY } from '../config/index.js';
-import { equipStatText, equipPower } from '../phaser/entities/Player.js';
+import { equipStatText, equipPower } from '../phaser/systems/EquipmentFactory.js';
+import { escapeHtml } from '../utils/html.js';
 import { InventoryModal } from './InventoryModal.js';
 
 export class HeroEquipTab {
@@ -31,11 +32,13 @@ export class HeroEquipTab {
         ? (EQUIP_TYPE_TIER_IMAGES[type][eq.tier] || EQUIP_ICONS[type])
         : EQUIP_ICONS[type];
 
+      const nameHtml = eq ? `${escapeHtml(eq.name)}${eq.enhanceLevel ? ' +' + eq.enhanceLevel : ''}` : '未装备';
+
       card.innerHTML = `
         <div class="equip-slot-type">${type}</div>
         <img class="equip-slot-icon" src="${iconUrl}" alt="${type}" onerror="this.style.display='none'; this.parentElement.querySelector('.equip-slot-name').textContent='${EQUIP_ICONS[type]}';">
-        <div class="equip-slot-name" style="color:${eq ? eq.quality.color : '#888'}">${eq ? `${eq.name}${eq.enhanceLevel ? ' +' + eq.enhanceLevel : ''}` : '未装备'}</div>
-        <div class="equip-slot-stats">${eq ? equipStatText(eq) : '点击装备'}</div>
+        <div class="equip-slot-name" style="color:${eq ? eq.quality.color : '#888'}">${nameHtml}</div>
+        <div class="equip-slot-stats">${eq ? escapeHtml(equipStatText(eq)) : '点击装备'}</div>
       `;
 
       card.addEventListener('click', () => this._openInventory(type));

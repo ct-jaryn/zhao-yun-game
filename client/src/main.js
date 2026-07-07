@@ -5,18 +5,25 @@ import { CoverController } from './cover/CoverController.js';
 
 window.addEventListener('DOMContentLoaded', () => {
   const app = new GameApp();
+  // 保留全局引用仅用于调试与测试钩子，核心逻辑不再依赖 window.*
   window.gameApp = app;
+
+  // 大厅导航器：UIBridge 通过此对象与 LobbyController 交互，避免直接访问 window
+  const lobbyNavigator = { controller: null };
+  window.uiBridge = new UIBridge(app, lobbyNavigator);
 
   let assetsReady = false;
   let pendingUserInfo = null;
 
   function initLobby(userInfo) {
-    if (window.lobbyController) return;
+    if (lobbyNavigator.controller) return;
     try {
-      window.uiBridge = new UIBridge(app);
-      window.lobbyController = new LobbyController(app);
-      if (userInfo && window.lobbyController.setUserInfo) {
-        window.lobbyController.setUserInfo(userInfo);
+      const lobby = new LobbyController(app);
+      lobbyNavigator.controller = lobby;
+      // 保留全局引用仅用于调试与测试钩子
+      window.lobbyController = lobby;
+      if (userInfo && lobby.setUserInfo) {
+        lobby.setUserInfo(userInfo);
       }
       console.log('[main] Lobby initialized');
     } catch (err) {

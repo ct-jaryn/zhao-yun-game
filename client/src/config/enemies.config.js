@@ -9,8 +9,88 @@ export const ENEMY_TYPES = {
   xuzhu:   { name:'许褚', color:'#3d2817', radius:120, hp:1500, atk:50, def:18, speed:90, exp:500, score:400, dropRate:1.0 }
 };
 
+export const BOSS_TYPES = ['boss', 'lubu', 'dianwei', 'xuzhu'];
+export const MINION_TYPES = ['soldier', 'archer', 'cavalry'];
+export const ELITE_TYPES = ['general'];
+
+export function isBossType(type) { return BOSS_TYPES.includes(type); }
+export function isMinionType(type) { return MINION_TYPES.includes(type); }
+export function isEliteType(type) { return ELITE_TYPES.includes(type); }
+
 // 敌人追踪赵云参数：进入范围开始追，超出范围停止追，追击速度比正常慢
 export const ENEMY_AGGRO_RANGE = 420;        // 进入此距离开始追击
 export const ENEMY_LOSE_AGGRO_RANGE = 650;   // 超出此距离才放弃追击（防止来回抖动）
 export const ENEMY_CHASE_SPEED_RATIO = 0.55; // 追击速度倍数（较慢）
 export const ENEMY_WANDER_SPEED_RATIO = 0.35; // 游荡速度倍数
+
+// 敌人战斗通用配置
+export const ENEMY_COMBAT_CONFIG = {
+  levelScaling: {
+    hp: 0.25,
+    atk: 0.25,
+    def: 0.25,
+    exp: 0.25
+  },
+  boss: {
+    hpRegen: 0.05,
+    lubuHpRegen: 0.05,
+    deathFadeDuration: 0.6,
+    reviveTimer: 60,
+    reviveHpMult: 2,
+    reviveAtkMult: 2,
+    reviveDefMult: 2,
+    enrageHpThreshold: 0.5,
+    enrageSizeScale: 1.5
+  },
+  enhanced: {
+    hpMult: 1.8,
+    atkMult: 1.4,
+    defMult: 1.4,
+    sizeScale: 1.4,
+    hpRegen: 0.08
+  },
+  knockback: {
+    duration: 0.12,
+    speed: 120
+  },
+  attack: {
+    baseCd: 1.0,
+    skillCd: 1.5,
+    skillAnimTimer: 0.7,
+    baseAnimTimer: 0.5,
+    ultimateChance: 0.1,
+    ultimateCd: 3.0,
+    ultimateAnimTimer: 0.9,
+    ultimateDamageMult: 1.5,
+    skillDamageMult: 1.3,
+    rangedFleeDistance: 150,
+    rangedProjectileSpeed: 260,
+    rangedProjectileSize: 6,
+    rangedProjectileLife: 2.5,
+    rangedAimJitter: 0.15,
+    shootTimerMin: 0.5,
+    shootTimerMax: 2
+  },
+  state: {
+    wanderTimerMin: 0.5,
+    wanderTimerMax: 1.5,
+    idleTimerMin: 1,
+    idleTimerMax: 3,
+    idleChance: 0.3
+  },
+  hpBar: {
+    width: 60,
+    height: 6,
+    yOffset: -15,
+    nameYOffset: -28,
+    fontSize: 12
+  },
+  tints: {
+    boss: 0xff00ff,
+    general: 0xff4444,
+    default: 0x88ff88,
+    hitFlash: 0xffffff,
+    charmed: 0xff69b4,
+    elite: 0xffaa00
+  }
+};

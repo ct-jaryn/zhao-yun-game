@@ -1,4 +1,5 @@
-import { W, H } from './utils/index.js';
+import { W, H } from '../config/game.config.js';
+import { isBossType } from '../config/index.js';
 
 export class DirectionHints {
   constructor(scene) {
@@ -32,7 +33,7 @@ export class DirectionHints {
       const ax = Math.max(margin, Math.min(W - margin, cx + Math.cos(angle) * Math.min(W, H) * 0.45));
       const ay = Math.max(margin, Math.min(H - margin, cy + Math.sin(angle) * Math.min(W, H) * 0.45));
 
-      const isBoss = e.type === 'boss' || e.type === 'lubu' || e.type === 'dianwei' || e.type === 'xuzhu';
+      const isBoss = isBossType(e.type);
       const size = isBoss ? 22 : 18;
 
       if (useTexture) {
@@ -77,5 +78,17 @@ export class DirectionHints {
         this.arrows[i].setVisible(false);
       }
     }
+  }
+
+  destroy() {
+    if (this.graphics) {
+      this.graphics.destroy();
+      this.graphics = null;
+    }
+    for (const arrow of this.arrows) {
+      if (arrow) arrow.destroy();
+    }
+    this.arrows = [];
+    this.scene = null;
   }
 }

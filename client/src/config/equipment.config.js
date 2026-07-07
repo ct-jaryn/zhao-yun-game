@@ -87,3 +87,50 @@ export const QUALITY = [
   { name:'史诗', color:'#aa44ff', mult:2.0 },   // 紫色
   { name:'传说', color:'#ffd700', mult:2.5 }    // 金色
 ];
+
+// 装备经济公式配置
+export const EQUIPMENT_ECONOMY = {
+  enhance: {
+    maxLevelBase: 5,
+    maxLevelPerQuality: 3,
+    costCoinBase: 50,
+    costStoneBase: 5,
+    costQualityMult: 0.2,
+    bonusRateBase: 0.05,
+    bonusRateQualityMult: 0.1
+  },
+  refine: {
+    maxLevelBase: 3,
+    maxLevelPerQuality: 2,
+    costCoinBase: 80,
+    costStoneBase: 3,
+    costQualityMult: 0.3,
+    bonusRateBase: 0.04,
+    bonusRateQualityMult: 0.15
+  },
+  wash: {
+    costCoinBase: 200,
+    costStoneBase: 2,
+    costQualityMult: 0.4,
+    costStoneQualityMult: 0.2,
+    rollCountBase: 1,
+    rollCountMaxBonus: 3,
+    positiveRate: 0.85,
+    valueMinRate: 0.2,
+    valueMaxRate: 0.7,
+    valueQualityMult: 0.2
+  },
+  salvage: {
+    coinBase: 10,
+    stoneBase: 2,
+    refineStoneBase: 1,
+    enhanceLevelMult: 0.2,
+    refineLevelMult: 0.3,
+    enhanceStoneMult: 0.5,
+    refineStoneMult: 0.5
+  },
+  gem: {
+    socketBase: 1,
+    socketPerQuality: 0.5
+  }
+};

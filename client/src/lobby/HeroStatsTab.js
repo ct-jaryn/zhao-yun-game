@@ -1,5 +1,6 @@
 import { HEROES } from '../config/index.js';
 import { RunConfig } from '../game/RunConfig.js';
+import { escapeHtml } from '../utils/html.js';
 
 export class HeroStatsTab {
   constructor(containerId, saveManager) {
@@ -12,7 +13,8 @@ export class HeroStatsTab {
     const heroCfg = HEROES[heroId];
     if (!heroCfg) return;
 
-    const runConfig = new RunConfig({ heroId, skin: this.save.heroes.getHero(heroId).skin, chapter: 1, difficulty: 'normal', mode: 'story' });
+    const heroData = this.save.heroes.getHero(heroId);
+    const runConfig = new RunConfig({ heroId, skin: heroData.skin, chapter: 1, difficulty: 'normal', mode: 'story', heroData });
     const stats = runConfig.toCombatStats();
     const power = this._calcPower(stats, heroCfg);
 
@@ -26,8 +28,8 @@ export class HeroStatsTab {
         <div class="stat-card"><div class="stat-label">移速</div><div class="stat-value">${stats.spd}</div></div>
       </div>
       <div class="hero-passive">
-        <h4>${heroCfg.passive.name}</h4>
-        <p>${heroCfg.passive.description}</p>
+        <h4>${escapeHtml(heroCfg.passive.name)}</h4>
+        <p>${escapeHtml(heroCfg.passive.description)}</p>
       </div>
       <div class="hero-passive">
         <h4>战力</h4>

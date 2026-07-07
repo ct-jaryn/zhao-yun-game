@@ -1,4 +1,4 @@
-import { QUALITY, ZHAO_YUN_EQUIP_TIERS, EQUIP_STAT_LABELS } from '../config/index.js';
+import { QUALITY, ZHAO_YUN_EQUIP_TIERS, EQUIP_STAT_LABELS, EQUIPMENT_ECONOMY } from '../config/index.js';
 
 const QUALITY_NAMES = ['普通', '精良', '稀有', '史诗', '传说'];
 
@@ -127,11 +127,14 @@ export class Inventory {
 
     const qualityIndex = this._qualityIndex(eq);
     const level = eq.enhanceLevel || 0;
-    const maxLevel = 5 + qualityIndex * 3;
+    const cfg = EQUIPMENT_ECONOMY.enhance;
+    const maxLevel = cfg.maxLevelBase + qualityIndex * cfg.maxLevelPerQuality;
     if (level >= maxLevel) return { ok: false, reason: '已达强化上限' };
 
-    const costCoins = Math.floor((level + 1) * (this._tier(eq) + 1) * 50 * (1 + qualityIndex * 0.2));
-    const costStones = Math.floor((level + 1) * (this._tier(eq) + 1) * 5 * (1 + qualityIndex * 0.2));
+    const tierFactor = (level + 1) * (this._tier(eq) + 1);
+    const qualityFactor = 1 + qualityIndex * cfg.costQualityMult;
+    const costCoins = Math.floor(tierFactor * cfg.costCoinBase * qualityFactor);
+    const costStones = Math.floor(tierFactor * cfg.costStoneBase * qualityFactor);
 
     if (account.getCurrency('coins') < costCoins) return { ok: false, reason: '铜币不足' };
     if (account.getCurrency('strengtheningStone') < costStones) return { ok: false, reason: '强化石不足' };
@@ -140,7 +143,7 @@ export class Inventory {
     account.consumeCurrency('strengtheningStone', costStones);
 
     const base = this._baseFromTier(eq);
-    const bonusRate = 0.05 * (1 + qualityIndex * 0.1);
+    const bonusRate = cfg.bonusRateBase * (1 + qualityIndex * cfg.bonusRateQualityMult);
     for (const [k, v] of Object.entries(base)) {
       const bonus = Math.max(1, Math.floor(v * bonusRate));
       eq.enhanceStats[k] = (eq.enhanceStats[k] || 0) + bonus;
@@ -163,11 +166,14 @@ export class Inventory {
 
     const qualityIndex = this._qualityIndex(eq);
     const level = eq.refineLevel || 0;
-    const maxLevel = 3 + qualityIndex * 2;
+    const cfg = EQUIPMENT_ECONOMY.refine;
+    const maxLevel = cfg.maxLevelBase + qualityIndex * cfg.maxLevelPerQuality;
     if (level >= maxLevel) return { ok: false, reason: '已达精炼上限' };
 
-    const costCoins = Math.floor((level + 1) * (this._tier(eq) + 1) * 80 * (1 + qualityIndex * 0.3));
-    const costRefineStone = Math.floor((level + 1) * (this._tier(eq) + 1) * 3 * (1 + qualityIndex * 0.3));
+    const tierFactor = (level + 1) * (this._tier(eq) + 1);
+    const qualityFactor = 1 + qualityIndex * cfg.costQualityMult;
+    const costCoins = Math.floor(tierFactor * cfg.costCoinBase * qualityFactor);
+    const costRefineStone = Math.floor(tierFactor * cfg.costStoneBase * qualityFactor);
 
     if (account.getCurrency('coins') < costCoins) return { ok: false, reason: '铜币不足' };
     if (account.getCurrency('refineStone') < costRefineStone) return { ok: false, reason: '精炼石不足' };
@@ -176,7 +182,7 @@ export class Inventory {
     account.consumeCurrency('refineStone', costRefineStone);
 
     const base = this._baseFromTier(eq);
-    const bonusRate = 0.04 * (1 + qualityIndex * 0.15);
+    const bonusRate = cfg.bonusRateBase * (1 + qualityIndex * cfg.bonusRateQualityMult);
     for (const [k, v] of Object.entries(base)) {
       const bonus = Math.max(1, Math.floor(v * bonusRate));
       eq.refineStats[k] = (eq.refineStats[k] || 0) + bonus;
@@ -198,8 +204,12 @@ export class Inventory {
     if (!eq) return { ok: false, reason: '装备不存在' };
 
     const qualityIndex = this._qualityIndex(eq);
-    const costCoins = Math.floor((this._tier(eq) + 1) * 200 * (1 + qualityIndex * 0.4));
-    const costRefineStone = Math.floor((this._tier(eq) + 1) * 2 * (1 + qualityIndex * 0.2));
+    const cfg = EQUIPMENT_ECONOMY.wash;
+    const tierFactor = this._tier(eq) + 1;
+    const qualityFactor = 1 + qualityIndex * cfg.costQualityMult;
+    const stoneQualityFactor = 1 + qualityIndex * cfg.costStoneQualityMult;
+    const costCoins = Math.floor(tierFactor * cfg.costCoinBase * qualityFactor);
+    const costRefineStone = Math.floor(tierFactor * cfg.costStoneBase * stoneQualityFactor);
 
     if (account.getCurrency('coins') < costCoins) return { ok: false, reason: '铜币不足' };
     if (account.getCurrency('refineStone') < costRefineStone) return { ok: false, reason: '精炼石不足' };
@@ -208,14 +218,14 @@ export class Inventory {
     account.consumeCurrency('refineStone', costRefineStone);
 
     const statPool = Object.keys(EQUIP_STAT_LABELS);
-    const rollCount = 1 + Math.floor(Math.random() * Math.min(3, qualityIndex + 1));
+    const rollCount = cfg.rollCountBase + Math.floor(Math.random() * Math.min(cfg.rollCountMaxBonus, qualityIndex + 1));
     const base = this._baseFromTier(eq);
     const baseAvg = Object.values(base).reduce((a, b) => a + b, 0) / Math.max(1, Object.keys(base).length);
     const washed = {};
     for (let i = 0; i < rollCount; i++) {
       const stat = statPool[Math.floor(Math.random() * statPool.length)];
-      const sign = Math.random() < 0.85 ? 1 : -1;
-      const value = Math.max(1, Math.floor(baseAvg * (0.2 + Math.random() * 0.5) * (1 + qualityIndex * 0.2))) * sign;
+      const sign = Math.random() < cfg.positiveRate ? 1 : -1;
+      const value = Math.max(1, Math.floor(baseAvg * (cfg.valueMinRate + Math.random() * (cfg.valueMaxRate - cfg.valueMinRate)) * (1 + qualityIndex * cfg.valueQualityMult))) * sign;
       washed[stat] = (washed[stat] || 0) + value;
     }
     eq.washStats = washed;
@@ -237,13 +247,15 @@ export class Inventory {
     if (!eq) return { ok: false, reason: '装备不存在' };
     if (!gem) return { ok: false, reason: '宝石不存在' };
 
-    const maxSockets = 1 + Math.floor(this._qualityIndex(eq) / 2);
+    const qualityIndex = this._qualityIndex(eq);
+    const cfg = EQUIPMENT_ECONOMY.gem;
+    const maxSockets = cfg.socketBase + Math.floor(qualityIndex * cfg.socketPerQuality);
     if ((eq.gemSockets || []).length >= maxSockets) return { ok: false, reason: '镶嵌孔已满' };
 
-    const gemIndex = account.gems.indexOf(gem);
+    const gemIndex = account.gemItems.indexOf(gem);
     if (gemIndex < 0) return { ok: false, reason: '背包中没有该宝石' };
 
-    account.gems.splice(gemIndex, 1);
+    account.removeGem(gemIndex);
     eq.gemSockets.push(gem);
     eq.gemStats[gem.stat] = (eq.gemStats[gem.stat] || 0) + gem.value;
     this._rebuildStats(eq);
@@ -259,11 +271,13 @@ export class Inventory {
     const qualityIndex = this._qualityIndex(eq);
     const enhanceLevel = eq.enhanceLevel || 0;
     const refineLevel = eq.refineLevel || 0;
+    const cfg = EQUIPMENT_ECONOMY.salvage;
+    const tierQualityFactor = (tier + 1) * (qualityIndex + 1);
 
     return {
-      coins: Math.floor((tier + 1) * (qualityIndex + 1) * 10 * (1 + enhanceLevel * 0.2 + refineLevel * 0.3)),
-      strengtheningStone: Math.floor((tier + 1) * (qualityIndex + 1) * 2 * (1 + enhanceLevel * 0.5)),
-      refineStone: Math.floor((tier + 1) * (qualityIndex + 1) * (refineLevel * 0.5)),
+      coins: Math.floor(tierQualityFactor * cfg.coinBase * (1 + enhanceLevel * cfg.enhanceLevelMult + refineLevel * cfg.refineLevelMult)),
+      strengtheningStone: Math.floor(tierQualityFactor * cfg.stoneBase * (1 + enhanceLevel * cfg.enhanceStoneMult)),
+      refineStone: Math.floor(tierQualityFactor * cfg.refineStoneBase * Math.max(0, refineLevel * cfg.refineStoneMult)),
       equip: eq
     };
   }

@@ -1,4 +1,5 @@
 import { HEROES, SKILLS, SKILL_ICON_IMAGES, MECHA_SKILL_ICON_IMAGES } from '../config/index.js';
+import { escapeHtml } from '../utils/html.js';
 import { Toast } from './Toast.js';
 
 export class HeroSkillsTab {
@@ -23,17 +24,17 @@ export class HeroSkillsTab {
           const selectedId = heroData.skillBranchSelections[idx];
           return `
             <div class="skill-card">
-              <img src="${iconMap[idx]}" alt="${sk.name}" onerror="this.style.display='none'">
+              <img src="${iconMap[idx]}" alt="${escapeHtml(sk.name)}" onerror="this.style.display='none'">
               <div class="skill-info">
-                <div class="skill-name">${sk.name} <span class="skill-level">Lv.${heroData.skillLevels[idx]}</span></div>
-                <div class="skill-desc">${sk.desc}</div>
-                <div class="skill-meta">快捷键 ${sk.key} · CD ${sk.cd}s · 消耗 ${sk.mp} MP</div>
+                <div class="skill-name">${escapeHtml(sk.name)} <span class="skill-level">Lv.${heroData.skillLevels[idx]}</span></div>
+                <div class="skill-desc">${escapeHtml(sk.desc)}</div>
+                <div class="skill-meta">快捷键 ${escapeHtml(sk.key)} · CD ${sk.cd}s · 消耗 ${sk.mp} MP</div>
                 ${branches.length ? `
                   <div class="skill-branches">
                     ${branches.map(b => `
                       <button class="skill-branch-btn ${selectedId === b.id ? 'active' : ''}" data-index="${idx}" data-branch="${b.id}">
-                        <span class="branch-name">${b.name}</span>
-                        <span class="branch-desc">${b.desc}</span>
+                        <span class="branch-name">${escapeHtml(b.name)}</span>
+                        <span class="branch-desc">${escapeHtml(b.desc)}</span>
                       </button>
                     `).join('')}
                   </div>

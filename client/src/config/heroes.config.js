@@ -480,3 +480,78 @@ export function getHeroList() {
 export function getHero(id) {
   return HEROES[id] || null;
 }
+
+// 战斗通用数值配置
+export const HERO_COMBAT_CONFIG = {
+  levelExp: {
+    base: 100,
+    growth: 1.25
+  },
+  levelUp: {
+    atkBonus: 3,
+    defBonus: 2,
+    restoreHp: true,
+    restoreMp: true
+  },
+  skillCast: {
+    attackTimerBase: 0.25,
+    attackTimerStep: 0.08,
+    dash: {
+      distance: 90,
+      particleCount: 8
+    },
+    ultimate: {
+      projectileSpeed: 350,
+      projectileDmgRatio: 0.5,
+      projectileSize: 5,
+      projectileLife: 1.5,
+      particleCount: 35,
+      particleSpeed: 160,
+      shake: 8,
+      flashDuration: 0.25
+    },
+    skill3: {
+      particleCount: 50,
+      particleSpeed: 80,
+      particleSize: 5,
+      shake: 5,
+      flashDuration: 0.2
+    },
+    skill1: {
+      particleCount: 18,
+      particleSpeed: 90,
+      shake: 3
+    }
+  },
+  dodge: {
+    durationClassic: 0.25,
+    durationMecha: 0.45,
+    cooldownClassic: 0.8,
+    cooldownMecha: 1.0,
+    speedClassic: 400,
+    speedMecha: 500,
+    invulnExtra: 0.15,
+    particleCount: 10,
+    particleSpeed: 70
+  },
+  combo: {
+    resetTime: 3,
+    interruptionTextThreshold: 5,
+    milestoneBonus: 0.2,
+    milestoneEvery: 5
+  },
+  passives: {
+    zhaoyun: { hpThreshold: 0.3, damageMult: 1.25 },
+    lubu: { bossDamageMult: 1.2 },
+    dianwei: { killHealRatio: 0.03 },
+    xuzhu: { blockChance: 0.2, blockDamageMult: 0.5 },
+    diaochan: { charmInterval: 8, charmRange: 200, charmDuration: 2.5 }
+  },
+  damage: {
+    overlappingExtraDistance: 5
+  },
+  sprite: {
+    targetHeightClassic: 210,
+    targetHeightMecha: 270
+  }
+};

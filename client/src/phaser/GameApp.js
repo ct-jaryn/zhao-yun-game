@@ -1,7 +1,10 @@
 import Phaser from 'phaser';
+import { W, H } from '../config/game.config.js';
 import { BootScene } from './scenes/BootScene.js';
 import { PreloadScene } from './scenes/PreloadScene.js';
+import { LoadingScene } from './scenes/LoadingScene.js';
 import { GameScene } from './scenes/GameScene.js';
+import { RunConfig } from '../game/RunConfig.js';
 
 export class GameApp {
   constructor() {
@@ -10,8 +13,8 @@ export class GameApp {
 
     this.config = {
       type: Phaser.CANVAS,
-      width: 1200,
-      height: 675,
+      width: W,
+      height: H,
       canvas,
       parent,
       backgroundColor: '#000000',
@@ -19,7 +22,7 @@ export class GameApp {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
       },
-      scene: [BootScene, PreloadScene, GameScene],
+      scene: [BootScene, PreloadScene, LoadingScene, GameScene],
       physics: {
         default: 'arcade',
         arcade: {
@@ -37,26 +40,26 @@ export class GameApp {
   }
 
   startChapter(chapter = 1, skin = 'classic') {
-    const scene = this.game.scene.getScene('GameScene');
-    if (scene) {
-      scene.startChapter(chapter, skin);
-    }
+    const heroData = RunConfig.createDefaultHeroData('zhaoyun');
+    const runConfig = new RunConfig({
+      heroId: 'zhaoyun',
+      skin,
+      chapter,
+      difficulty: 'normal',
+      mode: 'story',
+      heroData
+    });
+    this.startRun(runConfig);
   }
 
   startRun(runConfig, onComplete) {
-    this._pendingRunCompleteCallback = onComplete;
-    const scene = this.game.scene.getScene('GameScene');
+    const initData = { runConfig, onComplete };
+    const scene = this.game.scene.getScene('LoadingScene');
     if (scene) {
-      scene.scene.restart({ runConfig });
+      scene.scene.restart(initData);
     } else {
-      this.game.scene.start('GameScene', { runConfig });
+      this.game.scene.start('LoadingScene', initData);
     }
-  }
-
-  consumeRunCompleteCallback() {
-    const cb = this._pendingRunCompleteCallback;
-    this._pendingRunCompleteCallback = null;
-    return cb;
   }
 
   stopGame() {

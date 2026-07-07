@@ -51,7 +51,7 @@ export class InputManager {
       this.scene.input.mouse.disableContextMenu();
     }
 
-    this.scene.input.on('pointermove', pointer => {
+    this._onPointerMove = pointer => {
       this.mouse.x = pointer.x;
       this.mouse.y = pointer.y;
       this.mouse.worldX = pointer.worldX;
@@ -60,9 +60,9 @@ export class InputManager {
       if (this.mouse.down) {
         this.mouseAim = true;
       }
-    });
+    };
 
-    this.scene.input.on('pointerdown', pointer => {
+    this._onPointerDown = pointer => {
       if (pointer.leftButtonDown()) {
         this.mouse.down = true;
         this.mouseAim = true;
@@ -70,9 +70,9 @@ export class InputManager {
       if (pointer.rightButtonDown()) {
         this.mouse.rightDown = true;
       }
-    });
+    };
 
-    this.scene.input.on('pointerup', pointer => {
+    this._onPointerUp = pointer => {
       if (!pointer.leftButtonDown()) {
         this.mouse.down = false;
         this.mouseAim = false;
@@ -80,7 +80,11 @@ export class InputManager {
       if (!pointer.rightButtonDown()) {
         this.mouse.rightDown = false;
       }
-    });
+    };
+
+    this.scene.input.on('pointermove', this._onPointerMove);
+    this.scene.input.on('pointerdown', this._onPointerDown);
+    this.scene.input.on('pointerup', this._onPointerUp);
   }
 
   isDown(code) {
@@ -97,8 +101,18 @@ export class InputManager {
 
   destroy() {
     if (this.scene.input.keyboard) {
-      this.scene.input.keyboard.removeAllListeners();
+      for (const key of Object.values(this.keys)) {
+        if (key && key.destroy) key.destroy();
+      }
+      this.keys = {};
     }
-    this.scene.input.removeAllListeners();
+
+    if (this._onPointerMove) {
+      this.scene.input.off('pointermove', this._onPointerMove);
+      this.scene.input.off('pointerdown', this._onPointerDown);
+      this.scene.input.off('pointerup', this._onPointerUp);
+    }
+
+    this.scene = null;
   }
 }

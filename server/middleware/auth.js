@@ -1,10 +1,20 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'zhaoyun-game-default-secret-change-me';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('缺少环境变量 JWT_SECRET，请在启动前设置强度足够的密钥');
+}
+
+const JWT_OPTIONS = { expiresIn: '7d' };
+const JWT_VERIFY_OPTIONS = { algorithms: ['HS256'] };
+
+function issueToken(userId, username) {
+  return jwt.sign({ userId, username }, JWT_SECRET, JWT_OPTIONS);
+}
 
 function _verifyToken(token) {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, JWT_SECRET, JWT_VERIFY_OPTIONS);
   } catch (err) {
     return null;
   }
@@ -38,4 +48,4 @@ function optionalAuthMiddleware(req, res, next) {
   next();
 }
 
-module.exports = { authMiddleware, optionalAuthMiddleware, JWT_SECRET };
+module.exports = { authMiddleware, optionalAuthMiddleware, issueToken };
