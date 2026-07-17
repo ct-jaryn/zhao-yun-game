@@ -25,6 +25,9 @@ export class HeroSidebar {
       const item = document.createElement('div');
       item.className = 'hero-list-item' + (unlocked ? '' : ' locked');
       item.dataset.heroId = hero.id;
+      item.tabIndex = 0;
+      item.setAttribute('role', 'button');
+      item.setAttribute('aria-selected', this.selectedHeroId === hero.id ? 'true' : 'false');
 
       if (this.selectedHeroId === hero.id) {
         item.classList.add('active');
@@ -32,6 +35,7 @@ export class HeroSidebar {
 
       const avatarSrc = this._getAvatarSrc(hero.id, heroData.skin);
       const lockInfo = this._lockInfo(hero.id);
+      item.setAttribute('aria-label', unlocked ? `选择${hero.name}` : `${hero.name}，${lockInfo.text}`);
 
       item.innerHTML = `
         <img class="hero-list-avatar" src="${avatarSrc}" alt="${escapeHtml(hero.name)}" onerror="this.src='${PLAYER_AVATAR}'">
@@ -47,6 +51,16 @@ export class HeroSidebar {
           this._tryUnlock(hero.id);
           return;
         }
+        if (this.save.account.isHeroUnlocked(hero.id)) {
+          this._select(hero.id);
+        } else {
+          Toast.show(lockInfo.hint, 'info');
+        }
+      });
+
+      item.addEventListener('keydown', (e) => {
+        if (e.target.closest('button') || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault();
         if (this.save.account.isHeroUnlocked(hero.id)) {
           this._select(hero.id);
         } else {
