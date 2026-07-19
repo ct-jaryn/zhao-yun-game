@@ -70,6 +70,8 @@ export class Enemy {
     this.enhanced = options.enhanced || false;
     this.charmed = false;
     this.charmTimer = 0;
+    this.affixes = [];
+    this.affixNames = [];
 
     if (this.enhanced && type === 'boss') {
       const cfg = ENEMY_COMBAT_CONFIG.enhanced;

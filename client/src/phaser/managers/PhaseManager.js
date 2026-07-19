@@ -10,7 +10,7 @@ export class PhaseManager {
 
     this.phase = 'soldiers';
     this.soldierKills = 0;
-    this.soldiersRequired = 20;
+    this.soldiersRequired = this.chapterConfig.soldiersRequired || 20;
     this.midBossDefeated = false;
     this.finalBoss1Defeated = false;
     this.finalBoss2Defeated = false;
@@ -39,7 +39,10 @@ export class PhaseManager {
     const cfg = this.chapterConfig;
     this.phase = 'caocao';
     const pos = game.spawnManager.randomBossSpawnPos();
-    const boss = game.spawnManager.createEnemy(cfg.bossType, pos.x, pos.y, { skipRevive: true });
+    const boss = game.spawnManager.createEnemy(cfg.bossType, pos.x, pos.y, {
+      level: cfg.bossLevel,
+      skipRevive: true
+    });
     game.enemies.push(boss);
 
     game.effectManager.showWaveAnnounce(0, `⚠ ${cfg.bossName} 来袭!`);
@@ -55,7 +58,12 @@ export class PhaseManager {
     const names = cfg.finalBosses.map(b => b.name).join(' & ');
     for (const bossCfg of cfg.finalBosses) {
       const pos = game.spawnManager.randomBossSpawnPos();
-      const boss = game.spawnManager.createEnemy(bossCfg.type, pos.x, pos.y, { enhanced: bossCfg.enhanced || false, skipRevive: true });
+      const boss = game.spawnManager.createEnemy(bossCfg.type, pos.x, pos.y, {
+        level: bossCfg.level,
+        enhanced: bossCfg.enhanced || false,
+        name: bossCfg.name,
+        skipRevive: true
+      });
       game.enemies.push(boss);
     }
 

@@ -10,6 +10,7 @@ export const DIFFICULTY = {
     coinMult: 1.0,
     scoreMult: 1.0,
     dropBonus: 0,
+    bossDropCountBonus: 0,
     eliteChance: 0,
     affixes: []
   },
@@ -24,6 +25,7 @@ export const DIFFICULTY = {
     coinMult: 1.3,
     scoreMult: 1.3,
     dropBonus: 1,
+    bossDropCountBonus: 0,
     eliteChance: 0.1,
     affixes: []
   },
@@ -38,6 +40,7 @@ export const DIFFICULTY = {
     coinMult: 1.8,
     scoreMult: 1.8,
     dropBonus: 2,
+    bossDropCountBonus: 1,
     eliteChance: 0.25,
     affixes: ['狂暴']
   },
@@ -52,8 +55,25 @@ export const DIFFICULTY = {
     coinMult: 2.5,
     scoreMult: 2.5,
     dropBonus: 3,
+    bossDropCountBonus: 2,
     eliteChance: 0.4,
     affixes: ['狂暴', '铁壁']
+  }
+};
+
+// 难度词缀是独立于基础倍率的额外规则，便于后续扩展章节专属词缀。
+export const DIFFICULTY_AFFIXES = {
+  '狂暴': {
+    name: '狂暴',
+    description: '攻击力 +15%，移动速度 +8%',
+    atkMult: 1.15,
+    speedMult: 1.08
+  },
+  '铁壁': {
+    name: '铁壁',
+    description: '最大生命 +18%，防御力 +25%',
+    hpMult: 1.18,
+    defMult: 1.25
   }
 };
 

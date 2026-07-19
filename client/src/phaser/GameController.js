@@ -209,7 +209,7 @@ export class GameController {
         this.phaseManager.midBossDefeated = true;
         this.rewardBossKill(e, false);
 
-        if (this.chapter === 1 && this.phaseManager.diaochan) {
+        if (cfg.victoryCondition === 'rescue' && this.phaseManager.diaochan) {
           this.effectManager.addKillLog(`${cfg.bossName}败退！貂蝉获救！`);
           this.effectManager.addText(e.x, e.y - e.radius - 50, `${cfg.bossName}败退！貂蝉获救！`, '#ff0000', 28, '#000');
           this.effectManager.shakeScreen(10);
@@ -275,8 +275,8 @@ export class GameController {
     this.player.addExp(this.player.expToLevel, this);
     this.effectManager.addText(this.player.x, this.player.y - 90, isFinal ? '通关奖励：等级提升！' : '击败Boss：等级提升！', '#ffd700', 22, '#000');
     const cfg = RUN_REWARD_CONFIG;
-    this.dropManager.spawnBossDrops(boss, cfg.bossDropCount, isFinal ? cfg.bossDropQualityBonus : 0);
-    this.effectManager.addText(boss.x, boss.y - boss.radius - 55, `掉落 ${cfg.bossDropCount} 件装备！`, '#ffaa44', 18, '#000');
+    const drops = this.dropManager.spawnBossDrops(boss, cfg.bossDropCount, isFinal ? cfg.bossDropQualityBonus : 0);
+    this.effectManager.addText(boss.x, boss.y - boss.radius - 55, `掉落 ${drops.length} 件装备！`, '#ffaa44', 18, '#000');
   }
 
   onBossFirstDeath(boss) {

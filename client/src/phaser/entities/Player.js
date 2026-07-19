@@ -27,13 +27,16 @@ export class Player {
     this.critRate = stats.crit || 5;
     this.mpRegen = stats.mpRegen || 3;
     this.hpRegen = stats.hpRegen || 1;
+    this.passiveId = stats.passiveId || this.heroId;
     this.passive = stats.passive || null;
     this.skillDamageMult = stats.skillDamageMult || [1, 1, 1, 1, 1];
     this.skillBranches = stats.skillBranches || [];
     this.skillBranchSelections = stats.skillBranchSelections || {};
     this.talentEffects = stats.talentEffects || [];
 
-    this.equip = stats.equipment || createInitialEquip();
+    this.equip = stats.equipment && Object.keys(stats.equipment).length
+      ? stats.equipment
+      : createInitialEquip();
     this.skillCd = [0, 0, 0, 0, 0];
     this.attacking = false;
     this.attackTimer = 0;
@@ -473,7 +476,7 @@ useSkill(idx, game) {
     let actual = Math.max(1, dmg - this.def);
 
     // 许褚被动：概率减免伤害
-    if (this.heroId === 'xuzhu') {
+    if (this.passiveId === 'xuzhu') {
       const cfg = HERO_COMBAT_CONFIG.passives.xuzhu;
       if (Math.random() < cfg.blockChance) {
         actual = Math.max(1, Math.floor(actual * cfg.blockDamageMult));
@@ -502,7 +505,7 @@ useSkill(idx, game) {
     let mult = 1;
 
     // 赵云被动：低血量增伤
-    if (this.heroId === 'zhaoyun') {
+    if (this.passiveId === 'zhaoyun') {
       const cfg = HERO_COMBAT_CONFIG.passives.zhaoyun;
       if (this.hp <= this.maxHpTotal * cfg.hpThreshold) {
         mult *= cfg.damageMult;
@@ -510,7 +513,7 @@ useSkill(idx, game) {
     }
 
     // 吕布被动：对 Boss 增伤
-    if (this.heroId === 'lubu' && target) {
+    if (this.passiveId === 'lubu' && target) {
       if (BOSS_TYPES.includes(target.type)) {
         mult *= HERO_COMBAT_CONFIG.passives.lubu.bossDamageMult;
       }
@@ -521,7 +524,7 @@ useSkill(idx, game) {
 
   onKill(enemy, game) {
     // 典韦被动：击杀回血
-    if (this.heroId === 'dianwei') {
+    if (this.passiveId === 'dianwei') {
       const cfg = HERO_COMBAT_CONFIG.passives.dianwei;
       const heal = Math.floor(this.maxHpTotal * cfg.killHealRatio);
       this.hp = Math.min(this.maxHpTotal, this.hp + heal);
@@ -533,7 +536,7 @@ useSkill(idx, game) {
 
   applyPassives(dt, game) {
     // 貂蝉被动：定时魅惑附近敌人
-    if (this.heroId === 'diaochan') {
+    if (this.passiveId === 'diaochan') {
       const cfg = HERO_COMBAT_CONFIG.passives.diaochan;
       this._charmTimer = (this._charmTimer || 0) - dt;
       if (this._charmTimer <= 0) {

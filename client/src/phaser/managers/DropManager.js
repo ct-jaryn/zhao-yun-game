@@ -13,8 +13,25 @@ export class DropManager {
     return equipPower(eq) > equipPower(old);
   }
 
+  getDifficultyDropBonus() {
+    const runConfig = this.game.runConfig;
+    if (!runConfig) return 0;
+    const diff = runConfig.getDifficultyConfig();
+    const challenge = runConfig.challenge || {};
+    return (diff.dropBonus || 0) + (challenge.dropBonus || 0);
+  }
+
+  getBossDropCountBonus() {
+    const runConfig = this.game.runConfig;
+    if (!runConfig) return 0;
+    const diff = runConfig.getDifficultyConfig();
+    const challenge = runConfig.challenge || {};
+    return (diff.bossDropCountBonus || 0) + (challenge.bossDropCountBonus || 0);
+  }
+
   spawnDrop(x, y, level, bonus = 0) {
-    const eq = genEquip(Math.max(1, level + bonus));
+    const effectiveLevel = Math.max(1, level + bonus + this.getDifficultyDropBonus());
+    const eq = genEquip(effectiveLevel);
     const item = new DropItem(this.game.scene, x, y, eq);
     this.drops.push(item);
     return eq;
@@ -22,7 +39,8 @@ export class DropManager {
 
   spawnBossDrops(boss, count, levelBonus = 0) {
     const eqs = [];
-    for (let i = 0; i < count; i++) {
+    const totalCount = count + this.getBossDropCountBonus();
+    for (let i = 0; i < totalCount; i++) {
       const angle = Math.random() * Math.PI * 2;
       const dist = 20 + Math.random() * 60;
       const eq = this.spawnDrop(boss.x + Math.cos(angle) * dist, boss.y + Math.sin(angle) * dist, this.game.player.level, levelBonus);

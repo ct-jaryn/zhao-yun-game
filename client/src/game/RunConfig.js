@@ -73,6 +73,7 @@ export class RunConfig {
       radius: 36,
       skin: this.skin,
       heroId: this.heroId,
+      passiveId: heroCfg.id,
       passive: heroCfg.passive
     };
 
@@ -88,6 +89,9 @@ export class RunConfig {
         }
       }
     }
+
+    // 将持久化装备传入战斗实体；此前 Player 会因缺少该字段回退到初始装备。
+    stats.equipment = hero.equipment || {};
 
     // 应用技能等级加成（先简单处理：每级 +2% 对应技能伤害）
     stats.skillDamageMult = (hero.skillLevels || [1, 1, 1, 1, 1]).map(lv => 1 + ((lv || 1) - 1) * 0.02);

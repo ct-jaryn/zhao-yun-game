@@ -1,7 +1,7 @@
 import { MAP_W, MAP_H, isTerrainPositionClear } from '../utils/index.js';
 import { rand, randInt } from '../utils/index.js';
 import { Enemy } from '../entities/Enemy.js';
-import { BOSS_TYPES, isBossType } from '../../config/index.js';
+import { BOSS_TYPES, DIFFICULTY_AFFIXES, isBossType } from '../../config/index.js';
 
 export class SpawnManager {
   constructor(game) {
@@ -10,7 +10,8 @@ export class SpawnManager {
     this.autoSpawnInterval = 1.2;
   }
 
-  getEnemyLevel(type) {
+  getEnemyLevel(type, options = {}) {
+    if (Number.isFinite(options.level)) return options.level;
     const cfg = this.game.chapterConfig;
     if (type === 'lubu') return 5 + cfg.enemyLevelBonus;
     if (type === 'dianwei' || type === 'xuzhu') return 4 + cfg.enemyLevelBonus;
@@ -21,7 +22,7 @@ export class SpawnManager {
   }
 
   createEnemy(type, x, y, options = {}) {
-    const enemy = new Enemy(this.game.scene, x, y, type, this.getEnemyLevel(type), options);
+    const enemy = new Enemy(this.game.scene, x, y, type, this.getEnemyLevel(type, options), options);
     this._applyDifficultyScaling(enemy, options);
     return enemy;
   }
@@ -37,6 +38,38 @@ export class SpawnManager {
     enemy.atk = Math.floor(enemy.atk * diff.enemyAtk * (challenge.enemyAtkMult || 1));
     enemy.def = Math.floor(enemy.def * diff.enemyDef * (challenge.enemyDefMult || 1));
     enemy.speed = Math.floor(enemy.speed * diff.enemySpeed * (challenge.enemySpeedMult || 1));
+
+    // 难度词缀：基础倍率之后再应用，保证词缀在所有章节和无尽模式中一致生效。
+    const affixIds = [...(diff.affixes || []), ...(challenge.affixes || [])];
+    for (const affixId of affixIds) {
+      const affix = DIFFICULTY_AFFIXES[affixId];
+      if (!affix) continue;
+      enemy.affixes = enemy.affixes || [];
+      enemy.affixNames = enemy.affixNames || [];
+      if (enemy.affixes.includes(affixId)) continue;
+      enemy.affixes.push(affixId);
+      enemy.affixNames.push(affix.name || affixId);
+      if (affix.hpMult) {
+        enemy.maxHp = Math.floor(enemy.maxHp * affix.hpMult);
+        enemy.hp = enemy.maxHp;
+      }
+      if (affix.atkMult) enemy.atk = Math.floor(enemy.atk * affix.atkMult);
+      if (affix.defMult) enemy.def = Math.floor(enemy.def * affix.defMult);
+      if (affix.speedMult) enemy.speed = Math.floor(enemy.speed * affix.speedMult);
+    }
+
+    if (enemy.affixNames && enemy.affixNames.length > 0) {
+      const visibleAffixes = enemy.affixNames.filter(name => !enemy.name.includes(name));
+      if (visibleAffixes.length > 0) enemy.name = `${visibleAffixes.join('·')}·${enemy.name}`;
+    }
+
+    // 难度和词缀缩放后的数值必须成为 Boss 复活的基准，不能回退到未缩放的构造值。
+    enemy.baseMaxHp = enemy.maxHp;
+    enemy.baseAtk = enemy.atk;
+    enemy.baseDef = enemy.def;
+    enemy._originalBaseMaxHp = enemy.maxHp;
+    enemy._originalBaseAtk = enemy.atk;
+    enemy._originalBaseDef = enemy.def;
 
     // 精英怪词缀（仅非 Boss）
     if (!isBossType(enemy.type) && !options.elite && !enemy.enhanced && Math.random() < diff.eliteChance) {

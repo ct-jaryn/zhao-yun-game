@@ -67,6 +67,7 @@ export class ModeFooter {
           <button class="difficulty-btn active" data-difficulty="normal">普通</button>
           <button class="difficulty-btn" data-difficulty="hard">困难</button>
           <button class="difficulty-btn" data-difficulty="hell">修罗</button>
+          <button class="difficulty-btn" data-difficulty="reincarnation">轮回</button>
         </div>
         <div class="lobby-dialog-actions">
           <button class="btn" id="lobbyStoryCancel">取消</button>
@@ -115,6 +116,7 @@ export class ModeFooter {
           <button class="difficulty-btn active" data-difficulty="normal">普通</button>
           <button class="difficulty-btn" data-difficulty="hard">困难</button>
           <button class="difficulty-btn" data-difficulty="hell">修罗</button>
+          <button class="difficulty-btn" data-difficulty="reincarnation">轮回</button>
         </div>
         <div class="lobby-dialog-actions">
           <button class="btn" id="lobbyEndlessCancel">取消</button>
@@ -409,7 +411,7 @@ export class ModeFooter {
   }
 
   _difficultyName(diff) {
-    const names = { normal: '普通', hard: '困难', hell: '修罗' };
+    const names = { normal: '普通', hard: '困难', hell: '修罗', reincarnation: '轮回' };
     return names[diff] || diff;
   }
 }
