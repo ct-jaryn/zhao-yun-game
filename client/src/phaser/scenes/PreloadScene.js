@@ -11,6 +11,7 @@ export class PreloadScene extends Phaser.Scene {
     const loader = new AssetLoader(this);
     loader.loadPlayerAssets('classic');
     loader.loadCommonAssets();
+    loader.loadTerrainAssets();
     loader.loadEffectAssets();
 
     this.load.on('loaderror', file => {

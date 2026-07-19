@@ -1,5 +1,5 @@
 import { MAP_W, MAP_H, SKILLS, EQUIP_TYPES, QUALITY, BOSS_TYPES, HERO_COMBAT_CONFIG } from '../../config/index.js';
-import { vnorm, vec, vdist, angleDiff, pick } from '../utils/index.js';
+import { vnorm, vec, vdist, angleDiff, pick, resolveTerrainCollision } from '../utils/index.js';
 import { AssetLoader } from '../plugins/AssetLoader.js';
 import { createInitialEquip } from '../systems/EquipmentFactory.js';
 
@@ -66,6 +66,7 @@ export class Player {
     this.mouseAim = false;
 
     this.animPrefix = this.skin === 'mecha' ? 'mecha_player' : 'player';
+    this.createGroundShadow();
     this.createSprite();
   }
 
@@ -126,6 +127,18 @@ export class Player {
       game.flashScreen('#ffd700', 0.2);
       game.showLevelUp();
     }
+  }
+
+  createGroundShadow() {
+    this.shadow = this.scene.add.ellipse(
+      this.x,
+      this.y + this.radius * 0.72,
+      this.radius * 2.2,
+      this.radius * 0.62,
+      0x120d09,
+      0.42
+    );
+    this.shadow.setDepth(4);
   }
 
   createSprite() {
@@ -238,11 +251,18 @@ export class Player {
   clampPos() {
     this.x = Math.max(this.radius, Math.min(MAP_W - this.radius, this.x));
     this.y = Math.max(this.radius, Math.min(MAP_H - this.radius, this.y));
+    resolveTerrainCollision(this, 12);
+    this.x = Math.max(this.radius, Math.min(MAP_W - this.radius, this.x));
+    this.y = Math.max(this.radius, Math.min(MAP_H - this.radius, this.y));
   }
 
   syncSprite() {
     this.sprite.setPosition(this.x, this.y);
     this.updateFlip();
+    if (this.shadow) {
+      this.shadow.setPosition(this.x, this.y + this.radius * 0.72);
+      this.shadow.setAlpha(this.dead ? 0.12 : this.dodging ? 0.2 : 0.42);
+    }
 
     if (this.dead) {
       const key = `${this.animPrefix}_death`;
@@ -539,6 +559,10 @@ useSkill(idx, game) {
     if (this.sprite) {
       this.sprite.destroy();
       this.sprite = null;
+    }
+    if (this.shadow) {
+      this.shadow.destroy();
+      this.shadow = null;
     }
   }
 }

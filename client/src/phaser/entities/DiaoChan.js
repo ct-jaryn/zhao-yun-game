@@ -17,7 +17,20 @@ export class DiaoChan {
     this.dir = 0;
     this.drawH = 160;
 
+    this.createGroundShadow();
     this.createSprite();
+  }
+
+  createGroundShadow() {
+    this.shadow = this.scene.add.ellipse(
+      this.x,
+      this.y + this.radius * 0.78,
+      this.radius * 2.1,
+      this.radius * 0.6,
+      0x120d09,
+      0.32
+    );
+    this.shadow.setDepth(4);
   }
 
   createSprite() {
@@ -89,6 +102,10 @@ export class DiaoChan {
     if (!this.sprite) return;
     const floatY = Math.sin(this.animTimer) * 3;
     this.sprite.setPosition(this.x, this.y + floatY);
+    if (this.shadow) {
+      this.shadow.setPosition(this.x, this.y + this.radius * 0.78);
+      this.shadow.setScale(1 - Math.abs(floatY) * 0.025, 1 - Math.abs(floatY) * 0.04);
+    }
 
     if (this.state === 'captive') {
       const frame = Math.floor(this.tiedAnimTimer) % 6;
@@ -110,6 +127,10 @@ export class DiaoChan {
     if (this.sprite) {
       this.sprite.destroy();
       this.sprite = null;
+    }
+    if (this.shadow) {
+      this.shadow.destroy();
+      this.shadow = null;
     }
   }
 }

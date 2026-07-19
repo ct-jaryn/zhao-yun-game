@@ -1,5 +1,3 @@
-import { MAP_W, MAP_H } from '../utils/index.js';
-import { rand, randInt } from '../utils/index.js';
 import { isBossType, ENDLESS_CONFIG, ENDLESS_BOSS_POOL } from '../../config/index.js';
 
 export class EndlessPhaseManager {
@@ -123,15 +121,11 @@ export class EndlessPhaseManager {
   }
 
   _randomSpawnPos() {
-    const side = randInt(0, 3);
-    const margin = ENDLESS_CONFIG.spawnMargin;
-    const band = ENDLESS_CONFIG.spawnBand;
-    switch (side) {
-      case 0: return { x: rand(margin, MAP_W - margin), y: rand(margin, margin + band) };
-      case 1: return { x: rand(margin, MAP_W - margin), y: rand(MAP_H - margin - band, MAP_H - margin) };
-      case 2: return { x: rand(margin, margin + band), y: rand(margin, MAP_H - margin) };
-      default: return { x: rand(MAP_W - margin - band, MAP_W - margin), y: rand(margin, MAP_H - margin) };
-    }
+    return this.game.spawnManager.randomEdgePos(
+      ENDLESS_CONFIG.spawnMargin,
+      ENDLESS_CONFIG.spawnBand,
+      44
+    );
   }
 
   getPhaseName() {

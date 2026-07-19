@@ -1,5 +1,5 @@
 import { MAP_W, MAP_H, ENEMY_TYPES, ENEMY_AGGRO_RANGE, ENEMY_LOSE_AGGRO_RANGE, ENEMY_CHASE_SPEED_RATIO, ENEMY_WANDER_SPEED_RATIO, isBossType, ENEMY_COMBAT_CONFIG } from '../../config/index.js';
-import { rand, randInt, vdist, vsub, vnorm, vec } from '../utils/index.js';
+import { rand, randInt, vdist, vsub, vnorm, vec, resolveTerrainCollision } from '../utils/index.js';
 import { AssetLoader } from '../plugins/AssetLoader.js';
 import { Projectile } from './Projectile.js';
 
@@ -90,6 +90,7 @@ export class Enemy {
 
     this.spriteConfig = SPRITE_CONFIG[type] || SPRITE_CONFIG.soldier;
     this.baseSpriteScale = null;
+    this.createGroundShadow();
     this.createSprite();
     this.createHpBar();
     this.createNameLabel();
@@ -117,6 +118,18 @@ export class Enemy {
     if (this.type === 'boss' || this.type === 'lubu') return tints.boss;
     if (['general', 'dianwei', 'xuzhu'].includes(this.type)) return tints.general;
     return tints.default;
+  }
+
+  createGroundShadow() {
+    this.shadow = this.scene.add.ellipse(
+      this.x,
+      this.y + this.radius * 0.72,
+      this.radius * 2.15,
+      this.radius * 0.62,
+      0x120d09,
+      0.34
+    );
+    this.shadow.setDepth(4);
   }
 
   createSprite() {
@@ -409,12 +422,20 @@ export class Enemy {
   clampPos() {
     this.x = Math.max(this.radius, Math.min(MAP_W - this.radius, this.x));
     this.y = Math.max(this.radius, Math.min(MAP_H - this.radius, this.y));
+    resolveTerrainCollision(this, 12);
+    this.x = Math.max(this.radius, Math.min(MAP_W - this.radius, this.x));
+    this.y = Math.max(this.radius, Math.min(MAP_H - this.radius, this.y));
   }
 
   syncSprite() {
     if (!this.sprite) return;
     this.updateHitbox();
     this.sprite.setPosition(this.x, this.y);
+    if (this.shadow) {
+      this.shadow.setPosition(this.x, this.y + this.radius * 0.72);
+      this.shadow.setDisplaySize(this.radius * 2.15, this.radius * 0.62);
+      this.shadow.setAlpha(this.dead ? 0.1 : 0.34);
+    }
 
     if (this.dead) {
       const cfg = ENEMY_COMBAT_CONFIG;
@@ -537,6 +558,10 @@ export class Enemy {
     if (this.nameLabel) {
       this.nameLabel.destroy();
       this.nameLabel = null;
+    }
+    if (this.shadow) {
+      this.shadow.destroy();
+      this.shadow = null;
     }
   }
 }

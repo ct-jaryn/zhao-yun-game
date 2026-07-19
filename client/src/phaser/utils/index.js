@@ -1,6 +1,32 @@
 export {
-  MAP_W, MAP_H
+  MAP_W, MAP_H, TERRAIN
 } from '../../config/game.config.js';
+
+import { TERRAIN } from '../../config/game.config.js';
+
+export function isTerrainPositionClear(x, y, radius = 0, padding = 10) {
+  return TERRAIN.every((obstacle) => {
+    if (!obstacle.blocking) return true;
+    return Math.hypot(x - obstacle.x, y - obstacle.y) >= obstacle.r + radius + padding;
+  });
+}
+
+export function resolveTerrainCollision(entity, padding = 10) {
+  for (const obstacle of TERRAIN) {
+    if (!obstacle.blocking) continue;
+
+    const dx = entity.x - obstacle.x;
+    const dy = entity.y - obstacle.y;
+    const distance = Math.hypot(dx, dy);
+    const minDistance = obstacle.r + entity.radius + padding;
+    if (distance >= minDistance) continue;
+
+    const nx = distance > 0.001 ? dx / distance : 1;
+    const ny = distance > 0.001 ? dy / distance : 0;
+    entity.x = obstacle.x + nx * minDistance;
+    entity.y = obstacle.y + ny * minDistance;
+  }
+}
 
 export function vec(x, y) { return { x, y }; }
 export function vsub(a, b) { return { x: a.x - b.x, y: a.y - b.y }; }

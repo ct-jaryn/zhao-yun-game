@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { InputManager } from '../InputManager.js';
 import { GameController } from '../GameController.js';
 import { RunConfig } from '../../game/RunConfig.js';
+import { TERRAIN } from '../../config/game.config.js';
 import { MAP_W, MAP_H } from '../utils/index.js';
 
 export class GameScene extends Phaser.Scene {
@@ -61,10 +62,39 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // 将地图配置中的障碍点表现为可复用的战场装饰，保持在实体和特效之前渲染
+    const terrainKeys = {
+      rock: 'terrain_rock',
+      banner: 'terrain_banner',
+      fallen_tree: 'terrain_fallen_tree'
+    };
+    TERRAIN.forEach((obstacle, index) => {
+      const key = terrainKeys[obstacle.kind] || Object.values(terrainKeys)[index % 3];
+      if (!this.textures.exists(key)) return;
+
+      const prop = this.add.image(obstacle.x, obstacle.y, key);
+      prop.setOrigin(0.5, 1);
+
+      if (key === 'terrain_fallen_tree') {
+        prop.setDisplaySize(obstacle.r * 2.8, obstacle.r * 2.1);
+      } else if (key === 'terrain_banner') {
+        prop.setDisplaySize(obstacle.r * 1.75, obstacle.r * 2.4);
+      } else {
+        prop.setDisplaySize(obstacle.r * 2.25, obstacle.r * 2.0);
+      }
+
+      prop.setRotation(obstacle.rotation || 0);
+      prop.setAlpha(obstacle.kind === 'banner' ? 0.84 : 0.9);
+      prop.setDepth(-4);
+      this._bgObjects.push(prop);
+    });
+
     // 地图边界
     const graphics = this.add.graphics();
-    graphics.lineStyle(4, 0xff0000, 0.4);
+    graphics.lineStyle(5, 0xd6ad63, 0.42);
     graphics.strokeRect(0, 0, MAP_W, MAP_H);
+    graphics.lineStyle(2, 0x2a1b12, 0.35);
+    graphics.strokeRect(24, 24, MAP_W - 48, MAP_H - 48);
     graphics.setDepth(-5);
     this._bgObjects.push(graphics);
   }

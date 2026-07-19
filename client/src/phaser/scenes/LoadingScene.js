@@ -58,6 +58,7 @@ export class LoadingScene extends Phaser.Scene {
       loader.loadChapterAssets(this.runConfig.chapter || 1);
     }
     loader.loadCommonAssets();
+    loader.loadTerrainAssets();
     loader.loadEffectAssets();
   }
 

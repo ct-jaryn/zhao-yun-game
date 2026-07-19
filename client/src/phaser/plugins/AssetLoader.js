@@ -193,6 +193,18 @@ export class AssetLoader {
     }
   }
 
+  loadTerrainAssets() {
+    const terrainAssets = {
+      terrain_rock: 'terrain/rock.png',
+      terrain_banner: 'terrain/banner.png',
+      terrain_fallen_tree: 'terrain/fallen_tree.png'
+    };
+
+    for (const [key, path] of Object.entries(terrainAssets)) {
+      if (!this.scene.textures.exists(key)) this.scene.load.image(key, path);
+    }
+  }
+
   loadEffectAssets() {
     const keys = [
       'projectile_arrow',
@@ -219,6 +231,7 @@ export class AssetLoader {
   loadBootAssets() {
     this.loadAllPlayerAssets();
     this.loadCommonAssets();
+    this.loadTerrainAssets();
     this.loadEffectAssets();
   }
 

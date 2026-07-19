@@ -21,7 +21,7 @@ export class PhaseManager {
     this.rescueWinTimer = 0;
 
     if (game.chapter === 1) {
-      this.diaochan = new DiaoChan(game.scene, MAP_W - 350, MAP_H / 2);
+      this.diaochan = new DiaoChan(game.scene, MAP_W - 320, MAP_H / 2);
     }
   }
 

@@ -1,4 +1,4 @@
-import { MAP_W, MAP_H } from '../utils/index.js';
+import { MAP_W, MAP_H, isTerrainPositionClear } from '../utils/index.js';
 import { rand, randInt } from '../utils/index.js';
 import { Enemy } from '../entities/Enemy.js';
 import { BOSS_TYPES, isBossType } from '../../config/index.js';
@@ -53,26 +53,31 @@ export class SpawnManager {
   }
 
   randomSpawnPos() {
-    const side = randInt(0, 3);
-    const margin = 150;
-    switch (side) {
-      case 0: return { x: rand(margin, MAP_W - margin), y: rand(margin, margin + 200) };
-      case 1: return { x: rand(margin, MAP_W - margin), y: rand(MAP_H - margin - 200, MAP_H - margin) };
-      case 2: return { x: rand(margin, margin + 200), y: rand(margin, MAP_H - margin) };
-      default: return { x: rand(MAP_W - margin - 200, MAP_W - margin), y: rand(margin, MAP_H - margin) };
-    }
+    return this.randomEdgePos(220, 260, 44);
   }
 
   randomBossSpawnPos() {
-    const margin = 200;
-    const p = this.game.player;
-    const side = randInt(0, 3);
-    switch (side) {
-      case 0: return { x: rand(margin, MAP_W - margin), y: Math.max(margin, p.y - 500) };
-      case 1: return { x: rand(margin, MAP_W - margin), y: Math.min(MAP_H - margin, p.y + 500) };
-      case 2: return { x: Math.max(margin, p.x - 500), y: rand(margin, MAP_H - margin) };
-      default: return { x: Math.min(MAP_W - margin, p.x + 500), y: rand(margin, MAP_H - margin) };
+    return this.randomEdgePos(240, 320, 76, 650);
+  }
+
+  randomEdgePos(margin = 220, band = 260, radius = 44, minPlayerDistance = 0) {
+    const player = this.game.player;
+
+    for (let attempt = 0; attempt < 16; attempt++) {
+      const side = randInt(0, 3);
+      let pos;
+      switch (side) {
+        case 0: pos = { x: rand(margin, MAP_W - margin), y: rand(margin, margin + band) }; break;
+        case 1: pos = { x: rand(margin, MAP_W - margin), y: rand(MAP_H - margin - band, MAP_H - margin) }; break;
+        case 2: pos = { x: rand(margin, margin + band), y: rand(margin, MAP_H - margin) }; break;
+        default: pos = { x: rand(MAP_W - margin - band, MAP_W - margin), y: rand(margin, MAP_H - margin) }; break;
+      }
+
+      const farEnough = !player || Math.hypot(pos.x - player.x, pos.y - player.y) >= minPlayerDistance;
+      if (farEnough && isTerrainPositionClear(pos.x, pos.y, radius, 18)) return pos;
     }
+
+    return { x: MAP_W / 2, y: MAP_H - margin };
   }
 
   spawnPhaseMinions() {

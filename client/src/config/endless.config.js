@@ -18,8 +18,8 @@ export const ENDLESS_CONFIG = {
     { type: 'archer', threshold: 0.70 },
     { type: 'cavalry', threshold: 1.0 }
   ],
-  spawnMargin: 150,
-  spawnBand: 200,
+  spawnMargin: 220,
+  spawnBand: 260,
   scaling: {
     waveMultBase: 1,
     waveMultPerWave: 0.12,
